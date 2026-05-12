@@ -1,0 +1,327 @@
+import base64, re, os
+
+DISCIPLINAS = [
+    'Língua Portuguesa','Matemática','História','Geografia',
+    'Ciências','Arte','Educação Física',
+    'Língua Estrangeira – Inglês','Produção Textual',
+]
+MEDIA_MIN = 7.0
+
+def get_logo_b64():
+    path = "/tmp/logo_b64.txt"
+    if os.path.exists(path):
+        with open(path) as f:
+            return f.read().strip()
+    return ""
+
+def arred(v): return round(v*100)/100
+def fmt(v):   return '–' if v is None else f"{v:.1f}"
+
+def calc_media(p, g):
+    if not p or not g: return None
+    try: return arred((float(p)+float(g))/2)
+    except: return None
+
+def calc_rec(base, rec):
+    if base is None: return None
+    if not rec: return base
+    try: return max(base, arred((base+float(rec))/2))
+    except: return base
+
+def color_cls(v):
+    if v is None: return 'na'
+    return 'ap' if v >= MEDIA_MIN else 'rep'
+
+def sit_txt(v):
+    if v is None: return '–'
+    return 'Aprovado' if v >= MEDIA_MIN else 'Reprovado'
+
+def gerar_tbody(notas_aluno):
+    rows = []
+    for disc in DISCIPLINAS:
+        n   = notas_aluno.get(disc, {})
+        sid = re.sub(r'[^a-zA-Z0-9]','_', disc)
+        p1=n.get('p1',''); gl1=n.get('gl1','')
+        p2=n.get('p2',''); gl2=n.get('gl2','')
+        p3=n.get('p3',''); gl3=n.get('gl3','')
+
+        b1=calc_media(p1,gl1); ef1=calc_rec(b1,n.get('r1',''))
+        b2=calc_media(p2,gl2); ef2=calc_rec(b2,n.get('r2',''))
+        b3=calc_media(p3,gl3); ef3=calc_rec(b3,n.get('r3',''))
+        mfano = arred((ef1+ef2+ef3)/3) if ef1 and ef2 and ef3 else None
+        mfef  = calc_rec(mfano, n.get('rf',''))
+
+        def tdv(v): return f'<td class="calc {color_cls(v)}">{fmt(v)}</td>'
+        def tdp(v): return f'<td class="nota-val">{v if v else "–"}</td>'
+        def tdr(base):
+            v = n.get('r'+base,'')
+            if v: return f'<td class="nota-val rec-val">{v}</td>'
+            cls = ''
+            if b1 and eval(f'b{base}') and eval(f'b{base}') < MEDIA_MIN:
+                cls = 'rec-empty'
+            return f'<td class="nota-val {cls}">–</td>'
+
+        rows.append(f'''<tr>
+<td class="disc-name">{disc}</td>
+{tdp(p1)}{tdp(gl1)}{tdv(b1)}<td class="nota-val {'rec-val' if n.get('r1') else ''}">{n.get('r1','–') or '–'}</td>{tdv(ef1)}
+{tdp(p2)}{tdp(gl2)}{tdv(b2)}<td class="nota-val {'rec-val' if n.get('r2') else ''}">{n.get('r2','–') or '–'}</td>{tdv(ef2)}
+{tdp(p3)}{tdp(gl3)}{tdv(b3)}<td class="nota-val {'rec-val' if n.get('r3') else ''}">{n.get('r3','–') or '–'}</td>{tdv(ef3)}
+{tdv(mfano)}<td class="nota-val {'rec-val' if n.get('rf') else ''}">{n.get('rf','–') or '–'}</td>
+{tdv(mfef)}<td class="{color_cls(mfef)} sit-txt">{sit_txt(mfef)}</td>
+</tr>''')
+    return '\n'.join(rows)
+
+def gerar_boletim_html(aluno: dict) -> str:
+    logo = get_logo_b64()
+    tbody = gerar_tbody(aluno.get('notas',{}))
+    nome  = aluno['nome']
+    turma = aluno['turma']
+    periodo = aluno.get('periodo','')
+    prof  = aluno.get('professora','')
+    mat   = aluno.get('matricula','')
+    ano   = aluno.get('ano_letivo','2026')
+
+    return f'''<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Boletim – {nome}</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+:root{{
+  --azul:#2b3990;--azul-lt:#e8eaf8;--azul-md:#b0b8e8;
+  --amarelo:#f7d800;--amarelo-dk:#c8ab00;
+  --cinza-lt:#f7f7f5;--cinza-md:#dcdcd8;--cinza-dk:#4a4a4a;
+  --verde:#0a7c3e;--verde-lt:#e3f5ec;
+  --vermelho:#b52222;--laranja:#c25b0d;--laranja-lt:#fef0e4;
+  --roxo:#6a1a8a;--roxo-lt:#f5eafc;--borda:#c8c8c4;
+}}
+body{{font-family:'Nunito',sans-serif;background:#d0d3e4;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;padding:24px 12px;gap:16px;}}
+
+/* ── Top bar ── */
+.topbar{{
+  width:100%;max-width:900px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  background:#fff;border-radius:12px;padding:10px 20px;
+  box-shadow:0 2px 12px rgba(43,57,144,.13);
+}}
+.topbar-left{{display:flex;align-items:center;gap:10px;}}
+.back-btn{{
+  font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
+  background:var(--azul-lt);color:var(--azul);
+  border:none;border-radius:8px;padding:7px 14px;cursor:pointer;
+  text-decoration:none;display:inline-block;
+}}
+.back-btn:hover{{background:var(--azul-md);}}
+.print-btn{{
+  font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
+  background:var(--azul);color:#fff;
+  border:none;border-radius:8px;padding:7px 18px;cursor:pointer;
+}}
+.print-btn:hover{{opacity:.88;}}
+.topbar span{{font-size:12px;color:#888;}}
+
+/* ── Página A4 paisagem ── */
+.page{{
+  width:277mm;
+  background:#fff;
+  border-radius:6px;
+  box-shadow:0 4px 28px rgba(43,57,144,.18);
+  padding:6mm 8.5mm 5.5mm;
+  position:relative;overflow:hidden;
+}}
+.page::before{{
+  content:'';position:absolute;top:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,var(--azul) 0%,var(--amarelo) 50%,var(--azul) 100%);
+}}
+
+/* header */
+.header{{
+  display:grid;grid-template-columns:128px 1fr auto;
+  align-items:center;gap:8px;
+  padding-bottom:3.5px;margin-bottom:3.5px;
+  border-bottom:2.5px solid var(--amarelo);
+}}
+.header-logo img{{height:40px;max-width:126px;object-fit:contain;}}
+.header-center h1{{font-family:'Fredoka One',cursive;font-size:15px;color:var(--azul);line-height:1.1;}}
+.header-center p{{font-size:9px;color:#888;margin-top:2px;}}
+.header-right{{text-align:right;}}
+.pill-azul{{background:var(--azul);color:var(--amarelo);font-family:'Fredoka One',cursive;font-size:11px;padding:2px 11px;border-radius:20px;display:inline-block;margin-bottom:2px;}}
+.pill-amarelo{{background:var(--amarelo);color:var(--azul);font-family:'Fredoka One',cursive;font-size:9.5px;padding:2px 9px;border-radius:20px;display:inline-block;}}
+
+/* aluno info */
+.aluno-grid{{
+  display:grid;grid-template-columns:2fr 1fr 1.2fr 0.9fr;
+  gap:2px 10px;padding:2.5px 0;margin-bottom:3px;
+  border-bottom:1px solid var(--borda);
+}}
+.field{{display:flex;flex-direction:column;gap:1px;}}
+.field label{{font-size:7.5px;text-transform:uppercase;letter-spacing:.6px;color:#aaa;font-weight:800;}}
+.field span{{font-size:11px;font-weight:700;color:var(--azul);padding:2px 0;border-bottom:1.5px solid var(--borda);}}
+
+/* tabela */
+table.notas{{width:100%;border-collapse:collapse;font-size:8.5px;}}
+table.notas th,table.notas td{{padding:2px 1.5px;text-align:center;border:.5px solid var(--cinza-md);}}
+.disc-name{{text-align:left!important;padding-left:4px!important;font-weight:700;font-size:8px;min-width:84px;}}
+.nota-val{{font-size:9px;font-weight:600;}}
+.rec-val{{color:var(--laranja);font-weight:800;}}
+
+.th-trim{{font-size:8px;font-weight:900;letter-spacing:.3px;text-transform:uppercase;padding:3.5px 2px!important;}}
+.th-t1{{background:var(--azul);color:var(--amarelo);}}
+.th-t2{{background:#1a6e30;color:#d8f5e4;}}
+.th-t3{{background:#a34c00;color:#fef0e0;}}
+.th-rf{{background:var(--roxo);color:#f0d8fa;}}
+.th-fin{{background:#2a2a2a;color:#fff;}}
+.th-sub{{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.1px;padding:1.5px!important;}}
+.th-sub-t1{{background:var(--azul-lt);color:var(--azul);}}
+.th-sub-t2{{background:var(--verde-lt);color:var(--verde);}}
+.th-sub-t3{{background:var(--laranja-lt);color:var(--laranja);}}
+.th-sub-rf{{background:var(--roxo-lt);color:var(--roxo);}}
+.th-sub-fin{{background:#ebebeb;color:#333;}}
+table.notas tbody tr:nth-child(even) td{{background:var(--cinza-lt);}}
+table.notas tbody tr:nth-child(even) .disc-name{{background:#efefed;}}
+
+td.calc{{font-weight:800;font-size:9.5px;}}
+td.ap{{color:var(--verde);}} td.rep{{color:var(--vermelho);}} td.na{{color:#ccc;font-size:8px;}}
+td.sit-txt{{font-weight:800;font-size:9px;}}
+
+/* legenda */
+.legenda{{display:flex;gap:8px;align-items:center;font-size:7px;color:#888;flex-wrap:wrap;margin-top:2.5px;}}
+.leg-dot{{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:2px;}}
+
+/* frequência */
+.freq-bloco{{
+  background:var(--azul-lt);border:1px solid var(--azul-md);border-radius:7px;
+  padding:4px 9px;display:grid;grid-template-columns:repeat(4,1fr) auto;
+  gap:3px 9px;align-items:end;margin-top:3px;
+}}
+.freq-field{{display:flex;flex-direction:column;gap:1.5px;}}
+.freq-field label{{font-size:7px;text-transform:uppercase;letter-spacing:.5px;color:var(--azul);font-weight:800;}}
+.freq-val{{font-size:11.5px;font-weight:800;padding:1px 0;color:var(--cinza-dk);}}
+.sit-badge{{font-family:'Fredoka One',cursive;font-size:11px;padding:3px 10px;border-radius:20px;white-space:nowrap;display:inline-block;}}
+.sit-ok{{background:var(--verde);color:#fff;}}
+.sit-atencao{{background:var(--amarelo);color:var(--azul);}}
+.sit-rep-freq{{background:var(--vermelho);color:#fff;}}
+.sit-vazio{{background:var(--cinza-md);color:#888;font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:700;}}
+.freq-nota{{font-size:7px;color:#888;margin-top:2px;font-style:italic;}}
+
+/* rodapé */
+.footer-area{{margin-top:3px;padding-top:3px;border-top:2px solid var(--amarelo);}}
+.obs-box label{{font-size:7.5px;text-transform:uppercase;letter-spacing:.5px;color:#aaa;font-weight:800;display:block;margin-bottom:2px;}}
+.obs-line{{border-bottom:1px solid var(--borda);height:16px;margin-bottom:3px;}}
+.sign-row{{display:grid;grid-template-columns:1.6fr 1.6fr 1fr;gap:0 16px;margin-top:5px;}}
+.sign-box{{display:flex;flex-direction:column;}}
+.sign-label{{font-size:7.5px;text-transform:uppercase;letter-spacing:.5px;color:#aaa;font-weight:800;}}
+.sign-space{{height:28px;}}
+.sign-line{{border-bottom:1px solid var(--borda);}}
+.sign-caption{{font-size:7px;color:#bbb;margin-top:2px;font-style:italic;}}
+
+/* ── Print ── */
+@media print{{
+  @page{{size:A4 landscape;margin:0;}}
+  body{{background:#fff;padding:0;}}
+  .topbar{{display:none!important;}}
+  .page{{
+    width:297mm;box-shadow:none;border-radius:0;
+    padding:6mm 8.5mm 5.5mm;
+    page-break-after:always;
+  }}
+}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="back-btn">← Voltar</a>
+    <span>Boletim de <strong>{nome}</strong> — {turma} ({periodo})</span>
+  </div>
+  <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+</div>
+
+<div class="page">
+  <div class="header">
+    <div class="header-logo"><img src="data:image/jpeg;base64,{logo}" alt="Escola Espaço Alegre"></div>
+    <div class="header-center">
+      <h1>Escola Espaço Alegre</h1>
+      <p>Endereço: Rua [endereço] &nbsp;|&nbsp; Tel: (xx) xxxx-xxxx &nbsp;|&nbsp; Ensino Fundamental I</p>
+    </div>
+    <div class="header-right">
+      <div class="pill-azul">Ano Letivo {ano}</div><br>
+      <div class="pill-amarelo">BOLETIM ESCOLAR</div>
+    </div>
+  </div>
+
+  <div class="aluno-grid">
+    <div class="field"><label>Nome do(a) Aluno(a)</label><span>{nome}</span></div>
+    <div class="field"><label>Turma / Série</label><span>{turma} – {periodo}</span></div>
+    <div class="field"><label>Professor(a)</label><span>{prof}</span></div>
+    <div class="field"><label>Matrícula</label><span>{mat}</span></div>
+  </div>
+
+  <table class="notas">
+    <thead>
+      <tr>
+        <th rowspan="2" style="text-align:left;padding-left:4px;background:#f2f2f0;font-size:7px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;vertical-align:middle;">Disciplina</th>
+        <th class="th-trim th-t1" colspan="5">1º Trimestre</th>
+        <th class="th-trim th-t2" colspan="5">2º Trimestre</th>
+        <th class="th-trim th-t3" colspan="5">3º Trimestre</th>
+        <th class="th-trim th-rf" colspan="2">Rec. Final</th>
+        <th class="th-trim th-fin" colspan="2">Resultado</th>
+      </tr>
+      <tr>
+        <th class="th-sub th-sub-t1">Parc.</th><th class="th-sub th-sub-t1">Global</th><th class="th-sub th-sub-t1">Méd.T1</th><th class="th-sub th-sub-t1">Rec.T1</th><th class="th-sub th-sub-t1">Ef.T1</th>
+        <th class="th-sub th-sub-t2">Parc.</th><th class="th-sub th-sub-t2">Global</th><th class="th-sub th-sub-t2">Méd.T2</th><th class="th-sub th-sub-t2">Rec.T2</th><th class="th-sub th-sub-t2">Ef.T2</th>
+        <th class="th-sub th-sub-t3">Parc.</th><th class="th-sub th-sub-t3">Global</th><th class="th-sub th-sub-t3">Méd.T3</th><th class="th-sub th-sub-t3">Rec.T3</th><th class="th-sub th-sub-t3">Ef.T3</th>
+        <th class="th-sub th-sub-rf">M.Anual</th><th class="th-sub th-sub-rf">Rec.Fin</th>
+        <th class="th-sub th-sub-fin">M.Final</th><th class="th-sub th-sub-fin">Situação</th>
+      </tr>
+    </thead>
+    <tbody>{tbody}</tbody>
+  </table>
+
+  <div class="legenda">
+    <span><span class="leg-dot" style="background:var(--verde)"></span><strong>Aprovado</strong> ≥ 7,0</span>
+    <span><span class="leg-dot" style="background:var(--vermelho)"></span><strong>Reprovado</strong> &lt; 7,0</span>
+    <span style="font-style:italic;">Méd.Trim=(Parc+Global)÷2 | Rec=(Méd+Rec)÷2 | M.Anual=(Ef1+Ef2+Ef3)÷3 | Rec.Fin=(M.Anual+Rec)÷2</span>
+  </div>
+
+  <div class="freq-bloco">
+    <div class="freq-field"><label>Total de Aulas</label><div class="freq-val">–</div></div>
+    <div class="freq-field"><label>Total de Faltas</label><div class="freq-val">–</div></div>
+    <div class="freq-field"><label>% Frequência</label><div class="freq-val" style="color:#aaa;">–</div></div>
+    <div class="freq-field"><label>Máx. Faltas (25%)</label><div class="freq-val" style="color:var(--azul);font-size:9.5px;">–</div></div>
+    <div class="freq-field" style="align-items:center;"><label>&nbsp;</label><span class="sit-badge sit-vazio">A preencher</span></div>
+  </div>
+  <div class="freq-nota">📋 Freq. mínima: <strong>75%</strong> (LDB 9.394/96, Art. 24 VI)</div>
+
+  <div class="footer-area">
+    <div class="obs-box">
+      <label>Observações / Anotações Pedagógicas</label>
+      <div class="obs-line"></div>
+    </div>
+    <div class="sign-row">
+      <div class="sign-box">
+        <span class="sign-label">Professor(a) / Coordenador(a)</span>
+        <div class="sign-space"></div><div class="sign-line"></div>
+        <span class="sign-caption">Assinatura</span>
+      </div>
+      <div class="sign-box">
+        <span class="sign-label">Responsável / Encarregado(a)</span>
+        <div class="sign-space"></div><div class="sign-line"></div>
+        <span class="sign-caption">Assinatura &nbsp;&nbsp;&nbsp; Data: ____/____/________</span>
+      </div>
+      <div class="sign-box">
+        <span class="sign-label">Data de Entrega</span>
+        <div class="sign-space"></div><div class="sign-line"></div>
+        <span class="sign-caption">Carimbo / Rubrica da Escola</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>'''
