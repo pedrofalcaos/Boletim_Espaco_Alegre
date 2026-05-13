@@ -369,7 +369,8 @@ def _gerar_pagina(aluno: dict) -> str:
     <div class="header-logo"><img src="/static/logo.jpg" alt="Escola Espaço Alegre"></div>
     <div class="header-center">
       <h1>Escola Espaço Alegre</h1>
-      <p>R. Manoel de Arruda Câmara, 54 – Prado, Recife &nbsp;|&nbsp; Tel: (81) 3227-3158 &nbsp;|&nbsp; Ensino Fundamental I</p>
+      <p>R. Manoel de Arruda Câmara, 54 – Prado, Recife &nbsp;|&nbsp; Tel: (81) 3227-3158</p>
+      <p style="margin-top:1.5px;">Ed. Infantil e Fundamental Anos Iniciais &nbsp;·&nbsp; <span style="color:#2b3990;font-weight:800;">Escola Bilíngue</span></p>
     </div>
     <div class="header-right">
       <div class="pill-azul">Ano Letivo {ano}</div><br>

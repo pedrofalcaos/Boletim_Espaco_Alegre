@@ -86,7 +86,7 @@ input:not(:placeholder-shown)~.clr{display:block;}
     <div class="loading" id="loading"><div class="spinner"></div><p style="font-size:12px;color:#aaa;">Buscando...</p></div>
     <div class="erro" id="erro">❌ Matrícula não encontrada. Verifique o número e tente novamente.</div>
   </div>
-  <div class="footer">Escola Espaço Alegre &nbsp;|&nbsp; Ensino Fundamental I &nbsp;|&nbsp; 2026</div>
+  <div class="footer">Escola Espaço Alegre &nbsp;|&nbsp; Ed. Infantil e Fundamental Anos Iniciais &nbsp;|&nbsp; Bilíngue &nbsp;|&nbsp; 2026</div>
 </div>
 <script>
 function buscar(e){
