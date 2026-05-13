@@ -369,7 +369,7 @@ def _gerar_pagina(aluno: dict) -> str:
     <div class="header-logo"><img src="/static/logo.jpg" alt="Escola Espaço Alegre"></div>
     <div class="header-center">
       <h1>Escola Espaço Alegre</h1>
-      <p>Endereço: Rua [endereço] &nbsp;|&nbsp; Tel: (xx) xxxx-xxxx &nbsp;|&nbsp; Ensino Fundamental I</p>
+      <p>R. Manoel de Arruda Câmara, 54 – Prado, Recife &nbsp;|&nbsp; Tel: (81) 3227-3158 &nbsp;|&nbsp; Ensino Fundamental I</p>
     </div>
     <div class="header-right">
       <div class="pill-azul">Ano Letivo {ano}</div><br>
