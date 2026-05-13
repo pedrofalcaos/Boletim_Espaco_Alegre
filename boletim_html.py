@@ -297,24 +297,50 @@ td.sit-txt{font-weight:800;font-size:9px;}
    ══════════════════════════════════════ */
 @media print{
   @page{size:A4 landscape;margin:0;}
-  body{background:#fff;padding:0;gap:0;}
-  .topbar{display:none!important;}
-  .table-scroll::before{display:none!important;}
-  .table-scroll{overflow:visible;}
-  .disc-name{position:static;box-shadow:none;}
-  table.notas thead tr:first-child th:first-child,
-  table.notas thead tr:last-child th:first-child{position:static;box-shadow:none;}
-  table.notas{min-width:unset;}
-  .page{
-    width:297mm;box-shadow:none;border-radius:0;
-    padding:6mm 8.5mm 5.5mm;
-    page-break-after:always;break-after:page;
+
+  /* reset total do body — sem flex, sem padding, sem gap */
+  html,body{
+    display:block!important;
+    width:297mm!important;
+    padding:0!important;margin:0!important;gap:0!important;
+    background:#fff!important;min-height:unset!important;
+    align-items:unset!important;
   }
-  .aluno-grid{grid-template-columns:2fr 1fr 1.2fr 0.9fr;}
-  .header{grid-template-columns:128px 1fr auto;}
-  .header-right{display:block;}
-  .freq-bloco{grid-template-columns:repeat(4,1fr) auto;}
-  .sign-row{grid-template-columns:1.6fr 1.6fr 1fr;}
+
+  .topbar{display:none!important;}
+
+  /* scroll hint e overflow */
+  .table-scroll::before{display:none!important;}
+  .table-scroll{overflow:visible!important;width:100%!important;}
+
+  /* sticky desativado */
+  .disc-name{position:static!important;box-shadow:none!important;}
+  table.notas thead tr:first-child th:first-child,
+  table.notas thead tr:last-child th:first-child{
+    position:static!important;box-shadow:none!important;
+  }
+  table.notas{min-width:unset!important;width:100%!important;}
+
+  /* página exata A4 landscape */
+  .page{
+    display:block!important;
+    width:297mm!important;height:210mm!important;
+    overflow:hidden!important;
+    box-shadow:none!important;border-radius:0!important;
+    padding:5mm 8mm 4mm!important;
+    page-break-after:always!important;break-after:page!important;
+  }
+
+  /* restaura grids do layout de impressão */
+  .header{grid-template-columns:128px 1fr auto!important;}
+  .header-right{display:block!important;}
+  .header-logo img{height:40px!important;max-width:126px!important;}
+  .header-center h1{font-size:15px!important;}
+  .header-center p{font-size:9px!important;}
+  .aluno-grid{grid-template-columns:2fr 1fr 1.2fr 0.9fr!important;}
+  .freq-bloco{grid-template-columns:repeat(4,1fr) auto!important;}
+  .sign-row{grid-template-columns:1.6fr 1.6fr 1fr!important;}
+  .sign-space{height:22px!important;}
 }
 """
 
