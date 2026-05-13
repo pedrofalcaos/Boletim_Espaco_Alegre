@@ -75,7 +75,7 @@ def login_page(erro: bool = False) -> str:
     return page_shell("Login — Escola Espaço Alegre", body, css)
 
 # ── Dashboard admin ──────────────────────────────────────────────────────────
-def admin_dashboard(alunos: dict) -> str:
+def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
     # agrupar por turma
     turmas: dict = {}
     for mat, al in sorted(alunos.items(), key=lambda x: x[1]['nome']):
@@ -136,6 +136,7 @@ def admin_dashboard(alunos: dict) -> str:
 </div>"""
 
     total = len(alunos)
+    aviso_reset = '<div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:11px 16px;margin-bottom:20px;font-size:12px;color:var(--verde);font-weight:700;">✔ Banco de dados resetado com sucesso!</div>' if resetado else ''
     body = f"""
 <div style="max-width:960px;margin:0 auto;padding:24px 16px;">
   <!-- Header -->
@@ -157,7 +158,9 @@ def admin_dashboard(alunos: dict) -> str:
     </a>
   </div>
 
-  <!-- Aviso -->
+  {aviso_reset}
+
+  <!-- Aviso privacidade -->
   <div style="background:var(--azul-lt);border:1px solid var(--azul-md);border-radius:10px;
               padding:11px 16px;margin-bottom:20px;font-size:12px;color:var(--azul);">
     💡 <strong>Privacidade garantida:</strong> cada pai acessa apenas o boletim do próprio filho pelo número de matrícula.
@@ -165,6 +168,26 @@ def admin_dashboard(alunos: dict) -> str:
   </div>
 
   {turma_blocks}
+
+  <!-- Reset banco -->
+  <div style="background:var(--vermelho-lt);border:1px solid #fecaca;border-radius:12px;
+              padding:16px 20px;margin-top:24px;">
+    <div style="font-family:'Fredoka One',cursive;font-size:14px;color:var(--vermelho);margin-bottom:6px;">
+      ⚠️ Zona de perigo — Resetar banco de dados
+    </div>
+    <p style="font-size:12px;color:#888;margin-bottom:12px;">
+      Apaga <strong>todos os dados</strong> e recarrega do arquivo de semente (<code>dados.json</code>).
+      Use apenas quando necessário atualizar os dados iniciais após um novo deploy.
+    </p>
+    <form method="POST" action="/admin/resetar" onsubmit="return confirm('Tem certeza? Todos os dados atuais serão apagados e substituídos pelos dados do arquivo de semente.');">
+      <button type="submit"
+        style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;
+               background:var(--vermelho);color:#fff;border:none;border-radius:8px;
+               padding:10px 22px;cursor:pointer;">
+        🗑 Resetar banco de dados
+      </button>
+    </form>
+  </div>
 </div>"""
     return page_shell("Painel — Escola Espaço Alegre", body)
 

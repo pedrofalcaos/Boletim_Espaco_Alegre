@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from db import get_aluno, get_all_alunos, upsert_aluno, delete_aluno, DISCIPLINAS
+from db import get_aluno, get_all_alunos, upsert_aluno, delete_aluno, reset_db, DISCIPLINAS
 from boletim_html import gerar_boletim_html
 from auth import (check_session, make_session_token,
                   ADMIN_USER, ADMIN_PASS, COOKIE_NAME, COOKIE_MAX)
@@ -164,11 +164,11 @@ async def logout():
     return resp
 
 @app.get("/admin", response_class=HTMLResponse)
-async def painel(request: Request):
+async def painel(request: Request, resetado: str = ""):
     if not check_session(request):
         return _redir_login()
     alunos = get_all_alunos()
-    return admin_dashboard(alunos)
+    return admin_dashboard(alunos, resetado=bool(resetado))
 
 @app.get("/admin/aluno/novo", response_class=HTMLResponse)
 async def novo_aluno_form(request: Request):
@@ -254,4 +254,11 @@ async def excluir_aluno(request: Request, matricula: str):
         return _redir_login()
     delete_aluno(matricula)
     return RedirectResponse("/admin", status_code=302)
+
+@app.post("/admin/resetar")
+async def resetar_banco(request: Request):
+    if not check_session(request):
+        return _redir_login()
+    reset_db()
+    return RedirectResponse("/admin?resetado=1", status_code=302)
 

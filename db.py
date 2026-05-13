@@ -195,6 +195,18 @@ if DATABASE_URL:
         finally:
             conn.close()
 
+    def reset_db():
+        global _pg_ready
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM alunos")
+                conn.commit()
+            _seed(conn)
+        finally:
+            conn.close()
+        _pg_ready = True
+
 
 # ══════════════════════════════════════════════════════════════════
 #  BACKEND  JSON local (sem DATABASE_URL)
@@ -258,3 +270,9 @@ else:
                 _save(db)
                 return True
             return False
+
+    def reset_db():
+        with _lock:
+            if os.path.exists(DB_FILE):
+                os.remove(DB_FILE)
+            _load()
