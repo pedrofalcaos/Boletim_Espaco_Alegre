@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from db import get_aluno, get_all_alunos, upsert_aluno, delete_aluno, reset_db, DISCIPLINAS
-from boletim_html import gerar_boletim_html
+from boletim_html import gerar_boletim_html, gerar_boletins_multiplos_html
 from auth import (check_session, make_session_token,
                   ADMIN_USER, ADMIN_PASS, COOKIE_NAME, COOKIE_MAX)
 from templates import login_page, admin_dashboard, aluno_form
@@ -117,8 +117,7 @@ async def index():
     return INDEX_HTML
 
 @app.get("/boletim/{matricula}", response_class=HTMLResponse)
-async def ver_boletim(matricula: str):
-    # Segurança: sanitiza a matrícula (só dígitos)
+async def ver_boletim(matricula: str, ref: str = ""):
     mat_clean = re.sub(r'\D', '', matricula)
     if not mat_clean:
         return RedirectResponse("/?erro=1")
@@ -129,7 +128,27 @@ async def ver_boletim(matricula: str):
 
     aluno_completo = dict(aluno)
     aluno_completo['matricula'] = mat_clean
-    return HTMLResponse(gerar_boletim_html(aluno_completo))
+    back_url = "/admin" if ref == "admin" else "/"
+    return HTMLResponse(gerar_boletim_html(aluno_completo, back_url=back_url))
+
+@app.get("/admin/imprimir", response_class=HTMLResponse)
+async def imprimir_boletins(request: Request, turma: str = "todos"):
+    if not check_session(request):
+        return _redir_login()
+    alunos = get_all_alunos()
+    if turma == "todos":
+        lista = sorted(
+            [dict(a, matricula=m) for m, a in alunos.items()],
+            key=lambda x: (x['turma'], x['nome'])
+        )
+        titulo = "Todos os Alunos"
+    else:
+        lista = sorted(
+            [dict(a, matricula=m) for m, a in alunos.items() if a['turma'] == turma],
+            key=lambda x: x['nome']
+        )
+        titulo = turma
+    return HTMLResponse(gerar_boletins_multiplos_html(lista, titulo))
 
 # ════════════════════════════════════════════════════════════════════════════
 #  ÁREA ADMINISTRATIVA — acesso restrito por login

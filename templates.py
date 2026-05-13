@@ -1,4 +1,5 @@
 """HTML de todas as páginas."""
+from urllib.parse import quote
 
 # ── Paleta ──────────────────────────────────────────────────────────────────
 CSS_VARS = """
@@ -85,14 +86,14 @@ def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
     turma_blocks = ""
     for turma, lista in sorted(turmas.items()):
         rows = ""
-        for mat, al in lista:
+        for i, (mat, al) in enumerate(lista, 1):
             nome = al['nome']
             prof = al.get('professora','–')
-            # conta notas preenchidas
             total_notas = sum(1 for disc_n in al.get('notas',{}).values() for k in ('p1','gl1') if disc_n.get(k))
             badge_color = "var(--verde)" if total_notas >= 18 else ("var(--laranja)" if total_notas > 0 else "#ccc")
             rows += f"""
 <tr>
+  <td style="text-align:center;font-size:11px;color:#aaa;font-weight:700;width:32px;">{i}</td>
   <td style="font-weight:700;color:var(--azul);">{mat}</td>
   <td>{nome}</td>
   <td style="font-size:12px;color:#888;">{prof}</td>
@@ -100,29 +101,38 @@ def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
     <span style="background:{badge_color};color:#fff;font-size:10px;font-weight:800;
                  padding:2px 9px;border-radius:20px;">{total_notas} notas</span>
   </td>
-  <td style="text-align:center;">
+  <td style="text-align:center;white-space:nowrap;">
     <a href="/admin/aluno/{mat}" style="background:var(--azul-lt);color:var(--azul);
        font-size:11px;font-weight:800;padding:4px 12px;border-radius:7px;display:inline-block;">
       ✏️ Editar
     </a>
     &nbsp;
-    <a href="/boletim/{mat}" target="_blank" style="background:var(--verde-lt);color:var(--verde);
+    <a href="/boletim/{mat}?ref=admin" target="_blank" style="background:var(--verde-lt);color:var(--verde);
        font-size:11px;font-weight:800;padding:4px 12px;border-radius:7px;display:inline-block;">
       👁 Ver
     </a>
   </td>
 </tr>"""
+        turma_enc = quote(turma, safe='')
         turma_blocks += f"""
 <div style="margin-bottom:24px;">
-  <div style="font-family:'Fredoka One',cursive;font-size:16px;color:var(--azul);
-              margin-bottom:8px;padding-left:4px;border-left:4px solid var(--amarelo);padding-left:10px;">
-    {turma}
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+    <div style="font-family:'Fredoka One',cursive;font-size:16px;color:var(--azul);
+                border-left:4px solid var(--amarelo);padding-left:10px;flex:1;">
+      {turma} <span style="font-size:12px;font-family:'Nunito',sans-serif;font-weight:700;color:#aaa;">({len(lista)} alunos)</span>
+    </div>
+    <a href="/admin/imprimir?turma={turma_enc}" target="_blank"
+       style="background:var(--azul);color:#fff;font-family:'Nunito',sans-serif;
+              font-size:11px;font-weight:800;padding:5px 14px;border-radius:8px;white-space:nowrap;">
+      🖨️ Imprimir Turma
+    </a>
   </div>
   <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07);">
   <table style="width:100%;border-collapse:collapse;font-size:13px;">
     <thead>
       <tr style="background:var(--azul-lt);font-size:10px;font-weight:800;
                  text-transform:uppercase;letter-spacing:.5px;color:var(--azul);">
+        <th style="padding:8px 8px;text-align:center;width:32px;">#</th>
         <th style="padding:8px 12px;text-align:left;">Matrícula</th>
         <th style="padding:8px 12px;text-align:left;">Nome</th>
         <th style="padding:8px 12px;text-align:left;">Professor(a)</th>
@@ -146,6 +156,11 @@ def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
       <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:var(--azul);">Painel Administrativo</h1>
       <p style="font-size:12px;color:#888;">{total} alunos cadastrados</p>
     </div>
+    <a href="/admin/imprimir?turma=todos" target="_blank"
+       style="background:var(--azul);color:#fff;font-family:'Nunito',sans-serif;
+              font-weight:800;font-size:13px;padding:10px 18px;border-radius:10px;">
+      🖨️ Imprimir Todos
+    </a>
     <a href="/admin/aluno/novo"
        style="background:var(--amarelo);color:var(--azul);font-family:'Nunito',sans-serif;
               font-weight:900;font-size:13px;padding:10px 20px;border-radius:10px;">
