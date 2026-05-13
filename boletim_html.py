@@ -87,33 +87,38 @@ _CSS = """
   --vermelho:#b52222;--laranja:#c25b0d;--laranja-lt:#fef0e4;
   --roxo:#6a1a8a;--roxo-lt:#f5eafc;--borda:#c8c8c4;
 }
+
+/* ── Base ── */
 body{font-family:'Nunito',sans-serif;background:#d0d3e4;min-height:100vh;
   display:flex;flex-direction:column;align-items:center;padding:24px 12px;gap:16px;}
 
+/* ── Topbar ── */
 .topbar{
-  width:100%;max-width:900px;
+  width:100%;max-width:960px;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
   background:#fff;border-radius:12px;padding:10px 20px;
   box-shadow:0 2px 12px rgba(43,57,144,.13);
 }
-.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .back-btn{
   font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
   background:var(--azul-lt);color:var(--azul);
   border:none;border-radius:8px;padding:7px 14px;cursor:pointer;
-  text-decoration:none;display:inline-block;
+  text-decoration:none;display:inline-block;white-space:nowrap;
 }
 .back-btn:hover{background:var(--azul-md);}
 .print-btn{
   font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
   background:var(--azul);color:#fff;
   border:none;border-radius:8px;padding:7px 18px;cursor:pointer;
+  white-space:nowrap;
 }
 .print-btn:hover{opacity:.88;}
 .topbar span{font-size:12px;color:#888;}
 
+/* ── Página ── */
 .page{
-  width:277mm;
+  width:min(277mm, 100%);
   background:#fff;
   border-radius:6px;
   box-shadow:0 4px 28px rgba(43,57,144,.18);
@@ -125,6 +130,7 @@ body{font-family:'Nunito',sans-serif;background:#d0d3e4;min-height:100vh;
   background:linear-gradient(90deg,var(--azul) 0%,var(--amarelo) 50%,var(--azul) 100%);
 }
 
+/* ── Header ── */
 .header{
   display:grid;grid-template-columns:128px 1fr auto;
   align-items:center;gap:8px;
@@ -138,6 +144,7 @@ body{font-family:'Nunito',sans-serif;background:#d0d3e4;min-height:100vh;
 .pill-azul{background:var(--azul);color:var(--amarelo);font-family:'Fredoka One',cursive;font-size:11px;padding:2px 11px;border-radius:20px;display:inline-block;margin-bottom:2px;}
 .pill-amarelo{background:var(--amarelo);color:var(--azul);font-family:'Fredoka One',cursive;font-size:9.5px;padding:2px 9px;border-radius:20px;display:inline-block;}
 
+/* ── Info do aluno ── */
 .aluno-grid{
   display:grid;grid-template-columns:2fr 1fr 1.2fr 0.9fr;
   gap:2px 10px;padding:2.5px 0;margin-bottom:3px;
@@ -147,9 +154,22 @@ body{font-family:'Nunito',sans-serif;background:#d0d3e4;min-height:100vh;
 .field label{font-size:7.5px;text-transform:uppercase;letter-spacing:.6px;color:#aaa;font-weight:800;}
 .field span{font-size:11px;font-weight:700;color:var(--azul);padding:2px 0;border-bottom:1.5px solid var(--borda);}
 
-table.notas{width:100%;border-collapse:collapse;font-size:8.5px;}
+/* ── Tabela ── */
+.table-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  margin:0 -2px;
+  padding:0 2px;
+}
+table.notas{width:100%;border-collapse:collapse;font-size:8.5px;min-width:680px;}
 table.notas th,table.notas td{padding:2px 1.5px;text-align:center;border:.5px solid var(--cinza-md);}
-.disc-name{text-align:left!important;padding-left:4px!important;font-weight:700;font-size:8px;min-width:84px;}
+.disc-name{
+  text-align:left!important;padding-left:4px!important;
+  font-weight:700;font-size:8px;min-width:90px;
+  position:sticky;left:0;z-index:2;
+  background:#fff;
+  box-shadow:2px 0 4px rgba(0,0,0,.06);
+}
 .nota-val{font-size:9px;font-weight:600;}
 .rec-val{color:var(--laranja);font-weight:800;}
 
@@ -165,6 +185,17 @@ table.notas th,table.notas td{padding:2px 1.5px;text-align:center;border:.5px so
 .th-sub-t3{background:var(--laranja-lt);color:var(--laranja);}
 .th-sub-rf{background:var(--roxo-lt);color:var(--roxo);}
 .th-sub-fin{background:#ebebeb;color:#333;}
+
+/* cabeçalho fixo (sticky) da coluna disciplina */
+table.notas thead tr:first-child th:first-child{
+  position:sticky;left:0;z-index:4;background:#f2f2f0;
+  box-shadow:2px 0 4px rgba(0,0,0,.06);
+}
+table.notas thead tr:last-child th:first-child{
+  position:sticky;left:0;z-index:4;background:var(--azul-lt);
+  box-shadow:2px 0 4px rgba(0,0,0,.06);
+}
+
 table.notas tbody tr:nth-child(even) td{background:var(--cinza-lt);}
 table.notas tbody tr:nth-child(even) .disc-name{background:#efefed;}
 
@@ -172,9 +203,11 @@ td.calc{font-weight:800;font-size:9.5px;}
 td.ap{color:var(--verde);} td.rep{color:var(--vermelho);} td.na{color:#ccc;font-size:8px;}
 td.sit-txt{font-weight:800;font-size:9px;}
 
+/* ── Legenda ── */
 .legenda{display:flex;gap:8px;align-items:center;font-size:7px;color:#888;flex-wrap:wrap;margin-top:2.5px;}
 .leg-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:2px;}
 
+/* ── Frequência ── */
 .freq-bloco{
   background:var(--azul-lt);border:1px solid var(--azul-md);border-radius:7px;
   padding:4px 9px;display:grid;grid-template-columns:repeat(4,1fr) auto;
@@ -185,11 +218,11 @@ td.sit-txt{font-weight:800;font-size:9px;}
 .freq-val{font-size:11.5px;font-weight:800;padding:1px 0;color:var(--cinza-dk);}
 .sit-badge{font-family:'Fredoka One',cursive;font-size:11px;padding:3px 10px;border-radius:20px;white-space:nowrap;display:inline-block;}
 .sit-ok{background:var(--verde);color:#fff;}
-.sit-atencao{background:var(--amarelo);color:var(--azul);}
 .sit-rep-freq{background:var(--vermelho);color:#fff;}
 .sit-vazio{background:var(--cinza-md);color:#888;font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:700;}
 .freq-nota{font-size:7px;color:#888;margin-top:2px;font-style:italic;}
 
+/* ── Rodapé / assinaturas ── */
 .footer-area{margin-top:3px;padding-top:3px;border-top:2px solid var(--amarelo);}
 .obs-box label{font-size:7.5px;text-transform:uppercase;letter-spacing:.5px;color:#aaa;font-weight:800;display:block;margin-bottom:2px;}
 .obs-line{border-bottom:1px solid var(--borda);height:16px;margin-bottom:3px;}
@@ -200,15 +233,88 @@ td.sit-txt{font-weight:800;font-size:9px;}
 .sign-line{border-bottom:1px solid var(--borda);}
 .sign-caption{font-size:7px;color:#bbb;margin-top:2px;font-style:italic;}
 
+/* ══════════════════════════════════════
+   RESPONSIVO — TELA (não afeta impressão)
+   ══════════════════════════════════════ */
+@media screen and (max-width:800px){
+  body{padding:0;gap:0;background:#f0f1f7;}
+
+  .topbar{
+    border-radius:0;max-width:100%;
+    padding:8px 12px;gap:8px;
+    position:sticky;top:0;z-index:10;
+  }
+  .topbar span{font-size:11px;}
+
+  .page{
+    width:100%;border-radius:0;
+    padding:10px 10px 14px;
+    box-shadow:none;
+  }
+
+  /* Header: esconde pills, reduz logo */
+  .header{grid-template-columns:44px 1fr;gap:6px;}
+  .header-right{display:none;}
+  .header-logo img{height:30px;max-width:42px;}
+  .header-center h1{font-size:12px;}
+  .header-center p{font-size:7.5px;}
+
+  /* Info aluno: 2 colunas */
+  .aluno-grid{grid-template-columns:1fr 1fr;gap:3px 8px;}
+  .field label{font-size:7px;}
+  .field span{font-size:10px;}
+
+  /* Scroll hint */
+  .table-scroll::before{
+    content:'← deslize para ver mais →';
+    display:block;font-size:10px;color:var(--azul);
+    text-align:center;padding:3px 0 4px;font-weight:700;
+    opacity:.7;
+  }
+
+  /* Frequência: 2+2+1 */
+  .freq-bloco{
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:auto auto auto;
+  }
+  .freq-bloco > div:last-child{grid-column:1/-1;justify-self:center;}
+
+  /* Assinaturas: empilhadas */
+  .sign-row{grid-template-columns:1fr;gap:10px 0;}
+  .sign-space{height:20px;}
+}
+
+/* Landscape mobile: aproveita largura sem dica de scroll */
+@media screen and (max-width:900px) and (orientation:landscape){
+  body{padding:0 0 8px;}
+  .topbar{border-radius:0;max-width:100%;padding:6px 14px;}
+  .page{width:100%;border-radius:0;padding:8px 10px 10px;box-shadow:none;}
+  .table-scroll::before{content:'';}
+}
+
+/* ══════════════════════════════════════
+   IMPRESSÃO — A4 paisagem
+   ══════════════════════════════════════ */
 @media print{
   @page{size:A4 landscape;margin:0;}
   body{background:#fff;padding:0;gap:0;}
   .topbar{display:none!important;}
+  .table-scroll::before{display:none!important;}
+  .table-scroll{overflow:visible;}
+  .disc-name{position:static;box-shadow:none;}
+  table.notas thead tr:first-child th:first-child,
+  table.notas thead tr:last-child th:first-child{position:static;box-shadow:none;}
+  table.notas{min-width:unset;}
   .page{
     width:297mm;box-shadow:none;border-radius:0;
     padding:6mm 8.5mm 5.5mm;
     page-break-after:always;break-after:page;
   }
+  .aluno-grid{grid-template-columns:2fr 1fr 1.2fr 0.9fr;}
+  .header{grid-template-columns:128px 1fr auto;}
+  .header-right{display:block;}
+  .freq-bloco{grid-template-columns:repeat(4,1fr) auto;}
+  .sign-row{grid-template-columns:1.6fr 1.6fr 1fr;}
 }
 """
 
@@ -247,6 +353,7 @@ def _gerar_pagina(aluno: dict) -> str:
     <div class="field"><label>Matrícula</label><span>{mat}</span></div>
   </div>
 
+  <div class="table-scroll">
   <table class="notas">
     <thead>
       <tr>
@@ -267,6 +374,7 @@ def _gerar_pagina(aluno: dict) -> str:
     </thead>
     <tbody>{tbody}</tbody>
   </table>
+  </div>
 
   <div class="legenda">
     <span><span class="leg-dot" style="background:var(--verde)"></span><strong>Aprovado</strong> ≥ 7,0</span>
