@@ -330,6 +330,11 @@ td.sit-txt{font-weight:800;font-size:9px;}
     padding:5mm 8mm 4mm!important;
     page-break-after:always!important;break-after:page!important;
   }
+  /* último boletim NÃO cria página em branco extra */
+  .page:last-child{
+    page-break-after:avoid!important;break-after:avoid!important;
+  }
+  #print-modal{display:none!important;}
 
   /* restaura grids do layout de impressão */
   .header{grid-template-columns:128px 1fr auto!important;}
@@ -442,6 +447,52 @@ def _gerar_pagina(aluno: dict) -> str:
   </div>
 </div>'''
 
+_MODAL_HTML = '''
+<div id="print-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+     z-index:999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:18px;padding:28px 28px 20px;max-width:340px;
+              width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+    <div style="font-size:40px;margin-bottom:10px;">🖨️</div>
+    <h3 style="font-family:\'Fredoka One\',cursive;color:#2b3990;font-size:19px;margin-bottom:10px;">
+      Antes de imprimir
+    </h3>
+    <p style="font-size:13px;color:#555;line-height:1.6;margin-bottom:6px;">
+      No diálogo de impressão, selecione:
+    </p>
+    <div style="background:#e8eaf8;border-radius:10px;padding:10px 14px;margin-bottom:16px;text-align:left;">
+      <div style="font-size:13px;color:#2b3990;font-weight:800;margin-bottom:4px;">
+        📄 Orientação → <strong>Paisagem</strong>
+      </div>
+      <div style="font-size:11px;color:#888;">Margens: Nenhuma &nbsp;·&nbsp; Tamanho: A4</div>
+    </div>
+    <button onclick="fecharEImprimir()"
+      style="width:100%;background:#2b3990;color:#fff;border:none;border-radius:10px;
+             padding:13px;font-family:\'Nunito\',sans-serif;font-size:14px;font-weight:900;
+             cursor:pointer;margin-bottom:8px;">
+      OK, continuar
+    </button>
+    <button onclick="document.getElementById(\'print-modal\').style.display=\'none\'"
+      style="background:none;border:none;color:#aaa;font-size:12px;cursor:pointer;
+             font-family:\'Nunito\',sans-serif;padding:4px;">
+      Cancelar
+    </button>
+  </div>
+</div>
+<script>
+function abrirImpressao(){
+  var mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(mobile){
+    document.getElementById('print-modal').style.display='flex';
+  } else {
+    window.print();
+  }
+}
+function fecharEImprimir(){
+  document.getElementById('print-modal').style.display='none';
+  setTimeout(function(){ window.print(); }, 120);
+}
+</script>'''
+
 def _html_shell(title: str, topbar: str, pages: str) -> str:
     return f'''<!DOCTYPE html>
 <html lang="pt-BR">
@@ -455,6 +506,7 @@ def _html_shell(title: str, topbar: str, pages: str) -> str:
 <body>
 {topbar}
 {pages}
+{_MODAL_HTML}
 </body>
 </html>'''
 
@@ -468,7 +520,7 @@ def gerar_boletim_html(aluno: dict, back_url: str = '/') -> str:
     <a href="{back_url}" class="back-btn">← Voltar</a>
     <span>Boletim de <strong>{nome}</strong> — {turma} ({periodo})</span>
   </div>
-  <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  <button class="print-btn" onclick="abrirImpressao()">🖨️ Imprimir / Salvar PDF</button>
 </div>'''
     return _html_shell(f'Boletim – {nome}', topbar, _gerar_pagina(aluno))
 
@@ -480,7 +532,7 @@ def gerar_boletins_multiplos_html(alunos: list, titulo: str) -> str:
     <a href="/admin" class="back-btn">← Painel Admin</a>
     <span><strong>{titulo}</strong> — {n} boletim(s)</span>
   </div>
-  <button class="print-btn" onclick="window.print()">🖨️ Imprimir Todos ({n})</button>
+  <button class="print-btn" onclick="abrirImpressao()">🖨️ Imprimir Todos ({n})</button>
 </div>'''
     pages = '\n'.join(_gerar_pagina(a) for a in alunos)
     return _html_shell(f'Boletins – {titulo}', topbar, pages)
