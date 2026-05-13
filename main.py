@@ -184,13 +184,18 @@ async def novo_aluno_form(request: Request):
     return aluno_form("", vazio, novo=True)
 
 @app.get("/admin/aluno/{matricula}", response_class=HTMLResponse)
-async def editar_aluno_form(request: Request, matricula: str):
+async def editar_aluno_form(request: Request, matricula: str, ok: str = ""):
     if not check_session(request):
         return _redir_login()
     al = get_aluno(matricula)
     if not al:
         return RedirectResponse("/admin", status_code=302)
-    return aluno_form(matricula, al, novo=False)
+    msg = "Dados salvos com sucesso!" if ok else ""
+    return aluno_form(matricula, al, novo=False, msg=msg)
+
+def _disc_sid(d: str) -> str:
+    """Gera o identificador de campo para uma disciplina (mesmo padrão do templates.py)."""
+    return d.replace(' ', '_').replace('–', '_').replace('/', '_')
 
 def _parse_form(form: dict) -> dict:
     """Extrai dados do formulário em estrutura de aluno."""
@@ -200,13 +205,12 @@ def _parse_form(form: dict) -> dict:
     for key, val in form.items():
         val = val.strip()
         if key.startswith("nota_"):
-            # nota_LínguaPortuguesa_p1  →  disc=Língua Portuguesa, campo=p1
+            # nota_Língua_Portuguesa_p1  →  disc=Língua Portuguesa, campo=p1
             parts = key[5:].rsplit("_", 1)
             if len(parts) == 2:
                 disc_sid, campo = parts
-                # achar disciplina pelo sid
                 for d in DISC_LIST:
-                    if re.sub(r'[^a-zA-Z0-9]','_',d) == disc_sid:
+                    if _disc_sid(d) == disc_sid:
                         if val:
                             notas[d][campo] = val
                         break
@@ -251,13 +255,3 @@ async def excluir_aluno(request: Request, matricula: str):
     delete_aluno(matricula)
     return RedirectResponse("/admin", status_code=302)
 
-# ── Página de aluno salvo com mensagem ──────────────────────────────────────
-@app.get("/admin/aluno/{matricula}", response_class=HTMLResponse)
-async def editar_aluno_msg(request: Request, matricula: str, ok: str = ""):
-    if not check_session(request):
-        return _redir_login()
-    al = get_aluno(matricula)
-    if not al:
-        return RedirectResponse("/admin", status_code=302)
-    msg = "Dados salvos com sucesso!" if ok else ""
-    return aluno_form(matricula, al, novo=False, msg=msg)
