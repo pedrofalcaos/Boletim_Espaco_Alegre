@@ -76,7 +76,7 @@ input:not(:placeholder-shown)~.clr{display:block;}
     <form id="frm" onsubmit="buscar(event)">
       <label for="mat">Número de Matrícula</label>
       <div class="inp-wrap">
-        <input type="text" id="mat" placeholder="Ex.: 20261047"
+        <input type="text" id="mat" placeholder="Digite o número da matrícula"
                maxlength="12" autocomplete="off" inputmode="numeric"
                oninput="limpaErro()">
         <button type="button" class="clr" onclick="limpar()">✕</button>
