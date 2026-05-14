@@ -213,72 +213,180 @@ def aluno_form(matricula: str, aluno: dict, novo: bool, msg: str = "") -> str:
         'Ciências','Arte','Educação Física',
         'Língua Estrangeira – Inglês','Produção Textual',
     ]
+    # Nomes exatos iguais ao banco (sem travessão)
     TURMAS = [
-        '1º Ano – A','1º Ano – B','2º Ano – A','2º Ano – B',
-        '3º Ano – A','3º Ano – B','4º Ano – A','4º Ano – B',
-        '5º Ano – A','5º Ano – B',
+        '1º Ano A','1º Ano B','2º Ano A','2º Ano B',
+        '3º Ano A','3º Ano B','4º Ano A','4º Ano B',
+        '5º Ano A','5º Ano B',
     ]
     PERIODOS = ['Manhã','Tarde','Noite']
 
     def sel(opts, cur):
         return ''.join(f'<option {"selected" if o==cur else ""}>{o}</option>' for o in opts)
 
-    def nota_inp(disc, campo, label_short):
-        val = aluno.get('notas',{}).get(disc,{}).get(campo,'')
-        sid = disc.replace(' ','_').replace('–','_').replace('/','_')
-        return f"""
-        <div>
-          <label style="font-size:8.5px;color:#aaa;font-weight:800;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px;">{label_short}</label>
-          <input type="number" name="nota_{sid}_{campo}" value="{val}" min="0" max="10" step="0.1"
-            placeholder="—"
-            style="width:68px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
-                   text-align:center;padding:6px 4px;border:1.5px solid var(--borda);
-                   border-radius:7px;outline:none;color:var(--azul);"
-            onfocus="this.style.borderColor='var(--azul)'"
-            onblur="this.style.borderColor='var(--borda)'">
-        </div>"""
+    def sid(d):
+        return d.replace(' ','_').replace('–','_').replace('/','_')
 
-    # Linhas da tabela de notas
+    # ── estilos base ──
+    lbl_s   = "font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;"
+    lbl_sm  = "font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:#aaa;display:block;margin-bottom:2px;"
+    inp_s   = ("width:100%;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;"
+               "color:var(--azul);padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;outline:none;")
+    inp_ro  = ("width:100%;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;"
+               "color:#999;padding:8px 12px;border:1.5px solid #e8e8e8;border-radius:8px;"
+               "background:#f8f8f8;cursor:not-allowed;")
+    nota_s  = ("width:60px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;"
+               "text-align:center;padding:5px 3px;border:1.5px solid var(--borda);"
+               "border-radius:7px;outline:none;color:var(--azul);")
+    rec_s   = ("width:60px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;"
+               "text-align:center;padding:5px 3px;border:1.5px solid #f0c060;"
+               "border-radius:7px;outline:none;color:var(--laranja);"
+               "opacity:0.3;cursor:not-allowed;background:#fffbf0;")
+
+    # ── campos de identidade ──
+    def field_ro(label, value):
+        return f'''<div><label style="{lbl_s}">{label}</label>
+          <div style="{inp_ro}border:1.5px solid #e8e8e8;">{value or '—'} 🔒</div></div>'''
+
+    if novo:
+        dados_html = f'''
+        <div style="grid-column:span 2;">
+          <label style="{lbl_s}">Nome Completo</label>
+          <input name="nome" value="" required style="{inp_s}"
+            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
+        </div>
+        <div>
+          <label style="{lbl_s}">Matrícula</label>
+          <input name="matricula" value="" required style="{inp_s}"
+            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
+        </div>
+        <div>
+          <label style="{lbl_s}">Turma</label>
+          <select name="turma" style="{inp_s}background:#fff;">
+            {sel(TURMAS, '')}
+          </select>
+        </div>
+        <div>
+          <label style="{lbl_s}">Período</label>
+          <select name="periodo" style="{inp_s}background:#fff;">
+            {sel(PERIODOS, '')}
+          </select>
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="{lbl_s}">Professor(a)</label>
+          <input name="professora" value="" style="{inp_s}"
+            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
+        </div>
+        <div>
+          <label style="{lbl_s}">Ano Letivo</label>
+          <input name="ano_letivo" value="2026" style="{inp_s}"
+            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
+        </div>'''
+        lock_aviso = ''
+    else:
+        # campos bloqueados — hidden inputs garantem o envio
+        nome_v  = aluno.get('nome','')
+        turma_v = aluno.get('turma','')
+        per_v   = aluno.get('periodo','')
+        prof_v  = aluno.get('professora','')
+        ano_v   = aluno.get('ano_letivo','2026')
+        dados_html = f'''
+        <input type="hidden" name="nome"       value="{nome_v}">
+        <input type="hidden" name="matricula"  value="{matricula}">
+        <input type="hidden" name="turma"      value="{turma_v}">
+        <input type="hidden" name="periodo"    value="{per_v}">
+        <input type="hidden" name="professora" value="{prof_v}">
+        <input type="hidden" name="ano_letivo" value="{ano_v}">
+        <div style="grid-column:span 2;">{field_ro("Nome Completo", nome_v)}</div>
+        <div>{field_ro("Matrícula", matricula)}</div>
+        <div>{field_ro("Turma", turma_v)}</div>
+        <div>{field_ro("Período", per_v)}</div>
+        <div style="grid-column:span 2;">{field_ro("Professor(a)", prof_v)}</div>
+        <div>{field_ro("Ano Letivo", ano_v)}</div>'''
+        lock_aviso = '<span style="font-size:11px;color:#aaa;font-weight:600;margin-left:8px;">🔒 Dados bloqueados — edite apenas as notas</span>'
+
+    # ── tabela de notas ──
+    T_COLORS = [("#2b3990","#f7d800"),("#1a6e30","#d8f5e4"),("#a34c00","#fef0e0")]
+    T_LABELS = ["1º Trimestre","2º Trimestre","3º Trimestre"]
+
+    header_cols = '<th style="text-align:left;padding:8px 10px;background:#f2f2f0;font-size:10px;color:#aaa;font-weight:800;text-transform:uppercase;min-width:140px;">Disciplina</th>'
+    for i,(t_bg,t_fg) in enumerate(T_COLORS):
+        header_cols += f'<th style="padding:8px 10px;background:{t_bg};color:{t_fg};font-size:10px;font-weight:900;text-transform:uppercase;">{T_LABELS[i]}<br><span style="font-size:8px;font-weight:600;opacity:.8;">Parcial · Global · Média · Rec.</span></th>'
+    header_cols += '<th style="padding:8px 10px;background:#6a1a8a;color:#f0d8fa;font-size:10px;font-weight:900;text-transform:uppercase;">Resultado Anual<br><span style="font-size:8px;font-weight:600;opacity:.8;">Média · Rec. Final</span></th>'
+
     disc_rows = ""
-    T_COLORS = [
-        ("T1","#2b3990","#f7d800"),
-        ("T2","#1a6e30","#d8f5e4"),
-        ("T3","#a34c00","#fef0e0"),
-    ]
+    init_calls = []
+
     for disc in DISCIPLINAS:
-        cells = f'<td style="font-weight:700;font-size:13px;color:var(--cinza-dk);padding:8px 12px;min-width:160px;">{disc}</td>'
-        for t_label, t_bg, t_fg in T_COLORS:
-            n = t_label[-1]  # "1","2","3"
-            cells += f"""
-            <td style="padding:6px 10px;">
-              <div style="display:flex;gap:8px;align-items:flex-end;">
-                {nota_inp(disc, f'p{n}', 'Parcial')}
-                {nota_inp(disc, f'gl{n}', 'Global')}
-                {nota_inp(disc, f'r{n}', 'Rec.')}
+        s   = sid(disc)
+        n   = aluno.get('notas',{}).get(disc,{})
+        cells = f'<td style="font-weight:700;font-size:12px;color:var(--cinza-dk);padding:7px 10px;min-width:140px;">{disc}</td>'
+
+        for t in [1,2,3]:
+            pv = n.get(f'p{t}',''); gv = n.get(f'gl{t}',''); rv = n.get(f'r{t}','')
+            t_bg = T_COLORS[t-1][0]
+            cells += f'''<td style="padding:6px 8px;border-left:2px solid {t_bg}20;">
+              <div style="display:flex;gap:5px;align-items:flex-end;flex-wrap:wrap;">
+                <div>
+                  <label style="{lbl_sm}">Parcial</label>
+                  <input type="number" name="nota_{s}_p{t}" value="{pv}" min="0" max="10" step="0.1"
+                    placeholder="—" style="{nota_s}"
+                    oninput="upd('{s}',{t})"
+                    onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
+                </div>
+                <div>
+                  <label style="{lbl_sm}">Global</label>
+                  <input type="number" name="nota_{s}_gl{t}" value="{gv}" min="0" max="10" step="0.1"
+                    placeholder="—" style="{nota_s}"
+                    oninput="upd('{s}',{t})"
+                    onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
+                </div>
+                <div style="text-align:center;min-width:40px;padding-bottom:2px;">
+                  <label style="{lbl_sm}color:{t_bg};">Média</label>
+                  <div id="med_{s}_{t}" style="font-size:15px;font-weight:800;color:#ccc;line-height:1.2;">–</div>
+                </div>
+                <div>
+                  <label style="{lbl_sm}color:var(--laranja);">Rec.</label>
+                  <input type="number" name="nota_{s}_r{t}" value="{rv}" min="0" max="10" step="0.1"
+                    placeholder="—" style="{rec_s}" disabled
+                    title="Habilitado automaticamente quando Média < 7,0"
+                    onfocus="this.style.borderColor='var(--laranja)'" onblur="this.style.borderColor='#f0c060'">
+                </div>
               </div>
-            </td>"""
-        cells += f'<td style="padding:6px 10px;">{nota_inp(disc,"rf","Rec. Final")}</td>'
+            </td>'''
+            init_calls.append(f"upd('{s}',{t},true);")
+
+        rfv = n.get('rf','')
+        cells += f'''<td style="padding:6px 8px;border-left:2px solid #6a1a8a30;">
+          <div style="display:flex;gap:5px;align-items:flex-end;flex-wrap:wrap;">
+            <div style="text-align:center;min-width:40px;padding-bottom:2px;">
+              <label style="{lbl_sm}color:#6a1a8a;">Anual</label>
+              <div id="anual_{s}" style="font-size:15px;font-weight:800;color:#ccc;line-height:1.2;">–</div>
+            </div>
+            <div>
+              <label style="{lbl_sm}color:var(--laranja);">Rec. Final</label>
+              <input type="number" name="nota_{s}_rf" value="{rfv}" min="0" max="10" step="0.1"
+                placeholder="—" style="{rec_s}" disabled
+                title="Habilitado quando Média Anual < 7,0"
+                onfocus="this.style.borderColor='var(--laranja)'" onblur="this.style.borderColor='#f0c060'">
+            </div>
+          </div>
+        </td>'''
         disc_rows += f"<tr style='border-bottom:.5px solid var(--cinza-md);'>{cells}</tr>"
 
     freq = aluno.get('frequencia', {})
     obs  = aluno.get('observacoes','')
     msg_html = f'<div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--verde);font-weight:700;">✔ {msg}</div>' if msg else ''
-
     titulo = "Novo Aluno" if novo else aluno.get('nome','Aluno')
-    mat_readonly = 'readonly style="background:#f5f5f5;color:#aaa;"' if not novo else ''
-
-    header_cols = '<th style="text-align:left;padding:8px 12px;background:#f2f2f0;font-size:10px;color:#aaa;font-weight:800;text-transform:uppercase;min-width:160px;">Disciplina</th>'
-    for t_label, t_bg, t_fg in T_COLORS:
-        header_cols += f'<th style="padding:8px 12px;background:{t_bg};color:{t_fg};font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.3px;">{t_label} (Parcial · Global · Rec.)</th>'
-    header_cols += '<th style="padding:8px 12px;background:#6a1a8a;color:#f0d8fa;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.3px;">Rec. Final</th>'
+    init_js = '\n  '.join(init_calls)
 
     body = f"""
-<div style="max-width:1080px;margin:0 auto;padding:24px 16px;">
-  <!-- Nav -->
+<div style="max-width:1100px;margin:0 auto;padding:24px 16px;">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
     <a href="/admin" style="background:var(--azul-lt);color:var(--azul);font-weight:800;font-size:12px;padding:7px 14px;border-radius:8px;">← Painel</a>
     <h1 style="font-family:'Fredoka One',cursive;font-size:20px;color:var(--azul);">{titulo}</h1>
-    {"" if novo else f'<a href="/boletim/{matricula}" target="_blank" style="margin-left:auto;background:var(--verde-lt);color:var(--verde);font-weight:800;font-size:12px;padding:7px 14px;border-radius:8px;">👁 Ver Boletim</a>'}
+    {lock_aviso}
+    {"" if novo else f'<a href="/boletim/{matricula}?ref=admin" target="_blank" style="margin-left:auto;background:var(--verde-lt);color:var(--verde);font-weight:800;font-size:12px;padding:7px 14px;border-radius:8px;">👁 Ver Boletim</a>'}
   </div>
 
   {msg_html}
@@ -291,67 +399,24 @@ def aluno_form(matricula: str, aluno: dict, novo: bool, msg: str = "") -> str:
         👤 Dados do Aluno
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:12px 16px;">
-        <div style="grid-column:span 2;">
-          <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Nome Completo</label>
-          <input name="nome" value="{aluno.get('nome','')}" required
-            style="width:100%;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--azul);
-                   padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;outline:none;"
-            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
-        </div>
-        <div>
-          <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Matrícula</label>
-          <input name="matricula" value="{matricula if not novo else ''}" {mat_readonly} required
-            style="width:100%;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--azul);
-                   padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;outline:none;"
-            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
-        </div>
-        <div>
-          <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Turma</label>
-          <select name="turma"
-            style="width:100%;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--azul);
-                   padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;outline:none;background:#fff;">
-            {sel(TURMAS, aluno.get('turma',''))}
-          </select>
-        </div>
-        <div>
-          <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Período</label>
-          <select name="periodo"
-            style="width:100%;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--azul);
-                   padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;outline:none;background:#fff;">
-            {sel(PERIODOS, aluno.get('periodo',''))}
-          </select>
-        </div>
-        <div style="grid-column:span 2;">
-          <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Professor(a)</label>
-          <input name="professora" value="{aluno.get('professora','')}"
-            style="width:100%;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--azul);
-                   padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;outline:none;"
-            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
-        </div>
-        <div>
-          <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Ano Letivo</label>
-          <input name="ano_letivo" value="{aluno.get('ano_letivo','2026')}"
-            style="width:100%;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--azul);
-                   padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;outline:none;"
-            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
-        </div>
+        {dados_html}
       </div>
     </div>
 
     <!-- Notas -->
     <div style="background:#fff;border-radius:14px;padding:20px 24px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.07);">
-      <div style="font-family:'Fredoka One',cursive;font-size:15px;color:var(--azul);margin-bottom:14px;border-bottom:2px solid var(--amarelo);padding-bottom:6px;">
-        📊 Notas por Disciplina
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;border-bottom:2px solid var(--amarelo);padding-bottom:6px;">
+        <span style="font-family:'Fredoka One',cursive;font-size:15px;color:var(--azul);">📊 Notas por Disciplina</span>
+        <span style="font-size:11px;color:#aaa;margin-left:auto;">
+          🟢 Média ≥ 7,0 · 🔴 Média &lt; 7,0 → Rec. desbloqueada automaticamente
+        </span>
       </div>
       <div style="overflow-x:auto;">
-      <table style="border-collapse:collapse;width:100%;">
-        <thead><tr>{header_cols}</tr></thead>
-        <tbody>{disc_rows}</tbody>
-      </table>
+        <table style="border-collapse:collapse;width:100%;">
+          <thead><tr>{header_cols}</tr></thead>
+          <tbody>{disc_rows}</tbody>
+        </table>
       </div>
-      <p style="font-size:11px;color:#aaa;margin-top:10px;font-style:italic;">
-        * Rec. = Nota de recuperação. Preencher apenas se o aluno foi à recuperação naquele trimestre.
-      </p>
     </div>
 
     <!-- Frequência -->
@@ -361,22 +426,20 @@ def aluno_form(matricula: str, aluno: dict, novo: bool, msg: str = "") -> str:
       </div>
       <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;">
         <div>
-          <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Total de Aulas no Ano</label>
+          <label style="{lbl_s}">Total de Aulas no Ano</label>
           <input name="total_aulas" type="number" min="0" value="{freq.get('total_aulas','')}" placeholder="ex: 200"
             style="font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--azul);
                    padding:8px 14px;border:1.5px solid var(--borda);border-radius:8px;outline:none;width:160px;"
             onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
         </div>
         <div>
-          <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Total de Faltas</label>
+          <label style="{lbl_s}">Total de Faltas</label>
           <input name="total_faltas" type="number" min="0" value="{freq.get('total_faltas','')}" placeholder="0"
             style="font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--azul);
                    padding:8px 14px;border:1.5px solid var(--borda);border-radius:8px;outline:none;width:140px;"
             onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='var(--borda)'">
         </div>
-        <div style="font-size:12px;color:#888;padding-bottom:8px;">
-          Mín. legal: <strong>75%</strong> de frequência (LDB 9.394/96)
-        </div>
+        <div style="font-size:12px;color:#888;padding-bottom:8px;">Mín. legal: <strong>75%</strong> (LDB 9.394/96)</div>
       </div>
     </div>
 
@@ -395,8 +458,7 @@ def aluno_form(matricula: str, aluno: dict, novo: bool, msg: str = "") -> str:
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
       <button type="submit"
         style="font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;
-               background:var(--azul);color:#fff;border:none;border-radius:10px;
-               padding:12px 32px;cursor:pointer;">
+               background:var(--azul);color:#fff;border:none;border-radius:10px;padding:12px 32px;cursor:pointer;">
         💾 Salvar
       </button>
       <a href="/admin"
@@ -413,14 +475,85 @@ def aluno_form(matricula: str, aluno: dict, novo: bool, msg: str = "") -> str:
         🗑 Excluir Aluno
       </button>'''}
     </div>
-
   </form>
 </div>
+
 <script>
-function confirmarExclusao(mat){{
-  if(confirm('Tem certeza que deseja excluir este aluno? Esta ação não pode ser desfeita.')){{
-    window.location.href='/admin/aluno/'+mat+'/excluir';
+function upd(s, t, init) {{
+  var p = parseFloat(document.querySelector('[name="nota_'+s+'_p'+t+'"]').value);
+  var g = parseFloat(document.querySelector('[name="nota_'+s+'_gl'+t+'"]').value);
+  var medEl  = document.getElementById('med_'+s+'_'+t);
+  var recInp = document.querySelector('[name="nota_'+s+'_r'+t+'"]');
+
+  if (!isNaN(p) && !isNaN(g)) {{
+    var med = Math.round((p+g)*10)/20;
+    medEl.textContent = med.toFixed(1).replace('.',',');
+    if (med >= 7) {{
+      medEl.style.color = '#0a7c3e';
+      recInp.disabled = true;
+      recInp.style.opacity = '0.3';
+      recInp.style.cursor = 'not-allowed';
+      if (!init) recInp.value = '';
+    }} else {{
+      medEl.style.color = '#b52222';
+      recInp.disabled = false;
+      recInp.style.opacity = '1';
+      recInp.style.cursor = '';
+    }}
+  }} else {{
+    medEl.textContent = '–';
+    medEl.style.color = '#ccc';
+    recInp.disabled = true;
+    recInp.style.opacity = '0.3';
+    recInp.style.cursor = 'not-allowed';
+  }}
+  updAnual(s);
+}}
+
+function calcEf(s, t) {{
+  var p  = parseFloat(document.querySelector('[name="nota_'+s+'_p'+t+'"]').value);
+  var g  = parseFloat(document.querySelector('[name="nota_'+s+'_gl'+t+'"]').value);
+  var r  = parseFloat(document.querySelector('[name="nota_'+s+'_r'+t+'"]').value);
+  if (isNaN(p) || isNaN(g)) return null;
+  var med = (p+g)/2;
+  if (!isNaN(r)) med = Math.max(med, (med+r)/2);
+  return Math.round(med*10)/10;
+}}
+
+function updAnual(s) {{
+  var ef1=calcEf(s,1), ef2=calcEf(s,2), ef3=calcEf(s,3);
+  var anualEl = document.getElementById('anual_'+s);
+  var rfInp   = document.querySelector('[name="nota_'+s+'_rf"]');
+  if (ef1!==null && ef2!==null && ef3!==null) {{
+    var anual = Math.round((ef1+ef2+ef3)*100/3)/100;
+    anualEl.textContent = anual.toFixed(1).replace('.',',');
+    if (anual >= 7) {{
+      anualEl.style.color = '#0a7c3e';
+      rfInp.disabled = true;
+      rfInp.style.opacity = '0.3';
+      rfInp.style.cursor = 'not-allowed';
+    }} else {{
+      anualEl.style.color = '#b52222';
+      rfInp.disabled = false;
+      rfInp.style.opacity = '1';
+      rfInp.style.cursor = '';
+    }}
+  }} else {{
+    anualEl.textContent = '–';
+    anualEl.style.color = '#ccc';
+    rfInp.disabled = true;
+    rfInp.style.opacity = '0.3';
   }}
 }}
+
+function confirmarExclusao(mat) {{
+  if(confirm('Tem certeza que deseja excluir este aluno? Esta ação não pode ser desfeita.'))
+    window.location.href='/admin/aluno/'+mat+'/excluir';
+}}
+
+// Inicializa todas as células ao carregar
+window.addEventListener('DOMContentLoaded', function() {{
+  {init_js}
+}});
 </script>"""
     return page_shell(f"Editar — {titulo}", body)
