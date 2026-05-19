@@ -1,0 +1,369 @@
+"""Formulário de preenchimento e visualização do Relatório Semestral da Ed. Infantil."""
+from templates import page_shell
+
+_OPCOES = ["Sim", "Não", "Em desenvolvimento"]
+
+_COR_OPCAO = {
+    "Sim":               ("#0a7c3e", "#e3f5ec", "#a8ddc0"),
+    "Não":               ("#b52222", "#fef2f2", "#fecaca"),
+    "Em desenvolvimento":("#c25b0d", "#fef0e4", "#f8d4a8"),
+}
+
+_STATUS_LABEL = {
+    "pendente":     ("🔴", "#b52222", "#fef2f2", "Pendente"),
+    "em_andamento": ("🟡", "#c25b0d", "#fef0e4", "Em andamento"),
+    "concluido":    ("🟢", "#0a7c3e", "#e3f5ec", "Concluído"),
+}
+
+
+def _badge_status(status: str) -> str:
+    ico, cor, bg, label = _STATUS_LABEL.get(status, _STATUS_LABEL["pendente"])
+    return (f'<span style="background:{bg};color:{cor};font-size:11px;font-weight:800;'
+            f'padding:3px 12px;border-radius:20px;border:1px solid {cor}30;">'
+            f'{ico} {label}</span>')
+
+
+def _badge_resposta(resp: str) -> str:
+    if not resp:
+        return '<span style="color:#ccc;font-size:12px;">— não respondido</span>'
+    cor, bg, borda = _COR_OPCAO.get(resp, ("#888", "#f5f5f5", "#ddd"))
+    return (f'<span style="background:{bg};color:{cor};border:1px solid {borda};'
+            f'font-size:12px;font-weight:800;padding:3px 12px;border-radius:20px;">'
+            f'{resp}</span>')
+
+
+# ════════════════════════════════════════════════════════════════════════
+#  FORMULÁRIO PRINCIPAL
+# ════════════════════════════════════════════════════════════════════════
+
+def relatorio_form_page(
+    user: dict,
+    aluno: dict,
+    matricula: str,
+    semestre: int,
+    relatorio: dict,
+    temas: list,
+    respostas: dict,     # {subtema_id: resposta_str}
+    msg: str = "",
+    erro: str = "",
+) -> str:
+    nome_aluno   = aluno.get("nome", "")
+    turma        = aluno.get("turma", "")
+    periodo      = aluno.get("periodo", "")
+    ano          = aluno.get("ano_letivo", "2026")
+    status       = relatorio.get("status", "pendente")
+    descricao    = relatorio.get("descricao_final", "")
+    rel_id       = relatorio.get("id")
+    sem_label    = "1º Semestre" if semestre == 1 else "2º Semestre"
+
+    is_admin     = user.get("role") == "admin"
+    is_readonly  = (status == "concluido") and not is_admin
+    nome_prof    = user.get("nome", "")
+
+    total_subtemas = sum(len(t.get("subtemas", [])) for t in temas)
+    respondidos    = sum(1 for sid in respostas if respostas[sid])
+    pct            = int(respondidos / total_subtemas * 100) if total_subtemas else 0
+
+    # ── Mensagens ──
+    aviso = ""
+    if msg:
+        aviso = f'<div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:11px 16px;margin-bottom:18px;font-size:13px;color:#0a7c3e;font-weight:700;">✔ {msg}</div>'
+    elif erro:
+        aviso = f'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:11px 16px;margin-bottom:18px;font-size:13px;color:#b52222;font-weight:700;">✖ {erro}</div>'
+
+    # ── Barra de progresso ──
+    cor_barra = "#0a7c3e" if pct == 100 else ("#c25b0d" if pct > 0 else "#dcdcd8")
+    barra_html = f"""
+<div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <span style="font-family:'Fredoka One',cursive;font-size:14px;color:#2b3990;">Progresso de preenchimento</span>
+    <span style="font-size:13px;font-weight:800;color:{cor_barra};">{respondidos} / {total_subtemas} subtemas</span>
+  </div>
+  <div style="background:#f0f0ee;border-radius:8px;height:12px;overflow:hidden;">
+    <div id="barra-prog" style="height:100%;width:{pct}%;background:{cor_barra};border-radius:8px;transition:width .4s;"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:6px;">
+    <span style="font-size:11px;color:#aaa;" id="txt-prog">{pct}% concluído</span>
+    {"<span style='font-size:11px;color:#0a7c3e;font-weight:700;'>✔ Todos os subtemas respondidos!</span>" if pct == 100 else ""}
+  </div>
+</div>"""
+
+    # ── Sem temas configurados ──
+    if not temas:
+        corpo = """
+<div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:12px;padding:24px;text-align:center;color:#c25b0d;font-size:14px;font-weight:700;">
+  ⚠️ Nenhum tema avaliativo cadastrado ainda.<br>
+  <span style="font-size:12px;font-weight:600;">Entre em contato com a coordenação para configurar os temas.</span>
+</div>"""
+        botoes = ""
+    elif is_readonly:
+        # ── Modo leitura (concluido + professora) ──
+        corpo = _render_readonly(temas, respostas, descricao)
+        botoes = ""
+    else:
+        # ── Modo edição ──
+        corpo, botoes = _render_form(matricula, semestre, temas, respostas, descricao, status, is_admin)
+
+    # ── Banner read-only ──
+    banner_concluido = ""
+    if is_readonly:
+        banner_concluido = """
+<div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:12px 18px;
+            margin-bottom:18px;display:flex;align-items:center;gap:10px;">
+  <span style="font-size:20px;">🟢</span>
+  <div>
+    <div style="font-weight:800;color:#0a7c3e;font-size:13px;">Relatório confirmado</div>
+    <div style="font-size:11px;color:#5a9a74;">Este relatório foi confirmado e não pode mais ser editado pela professora.</div>
+  </div>
+</div>"""
+    elif is_admin and status == "concluido":
+        banner_concluido = """
+<div style="background:#e8eaf8;border:1px solid #b0b8e8;border-radius:10px;padding:12px 18px;
+            margin-bottom:18px;display:flex;align-items:center;gap:10px;">
+  <span style="font-size:20px;">🔧</span>
+  <div>
+    <div style="font-weight:800;color:#2b3990;font-size:13px;">Modo admin — edição após confirmação</div>
+    <div style="font-size:11px;color:#666;">Como administrador, você pode editar mesmo após a confirmação.</div>
+  </div>
+</div>"""
+
+    back_url = "/professora" if not is_admin else "/admin/relatorios"
+    back_label = "← Minhas Turmas" if not is_admin else "← Relatórios"
+
+    body = f"""
+<div style="max-width:820px;margin:0 auto;padding:24px 16px;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <a href="{back_url}"
+       style="background:#e8eaf8;color:#2b3990;font-family:'Nunito',sans-serif;font-weight:800;
+              font-size:12px;padding:8px 14px;border-radius:8px;white-space:nowrap;margin-top:2px;">
+      {back_label}
+    </a>
+    <div style="flex:1;min-width:200px;">
+      <h1 style="font-family:'Fredoka One',cursive;font-size:19px;color:#2b3990;line-height:1.2;">
+        {nome_aluno}
+      </h1>
+      <div style="font-size:12px;color:#aaa;margin-top:3px;">
+        {turma} &nbsp;·&nbsp; {periodo} &nbsp;·&nbsp; {sem_label} &nbsp;·&nbsp; {ano}
+        {"&nbsp;·&nbsp; Profª " + nome_prof if not is_admin else ""}
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      {_badge_status(status)}
+      <a href="/{'admin/logout' if is_admin else 'professora/logout'}"
+         style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;
+                font-size:12px;padding:8px 14px;border-radius:9px;border:1px solid #dcdcd8;">
+        Sair
+      </a>
+    </div>
+  </div>
+
+  {aviso}
+  {banner_concluido}
+  {barra_html if not is_readonly else ""}
+  {corpo}
+  {botoes}
+
+</div>
+
+<script>
+var total = {total_subtemas};
+function updateProgress() {{
+  if (total === 0) return;
+  var names = {{}};
+  document.querySelectorAll('input[type=radio]').forEach(function(r) {{ names[r.name] = true; }});
+  var totalGrupos = Object.keys(names).filter(function(n){{return n.startsWith('resposta_');}}).length;
+  var respondidos = 0;
+  Object.keys(names).filter(function(n){{return n.startsWith('resposta_');}}).forEach(function(n) {{
+    if (document.querySelector('input[name="'+n+'"]:checked')) respondidos++;
+  }});
+  var pct = totalGrupos > 0 ? Math.round(respondidos / totalGrupos * 100) : 0;
+  var barra = document.getElementById('barra-prog');
+  var txt   = document.getElementById('txt-prog');
+  var cor   = pct === 100 ? '#0a7c3e' : (pct > 0 ? '#c25b0d' : '#dcdcd8');
+  if (barra) {{ barra.style.width = pct + '%'; barra.style.background = cor; }}
+  if (txt)   {{ txt.textContent = pct + '% concluído'; txt.style.color = cor; }}
+}}
+document.addEventListener('DOMContentLoaded', function() {{
+  document.querySelectorAll('input[type=radio]').forEach(function(r) {{
+    r.addEventListener('change', updateProgress);
+  }});
+  updateProgress();
+}});
+function confirmar() {{
+  // Valida no client antes de submeter
+  var names = {{}};
+  document.querySelectorAll('input[type=radio]').forEach(function(r) {{ names[r.name] = true; }});
+  var grupos = Object.keys(names).filter(function(n){{return n.startsWith('resposta_');}});
+  var naoRespondidos = grupos.filter(function(n) {{
+    return !document.querySelector('input[name="'+n+'"]:checked');
+  }});
+  if (naoRespondidos.length > 0) {{
+    alert('Por favor, responda todos os ' + grupos.length + ' subtemas antes de confirmar. Faltam ' + naoRespondidos.length + '.');
+    return;
+  }}
+  var desc = document.getElementById('descricao_final');
+  if (desc && desc.value.trim().length < 10) {{
+    alert('A descrição final deve ter pelo menos 10 caracteres.');
+    desc.focus();
+    return;
+  }}
+  if (!confirm('Confirmar o relatório de {nome_aluno}?\\n\\nApós confirmar, você não poderá mais editar.')) return;
+  var frm = document.getElementById('frm-relatorio');
+  frm.action = '/professora/relatorio/{matricula}/{semestre}/confirmar';
+  frm.submit();
+}}
+</script>"""
+    return page_shell(f"Relatório — {nome_aluno} — {sem_label}", body)
+
+
+# ── Modo leitura ──────────────────────────────────────────────────────────────
+
+def _render_readonly(temas: list, respostas: dict, descricao: str) -> str:
+    secoes = ""
+    for tema in temas:
+        linhas = ""
+        for st in tema.get("subtemas", []):
+            resp = respostas.get(st["id"], "")
+            linhas += f"""
+<div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:.5px solid #f5f5f5;">
+  <span style="flex:1;font-size:13px;color:#4a4a4a;">{st['descricao']}</span>
+  {_badge_resposta(resp)}
+</div>"""
+        secoes += f"""
+<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
+              margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
+    🏷️ {tema['nome']}
+  </div>
+  {linhas}
+</div>"""
+
+    desc_html = f"""
+<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
+              margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
+    💬 Descrição final do semestre
+  </div>
+  <p style="font-size:13px;color:#4a4a4a;line-height:1.7;white-space:pre-wrap;">{descricao or '—'}</p>
+</div>"""
+
+    return secoes + desc_html
+
+
+# ── Modo edição ───────────────────────────────────────────────────────────────
+
+def _render_form(matricula, semestre, temas, respostas, descricao, status, is_admin):
+    _INP_RD = ("position:absolute;opacity:0;width:0;height:0;")
+
+    def _opcao(subtema_id: int, valor: str, resp_atual: str) -> str:
+        checked = "checked" if resp_atual == valor else ""
+        cor, bg, borda = _COR_OPCAO[valor]
+        nome_campo = f"resposta_{subtema_id}"
+        # Estilo base do pill
+        base = (f"display:inline-block;font-size:12px;font-weight:800;padding:6px 14px;"
+                f"border-radius:20px;cursor:pointer;border:2px solid;transition:all .15s;"
+                f"border-color:{borda};background:#f9f9f9;color:#aaa;")
+        ativo = (f"display:inline-block;font-size:12px;font-weight:800;padding:6px 14px;"
+                 f"border-radius:20px;cursor:pointer;border:2px solid;transition:all .15s;"
+                 f"border-color:{cor};background:{bg};color:{cor};")
+        span_id = f"pill_{subtema_id}_{valor.replace(' ','_')}"
+        return f"""<label style="cursor:pointer;">
+  <input type="radio" name="{nome_campo}" value="{valor}" {checked}
+         style="{_INP_RD}"
+         onchange="updatePills({subtema_id}); updateProgress();">
+  <span id="{span_id}" style="{ativo if checked else base}">{valor}</span>
+</label>"""
+
+    secoes = ""
+    for tema in temas:
+        linhas = ""
+        for st in tema.get("subtemas", []):
+            sid = st["id"]
+            resp_atual = respostas.get(sid, "")
+            opcoes_html = "".join(_opcao(sid, v, resp_atual) for v in _OPCOES)
+            linhas += f"""
+<div style="padding:10px 0;border-bottom:.5px solid #f5f5f5;">
+  <div style="font-size:13px;color:#4a4a4a;margin-bottom:8px;font-weight:600;">{st['descricao']}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">{opcoes_html}</div>
+</div>"""
+
+        secoes += f"""
+<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
+              margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
+    🏷️ {tema['nome']}
+  </div>
+  {linhas}
+</div>"""
+
+    desc_card = f"""
+<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
+              margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
+    💬 Descrição final do semestre
+    <span style="font-size:10px;font-weight:700;color:#aaa;margin-left:8px;">obrigatória para confirmar</span>
+  </div>
+  <textarea id="descricao_final" name="descricao_final" rows="5"
+    placeholder="Descreva o desenvolvimento geral do aluno no semestre: pontos fortes, áreas a desenvolver, observações relevantes..."
+    style="width:100%;font-family:'Nunito',sans-serif;font-size:13px;color:#4a4a4a;
+           padding:12px 14px;border:1.5px solid #dcdcd8;border-radius:9px;outline:none;resize:vertical;line-height:1.6;"
+    onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#dcdcd8'">{descricao}</textarea>
+</div>"""
+
+    form_html = f"""<form id="frm-relatorio" method="POST" action="/professora/relatorio/{matricula}/{semestre}/salvar">
+{secoes}
+{desc_card}"""
+
+    botoes = f"""
+<div style="display:flex;gap:12px;flex-wrap:wrap;padding-bottom:32px;">
+  <button type="submit"
+    style="font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;
+           background:#f7f7f5;color:#2b3990;border:2px solid #2b3990;
+           border-radius:10px;padding:12px 28px;cursor:pointer;">
+    💾 Salvar Rascunho
+  </button>
+  {"" if not is_admin and status == "concluido" else f'''
+  <button type="button" onclick="confirmar()"
+    style="font-family:\'Nunito\',sans-serif;font-size:14px;font-weight:900;
+           background:#2b3990;color:#fff;border:none;
+           border-radius:10px;padding:12px 28px;cursor:pointer;">
+    ✅ {"Atualizar e Confirmar" if status == "concluido" else "Confirmar Relatório"}
+  </button>'''}
+</div>
+</form>"""
+
+    # JS para atualizar visual dos pills ao mudar seleção
+    ids_subtemas = [st["id"] for t in temas for st in t.get("subtemas", [])]
+    pill_js_vals = '["' + '","'.join(_OPCOES) + '"]'
+    pill_js = f"""
+<script>
+var _opcoes = {pill_js_vals};
+var _corAtivo = {{"Sim":"#0a7c3e","Não":"#b52222","Em desenvolvimento":"#c25b0d"}};
+var _bgAtivo  = {{"Sim":"#e3f5ec","Não":"#fef2f2","Em desenvolvimento":"#fef0e4"}};
+var _bdAtivo  = {{"Sim":"#a8ddc0","Não":"#fecaca","Em desenvolvimento":"#f8d4a8"}};
+function updatePills(sid) {{
+  _opcoes.forEach(function(v) {{
+    var key = v.replace(/ /g,'_');
+    var el  = document.getElementById('pill_' + sid + '_' + key);
+    var inp = document.querySelector('input[name="resposta_'+sid+'"][value="'+v+'"]:checked');
+    if (!el) return;
+    if (inp) {{
+      el.style.background    = _bgAtivo[v];
+      el.style.color         = _corAtivo[v];
+      el.style.borderColor   = _bdAtivo[v];
+    }} else {{
+      el.style.background    = '#f9f9f9';
+      el.style.color         = '#aaa';
+      el.style.borderColor   = '#ddd';
+    }}
+  }});
+}}
+document.addEventListener('DOMContentLoaded', function() {{
+  var ids = [{','.join(str(i) for i in ids_subtemas)}];
+  ids.forEach(function(sid) {{ updatePills(sid); }});
+}});
+</script>"""
+
+    return form_html + pill_js, botoes

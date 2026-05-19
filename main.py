@@ -12,13 +12,15 @@ from db_relatorio import (
     get_all_usuarios, create_usuario, delete_usuario,
     get_all_temas, create_tema, update_tema, delete_tema,
     create_subtema, delete_subtema,
-    get_relatorio,
+    get_relatorio, upsert_relatorio, update_relatorio,
+    get_respostas, save_respostas,
 )
 from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import admin_professoras_page, admin_temas_page
 from templates_professora import (
     professora_login_page, professora_dashboard, professora_turma_page, is_infantil
 )
+from templates_relatorio import relatorio_form_page
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -535,4 +537,151 @@ async def prof_turma(request: Request, turma: str):
         return _redir_prof_login()
     alunos = _dados_alunos_turma(user["nome"], turma)
     return professora_turma_page(user, turma, alunos)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  FASE 4 — Formulário do Relatório Semestral
+# ════════════════════════════════════════════════════════════════════════════
+
+def _parse_respostas(form: dict) -> dict:
+    """Extrai {subtema_id: resposta} do form POST."""
+    result = {}
+    for key, val in form.items():
+        if key.startswith("resposta_"):
+            try:
+                sid = int(key[9:])
+                if val.strip():
+                    result[sid] = val.strip()
+            except ValueError:
+                pass
+    return result
+
+
+def _check_acesso_aluno(user: dict, matricula: str) -> dict | None:
+    """
+    Retorna o aluno se o usuário tiver acesso (admin: qualquer aluno;
+    professora: só seus alunos). Retorna None se não tiver acesso.
+    """
+    aluno = get_aluno(matricula)
+    if not aluno:
+        return None
+    if user.get("role") == "admin":
+        return aluno
+    # Professora só acessa seus próprios alunos
+    if aluno.get("professora", "").strip() == user.get("nome", "").strip():
+        return aluno
+    return None
+
+
+@app.get("/professora/relatorio/{matricula}/{semestre}", response_class=HTMLResponse)
+async def prof_relatorio_get(request: Request, matricula: str, semestre: int, msg: str = "", erro: str = ""):
+    user = _check_prof(request)
+    if not user:
+        return _redir_prof_login()
+
+    if semestre not in (1, 2):
+        return RedirectResponse("/professora", status_code=302)
+
+    aluno = _check_acesso_aluno(user, matricula)
+    if not aluno:
+        return RedirectResponse("/professora", status_code=302)
+
+    if not is_infantil(aluno.get("turma", "")):
+        return RedirectResponse("/professora", status_code=302)
+
+    ano = aluno.get("ano_letivo", "2026")
+    temas = get_all_temas()
+
+    # Cria o relatório se não existir ainda
+    relatorio = upsert_relatorio(matricula, semestre, user["user_id"], ano)
+
+    respostas = get_respostas(relatorio["id"])
+    return relatorio_form_page(user, aluno, matricula, semestre, relatorio, temas, respostas, msg=msg, erro=erro)
+
+
+@app.post("/professora/relatorio/{matricula}/{semestre}/salvar")
+async def prof_relatorio_salvar(request: Request, matricula: str, semestre: int):
+    user = _check_prof(request)
+    if not user:
+        return _redir_prof_login()
+
+    aluno = _check_acesso_aluno(user, matricula)
+    if not aluno:
+        return RedirectResponse("/professora", status_code=302)
+
+    ano = aluno.get("ano_letivo", "2026")
+    relatorio = upsert_relatorio(matricula, semestre, user["user_id"], ano)
+
+    # Impede edição por professora após confirmar
+    if relatorio["status"] == "concluido" and user.get("role") == "professora":
+        return RedirectResponse(
+            f"/professora/relatorio/{matricula}/{semestre}?erro=Relat%C3%B3rio+j%C3%A1+confirmado",
+            status_code=302,
+        )
+
+    form = dict(await request.form())
+    respostas  = _parse_respostas(form)
+    descricao  = form.get("descricao_final", "").strip()
+
+    save_respostas(relatorio["id"], respostas)
+    update_relatorio(relatorio["id"], "em_andamento", descricao)
+
+    return RedirectResponse(
+        f"/professora/relatorio/{matricula}/{semestre}?msg=Rascunho+salvo+com+sucesso",
+        status_code=302,
+    )
+
+
+@app.post("/professora/relatorio/{matricula}/{semestre}/confirmar")
+async def prof_relatorio_confirmar(request: Request, matricula: str, semestre: int):
+    user = _check_prof(request)
+    if not user:
+        return _redir_prof_login()
+
+    aluno = _check_acesso_aluno(user, matricula)
+    if not aluno:
+        return RedirectResponse("/professora", status_code=302)
+
+    ano = aluno.get("ano_letivo", "2026")
+    relatorio = upsert_relatorio(matricula, semestre, user["user_id"], ano)
+
+    # Professora não pode re-confirmar relatório já concluído
+    if relatorio["status"] == "concluido" and user.get("role") == "professora":
+        return RedirectResponse(
+            f"/professora/relatorio/{matricula}/{semestre}?erro=Relat%C3%B3rio+j%C3%A1+confirmado",
+            status_code=302,
+        )
+
+    form = dict(await request.form())
+    respostas = _parse_respostas(form)
+    descricao = form.get("descricao_final", "").strip()
+
+    # Validação server-side: todos os subtemas respondidos
+    temas = get_all_temas()
+    todos_ids = [st["id"] for t in temas for st in t.get("subtemas", [])]
+    faltando  = [sid for sid in todos_ids if sid not in respostas or not respostas[sid]]
+    if faltando:
+        save_respostas(relatorio["id"], respostas)
+        update_relatorio(relatorio["id"], "em_andamento", descricao)
+        return RedirectResponse(
+            f"/professora/relatorio/{matricula}/{semestre}?erro=Preencha+todos+os+{len(todos_ids)}+subtemas+antes+de+confirmar",
+            status_code=302,
+        )
+
+    if len(descricao) < 10:
+        save_respostas(relatorio["id"], respostas)
+        update_relatorio(relatorio["id"], "em_andamento", descricao)
+        return RedirectResponse(
+            f"/professora/relatorio/{matricula}/{semestre}?erro=A+descri%C3%A7%C3%A3o+final+%C3%A9+obrigat%C3%B3ria",
+            status_code=302,
+        )
+
+    save_respostas(relatorio["id"], respostas)
+    update_relatorio(relatorio["id"], "concluido", descricao)
+
+    turma_enc = aluno.get("turma", "").replace(" ", "%20")
+    return RedirectResponse(
+        f"/professora/turma/{turma_enc}?ok=Relat%C3%B3rio+de+{matricula}+confirmado+com+sucesso",
+        status_code=302,
+    )
 
