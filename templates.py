@@ -75,6 +75,28 @@ def login_page(erro: bool = False) -> str:
     css = ".erro{background:var(--vermelho-lt);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--vermelho);font-weight:700;text-align:center;}"
     return page_shell("Login — Escola Espaço Alegre", body, css)
 
+# ── Nav bar do admin ─────────────────────────────────────────────────────────
+def admin_nav(current: str = "alunos") -> str:
+    items = [
+        ("alunos",      "/admin",               "📚 Alunos"),
+        ("professoras", "/admin/professoras",    "👩‍🏫 Professoras"),
+        ("temas",       "/admin/temas",          "🏷️ Temas Avaliativos"),
+        ("relatorios",  "/admin/relatorios",     "📋 Relatórios Semestrais"),
+    ]
+    links = ""
+    for key, href, label in items:
+        if key == current:
+            style = ("background:var(--azul);color:#fff;font-size:12px;font-weight:900;"
+                     "padding:7px 16px;border-radius:8px;white-space:nowrap;")
+        else:
+            style = ("background:transparent;color:var(--azul);font-size:12px;font-weight:700;"
+                     "padding:7px 16px;border-radius:8px;white-space:nowrap;"
+                     "border:1.5px solid transparent;")
+            style += "opacity:.7;"
+        links += f'<a href="{href}" style="{style}">{label}</a>\n'
+    return f'<div style="background:#fff;border-radius:10px;padding:6px 8px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;gap:4px;flex-wrap:wrap;">{links}</div>'
+
+
 # ── Dashboard admin ──────────────────────────────────────────────────────────
 def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
     # agrupar por turma
@@ -147,10 +169,11 @@ def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
 
     total = len(alunos)
     aviso_reset = '<div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:11px 16px;margin-bottom:20px;font-size:12px;color:var(--verde);font-weight:700;">✔ Banco de dados resetado com sucesso!</div>' if resetado else ''
+    nav = admin_nav("alunos")
     body = f"""
 <div style="max-width:960px;margin:0 auto;padding:24px 16px;">
   <!-- Header -->
-  <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap;">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
     <img src="/static/logo.jpg" style="height:48px;object-fit:contain;">
     <div style="flex:1;">
       <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:var(--azul);">Painel Administrativo</h1>
@@ -172,6 +195,8 @@ def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
       Sair
     </a>
   </div>
+
+  {nav}
 
   {aviso_reset}
 
@@ -213,8 +238,14 @@ def aluno_form(matricula: str, aluno: dict, novo: bool, msg: str = "") -> str:
         'Ciências','Arte','Educação Física',
         'Língua Estrangeira – Inglês','Produção Textual',
     ]
-    # Nomes exatos iguais ao banco (sem travessão)
     TURMAS = [
+        # Ed. Infantil — A (Manhã) e B (Tarde)
+        'Infantil 1 – A','Infantil 1 – B',
+        'Infantil 2 – A','Infantil 2 – B',
+        'Infantil 3 – A','Infantil 3 – B',
+        'Infantil 4 – A','Infantil 4 – B',
+        'Infantil 5 – A','Infantil 5 – B',
+        # Ed. Fundamental Anos Iniciais
         '1º Ano A','1º Ano B','2º Ano A','2º Ano B',
         '3º Ano A','3º Ano B','4º Ano A','4º Ano B',
         '5º Ano A','5º Ano B',

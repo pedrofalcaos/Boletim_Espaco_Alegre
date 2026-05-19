@@ -5,9 +5,16 @@ from fastapi.staticfiles import StaticFiles
 
 from db import get_aluno, get_all_alunos, upsert_aluno, delete_aluno, reset_db, DISCIPLINAS
 from boletim_html import gerar_boletim_html, gerar_boletins_multiplos_html
-from auth import (check_session, make_session_token,
-                  ADMIN_USER, ADMIN_PASS, COOKIE_NAME, COOKIE_MAX)
+from auth import (check_session, get_session_user, make_session_token,
+                  COOKIE_NAME, COOKIE_MAX)
+from db_relatorio import (
+    authenticate_user,
+    get_all_usuarios, create_usuario, delete_usuario,
+    get_all_temas, create_tema, update_tema, delete_tema,
+    create_subtema, delete_subtema,
+)
 from templates import login_page, admin_dashboard, aluno_form
+from templates_admin_extras import admin_professoras_page, admin_temas_page
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -169,9 +176,10 @@ async def post_login(
     usuario: str = Form(...),
     senha:   str = Form(...),
 ):
-    if usuario == ADMIN_USER and senha == ADMIN_PASS:
+    user = authenticate_user(usuario, senha)
+    if user and user.get("role") == "admin":
         resp = RedirectResponse("/admin", status_code=302)
-        resp.set_cookie(COOKIE_NAME, make_session_token(),
+        resp.set_cookie(COOKIE_NAME, make_session_token(user),
                         max_age=COOKIE_MAX, httponly=True, samesite="lax")
         return resp
     return RedirectResponse("/admin/login?erro=1", status_code=302)
@@ -280,4 +288,116 @@ async def resetar_banco(request: Request):
         return _redir_login()
     reset_db()
     return RedirectResponse("/admin?resetado=1", status_code=302)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  FASE 2 — Professoras
+# ════════════════════════════════════════════════════════════════════════════
+
+def _alunos_por_professora() -> dict:
+    """Retorna {nome_prof: [turmas_distintas]} a partir dos alunos cadastrados."""
+    alunos = get_all_alunos()
+    mapa: dict = {}
+    for al in alunos.values():
+        prof = al.get("professora", "").strip()
+        turma = al.get("turma", "").strip()
+        if prof:
+            if prof not in mapa:
+                mapa[prof] = set()
+            if turma:
+                mapa[prof].add(turma)
+    return {k: sorted(v) for k, v in mapa.items()}
+
+
+@app.get("/admin/professoras", response_class=HTMLResponse)
+async def listar_professoras(request: Request, ok: str = "", erro: str = ""):
+    if not check_session(request):
+        return _redir_login()
+    professoras = [u for u in get_all_usuarios() if u["role"] == "professora"]
+    alunos_map = _alunos_por_professora()
+    return admin_professoras_page(professoras, alunos_map, msg=ok, erro=erro)
+
+
+@app.post("/admin/professoras/nova")
+async def criar_professora(
+    request: Request,
+    nome:     str = Form(...),
+    username: str = Form(...),
+    senha:    str = Form(...),
+):
+    if not check_session(request):
+        return _redir_login()
+    if len(senha) < 6:
+        return RedirectResponse("/admin/professoras?erro=Senha+deve+ter+ao+menos+6+caracteres", status_code=302)
+    try:
+        create_usuario(username.strip(), senha, nome.strip(), role="professora")
+        return RedirectResponse(f"/admin/professoras?ok=Professora+{nome.strip()}+cadastrada+com+sucesso", status_code=302)
+    except ValueError:
+        return RedirectResponse("/admin/professoras?erro=Usu%C3%A1rio+j%C3%A1+existe", status_code=302)
+
+
+@app.post("/admin/professoras/{user_id}/excluir")
+async def excluir_professora(request: Request, user_id: int):
+    if not check_session(request):
+        return _redir_login()
+    delete_usuario(user_id)
+    return RedirectResponse("/admin/professoras?ok=Professora+removida", status_code=302)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  FASE 2 — Temas e Subtemas Avaliativos
+# ════════════════════════════════════════════════════════════════════════════
+
+@app.get("/admin/temas", response_class=HTMLResponse)
+async def listar_temas(request: Request, ok: str = "", erro: str = ""):
+    if not check_session(request):
+        return _redir_login()
+    temas = get_all_temas()
+    return admin_temas_page(temas, msg=ok, erro=erro)
+
+
+@app.post("/admin/temas/novo")
+async def criar_tema(request: Request, nome: str = Form(...)):
+    if not check_session(request):
+        return _redir_login()
+    nome = nome.strip()
+    if not nome:
+        return RedirectResponse("/admin/temas?erro=Nome+do+tema+n%C3%A3o+pode+ser+vazio", status_code=302)
+    create_tema(nome)
+    return RedirectResponse(f"/admin/temas?ok=Tema+criado+com+sucesso", status_code=302)
+
+
+@app.post("/admin/temas/{tema_id}/editar")
+async def editar_tema(request: Request, tema_id: int, nome: str = Form(...)):
+    if not check_session(request):
+        return _redir_login()
+    update_tema(tema_id, nome.strip())
+    return RedirectResponse("/admin/temas?ok=Tema+atualizado", status_code=302)
+
+
+@app.post("/admin/temas/{tema_id}/excluir")
+async def excluir_tema(request: Request, tema_id: int):
+    if not check_session(request):
+        return _redir_login()
+    delete_tema(tema_id)
+    return RedirectResponse("/admin/temas?ok=Tema+removido", status_code=302)
+
+
+@app.post("/admin/temas/{tema_id}/subtema")
+async def criar_subtema(request: Request, tema_id: int, descricao: str = Form(...)):
+    if not check_session(request):
+        return _redir_login()
+    descricao = descricao.strip()
+    if not descricao:
+        return RedirectResponse("/admin/temas?erro=Descri%C3%A7%C3%A3o+do+subtema+n%C3%A3o+pode+ser+vazia", status_code=302)
+    create_subtema(tema_id, descricao)
+    return RedirectResponse("/admin/temas?ok=Subtema+adicionado", status_code=302)
+
+
+@app.post("/admin/subtemas/{subtema_id}/excluir")
+async def excluir_subtema(request: Request, subtema_id: int):
+    if not check_session(request):
+        return _redir_login()
+    delete_subtema(subtema_id)
+    return RedirectResponse("/admin/temas?ok=Subtema+removido", status_code=302)
 
