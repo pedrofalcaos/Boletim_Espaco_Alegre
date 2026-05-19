@@ -98,7 +98,25 @@ def admin_nav(current: str = "alunos") -> str:
 
 
 # ── Dashboard admin ──────────────────────────────────────────────────────────
-def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
+def admin_dashboard(alunos: dict, resetado: bool = False, rel_status: dict = None) -> str:
+    """
+    rel_status: {matricula: {1: status_str, 2: status_str}} — status dos relatórios Infantil.
+    """
+    rel_status = rel_status or {}
+
+    # Helpers de status para Ed. Infantil
+    _ST_COR = {"pendente":"#b52222","em_andamento":"#c25b0d","concluido":"#0a7c3e"}
+    _ST_BG  = {"pendente":"#fef2f2","em_andamento":"#fef0e4","concluido":"#e3f5ec"}
+    _ST_ICO = {"pendente":"🔴","em_andamento":"🟡","concluido":"🟢"}
+    _ST_LAB = {"pendente":"Pendente","em_andamento":"Andamento","concluido":"Concluído"}
+
+    def _rel_pill(s):
+        if s is None:
+            return '<span style="color:#ccc;font-size:10px;font-weight:700;">–</span>'
+        return (f'<span style="background:{_ST_BG[s]};color:{_ST_COR[s]};font-size:9px;'
+                f'font-weight:800;padding:2px 8px;border-radius:10px;white-space:nowrap;">'
+                f'{_ST_ICO[s]} {_ST_LAB[s]}</span>')
+
     # agrupar por turma
     turmas: dict = {}
     for mat, al in sorted(alunos.items(), key=lambda x: x[1]['nome']):
@@ -112,39 +130,48 @@ def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
             m = re.search(r'(\d+)', t)
             num = int(m.group(1)) if m else 99
             letra = 0 if t.strip().endswith("A") else 1
-            return (0, num, letra)          # Infantil vem primeiro
+            return (0, num, letra)
         m = re.search(r'(\d+)', t)
         num = int(m.group(1)) if m else 99
         letra = 0 if t.strip().endswith("A") else 1
-        return (1, num, letra)             # Fundamental vem depois
+        return (1, num, letra)
 
     turma_blocks = ""
     for turma, lista in sorted(turmas.items(), key=lambda x: _sort_turma(x[0])):
+        e_infantil = turma.lower().startswith("infantil")
         rows = ""
         for i, (mat, al) in enumerate(lista, 1):
             nome = al['nome']
             prof = al.get('professora','–')
-            total_notas = sum(1 for disc_n in al.get('notas',{}).values() for k in ('p1','gl1') if disc_n.get(k))
-            badge_color = "var(--verde)" if total_notas >= 18 else ("var(--laranja)" if total_notas > 0 else "#ccc")
+
+            if e_infantil:
+                st = rel_status.get(mat, {})
+                badge_html = f'{_rel_pill(st.get(1))} &nbsp; {_rel_pill(st.get(2))}'
+                ver_href   = f"/admin/aluno/{mat}/relatorios"
+                ver_label  = "📋 Relatórios"
+            else:
+                total_notas = sum(1 for disc_n in al.get('notas',{}).values() for k in ('p1','gl1') if disc_n.get(k))
+                badge_color = "var(--verde)" if total_notas >= 18 else ("var(--laranja)" if total_notas > 0 else "#ccc")
+                badge_html = f'<span style="background:{badge_color};color:#fff;font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px;">{total_notas} notas</span>'
+                ver_href  = f"/boletim/{mat}?ref=admin"
+                ver_label = "👁 Ver"
+
             rows += f"""
 <tr>
   <td style="text-align:center;font-size:11px;color:#aaa;font-weight:700;width:32px;">{i}</td>
   <td style="font-weight:700;color:var(--azul);">{mat}</td>
   <td>{nome}</td>
   <td style="font-size:12px;color:#888;">{prof}</td>
-  <td style="text-align:center;">
-    <span style="background:{badge_color};color:#fff;font-size:10px;font-weight:800;
-                 padding:2px 9px;border-radius:20px;">{total_notas} notas</span>
-  </td>
+  <td style="text-align:center;">{badge_html}</td>
   <td style="text-align:center;white-space:nowrap;">
     <a href="/admin/aluno/{mat}" style="background:var(--azul-lt);color:var(--azul);
        font-size:11px;font-weight:800;padding:4px 12px;border-radius:7px;display:inline-block;">
       ✏️ Editar
     </a>
     &nbsp;
-    <a href="/boletim/{mat}?ref=admin" target="_blank" style="background:var(--verde-lt);color:var(--verde);
+    <a href="{ver_href}" {"target='_blank'" if not e_infantil else ""} style="background:var(--verde-lt);color:var(--verde);
        font-size:11px;font-weight:800;padding:4px 12px;border-radius:7px;display:inline-block;">
-      👁 Ver
+      {ver_label}
     </a>
   </td>
 </tr>"""
@@ -171,7 +198,7 @@ def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
         <th style="padding:8px 12px;text-align:left;">Matrícula</th>
         <th style="padding:8px 12px;text-align:left;">Nome</th>
         <th style="padding:8px 12px;text-align:left;">Professor(a)</th>
-        <th style="padding:8px 12px;text-align:center;">Notas T1</th>
+        <th style="padding:8px 12px;text-align:center;">Status / Notas</th>
         <th style="padding:8px 12px;text-align:center;">Ações</th>
       </tr>
     </thead>

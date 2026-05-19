@@ -10,14 +10,19 @@ from auth import (check_session, get_session_user, make_session_token,
 from db_relatorio import (
     authenticate_user,
     get_all_usuarios, create_usuario, delete_usuario,
+    update_usuario_turmas,
     get_all_temas, create_tema, update_tema, delete_tema,
     create_subtema, delete_subtema,
     get_relatorio, get_relatorio_by_id, upsert_relatorio, update_relatorio,
     get_respostas, save_respostas,
     update_subtema_turmas, get_temas_para_turma,
+    get_status_relatorios,
 )
 from templates import login_page, admin_dashboard, aluno_form
-from templates_admin_extras import admin_professoras_page, admin_temas_page, admin_relatorios_page
+from templates_admin_extras import (
+    admin_professoras_page, admin_temas_page, admin_relatorios_page,
+    admin_aluno_relatorios_page,
+)
 from templates_professora import (
     professora_login_page, professora_dashboard, professora_turma_page, is_infantil
 )
@@ -213,7 +218,10 @@ async def painel(request: Request, resetado: str = ""):
     if not check_session(request):
         return _redir_login()
     alunos = get_all_alunos()
-    return admin_dashboard(alunos, resetado=bool(resetado))
+    # Busca status dos relatórios dos alunos do Infantil em uma única query
+    matriculas_inf = [m for m, a in alunos.items() if is_infantil(a.get("turma", ""))]
+    rel_status = get_status_relatorios(matriculas_inf) if matriculas_inf else {}
+    return admin_dashboard(alunos, resetado=bool(resetado), rel_status=rel_status)
 
 @app.get("/admin/aluno/novo", response_class=HTMLResponse)
 async def novo_aluno_form(request: Request):
@@ -348,21 +356,32 @@ async def listar_professoras(request: Request, ok: str = "", erro: str = ""):
 
 
 @app.post("/admin/professoras/nova")
-async def criar_professora(
-    request: Request,
-    nome:     str = Form(...),
-    username: str = Form(...),
-    senha:    str = Form(...),
-):
+async def criar_professora(request: Request):
     if not check_session(request):
         return _redir_login()
+    form  = await request.form()
+    nome  = form.get("nome", "").strip()
+    username = form.get("username", "").strip()
+    senha = form.get("senha", "").strip()
+    turmas = list(form.getlist("turma"))
+
     if len(senha) < 6:
         return RedirectResponse("/admin/professoras?erro=Senha+deve+ter+ao+menos+6+caracteres", status_code=302)
     try:
-        create_usuario(username.strip(), senha, nome.strip(), role="professora")
-        return RedirectResponse(f"/admin/professoras?ok=Professora+{nome.strip()}+cadastrada+com+sucesso", status_code=302)
+        create_usuario(username, senha, nome, role="professora", turmas=turmas)
+        return RedirectResponse(f"/admin/professoras?ok=Professora+{nome}+cadastrada", status_code=302)
     except ValueError:
         return RedirectResponse("/admin/professoras?erro=Usu%C3%A1rio+j%C3%A1+existe", status_code=302)
+
+
+@app.post("/admin/professoras/{user_id}/turmas")
+async def salvar_turmas_professora(request: Request, user_id: int):
+    if not check_session(request):
+        return _redir_login()
+    form   = await request.form()
+    turmas = list(form.getlist("turma"))
+    update_usuario_turmas(user_id, turmas)
+    return RedirectResponse("/admin/professoras?ok=Turmas+atualizadas", status_code=302)
 
 
 @app.post("/admin/professoras/{user_id}/excluir")
@@ -371,6 +390,20 @@ async def excluir_professora(request: Request, user_id: int):
         return _redir_login()
     delete_usuario(user_id)
     return RedirectResponse("/admin/professoras?ok=Professora+removida", status_code=302)
+
+
+@app.get("/admin/aluno/{matricula}/relatorios", response_class=HTMLResponse)
+async def admin_ver_relatorios_aluno(request: Request, matricula: str):
+    """Página que mostra os relatórios semestrais de um aluno Infantil."""
+    if not check_session(request):
+        return _redir_login()
+    aluno = get_aluno(matricula)
+    if not aluno or not is_infantil(aluno.get("turma", "")):
+        return RedirectResponse("/admin", status_code=302)
+    ano  = aluno.get("ano_letivo", "2026")
+    rel1 = get_relatorio(matricula, 1, ano)
+    rel2 = get_relatorio(matricula, 2, ano)
+    return admin_aluno_relatorios_page(aluno, matricula, rel1, rel2)
 
 
 # ════════════════════════════════════════════════════════════════════════════

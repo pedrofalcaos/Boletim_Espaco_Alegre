@@ -1,6 +1,24 @@
 """Páginas extras do painel admin: professoras e temas avaliativos."""
 from templates import page_shell, admin_nav
 
+# Todas as turmas disponíveis (para seleção na criação/edição da professora)
+_TODAS_TURMAS = [
+    "Infantil 1 – A", "Infantil 1 – B",
+    "Infantil 2 – A", "Infantil 2 – B",
+    "Infantil 3 – A", "Infantil 3 – B",
+    "Infantil 4 – A", "Infantil 4 – B",
+    "Infantil 5 – A",
+    "1º Ano A", "1º Ano B", "2º Ano A", "2º Ano B",
+    "3º Ano A", "3º Ano B", "4º Ano A", "4º Ano B",
+    "5º Ano A", "5º Ano B",
+]
+
+_ST_COR = {"pendente":"#b52222","em_andamento":"#c25b0d","concluido":"#0a7c3e"}
+_ST_BG  = {"pendente":"#fef2f2","em_andamento":"#fef0e4","concluido":"#e3f5ec"}
+_ST_BD  = {"pendente":"#fecaca","em_andamento":"#f8d4a8","concluido":"#a8ddc0"}
+_ST_ICO = {"pendente":"🔴","em_andamento":"🟡","concluido":"🟢"}
+_ST_LAB = {"pendente":"Não preenchido","em_andamento":"Em preenchimento","concluido":"Preenchido"}
+
 
 # ── Utilitários ───────────────────────────────────────────────────────────────
 def _msg_ok(texto: str) -> str:
@@ -37,59 +55,90 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
     nav = admin_nav("professoras")
     aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
 
+    def _turmas_chips(turmas_conf, turmas_alunos):
+        """Mostra turmas configuradas (azul escuro) e as do aluno mas não configuradas (cinza)."""
+        conf_set = set(turmas_conf or [])
+        todas = sorted(set(list(conf_set) + list(turmas_alunos or [])))
+        if not todas:
+            return '<span style="color:#ccc;font-size:12px;">nenhuma turma vinculada</span>'
+        return " ".join(
+            f'<span style="background:{"#2b3990" if t in conf_set else "#e8eaf8"};'
+            f'color:{"#fff" if t in conf_set else "#2b3990"};font-size:10px;font-weight:800;'
+            f'padding:2px 9px;border-radius:20px;">{t}</span>'
+            for t in todas
+        )
+
+    def _turma_checkboxes(conf, prefix_id):
+        html = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">'
+        for t in _TODAS_TURMAS:
+            chk = "checked" if t in (conf or []) else ""
+            html += (f'<label style="display:flex;align-items:center;gap:4px;font-size:11px;'
+                     f'font-weight:700;color:#555;cursor:pointer;background:#f7f7f5;'
+                     f'border:1.5px solid #ddd;border-radius:7px;padding:3px 9px;">'
+                     f'<input type="checkbox" name="turma" value="{t}" {chk}> {t}</label>')
+        html += '</div>'
+        return html
+
     if professoras:
-        rows = ""
+        cards = ""
         for p in professoras:
-            turmas = alunos_por_prof.get(p["nome"], [])
-            turmas_html = " ".join(
-                f'<span style="background:#e8eaf8;color:#2b3990;font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px;">{t}</span>'
-                for t in turmas
-            ) or '<span style="color:#ccc;font-size:12px;">nenhuma turma vinculada</span>'
+            pid = p["id"]
+            conf_turmas = p.get("turmas") or []
+            aluno_turmas = alunos_por_prof.get(p["nome"], [])
+            chips = _turmas_chips(conf_turmas, aluno_turmas)
+            checkboxes = _turma_checkboxes(conf_turmas, pid)
 
-            rows += f"""
-<tr style="border-bottom:.5px solid #dcdcd8;">
-  <td style="padding:10px 14px;font-weight:800;color:#2b3990;">{p["nome"]}</td>
-  <td style="padding:10px 14px;font-size:12px;color:#888;">{p["username"]}</td>
-  <td style="padding:10px 14px;">{turmas_html}</td>
-  <td style="padding:10px 14px;text-align:center;">
-    <form method="POST" action="/admin/professoras/{p['id']}/excluir"
-          onsubmit="return confirm('Excluir {p['nome']}? Isso não apaga os alunos.');">
-      <button type="submit" style="{_BTN_VM}">🗑 Excluir</button>
+            cards += f"""
+<div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div style="flex:1;">
+      <div style="font-weight:800;color:#2b3990;font-size:14px;">{p["nome"]}</div>
+      <div style="font-size:11px;color:#aaa;margin-top:2px;">{p["username"]}</div>
+    </div>
+    <button type="button" onclick="toggleTurmas({pid})"
+      style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">
+      ✏️ Editar turmas
+    </button>
+    <form method="POST" action="/admin/professoras/{pid}/excluir"
+          onsubmit="return confirm('Excluir {p["nome"]}? Os alunos não são apagados.');">
+      <button type="submit" style="{_BTN_VM}">🗑</button>
     </form>
-  </td>
-</tr>"""
-
-        tabela = f"""
-<div style="overflow-x:auto;">
-<table style="width:100%;border-collapse:collapse;font-size:13px;">
-  <thead>
-    <tr style="background:#e8eaf8;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#2b3990;">
-      <th style="padding:9px 14px;text-align:left;">Nome</th>
-      <th style="padding:9px 14px;text-align:left;">Usuário</th>
-      <th style="padding:9px 14px;text-align:left;">Turmas vinculadas</th>
-      <th style="padding:9px 14px;text-align:center;">Ação</th>
-    </tr>
-  </thead>
-  <tbody>{rows}</tbody>
-</table>
+  </div>
+  <div style="margin-top:10px;">{chips}</div>
+  <div id="turmas-form-{pid}" style="display:none;margin-top:12px;border-top:1px solid #f0f0ee;padding-top:12px;">
+    <form method="POST" action="/admin/professoras/{pid}/turmas">
+      <div style="font-size:11px;font-weight:800;color:#aaa;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">
+        Selecione as turmas desta professora:
+      </div>
+      {checkboxes}
+      <button type="submit" style="{_BTN_AZ}padding:7px 18px;font-size:12px;margin-top:10px;">
+        Salvar turmas
+      </button>
+    </form>
+  </div>
 </div>"""
+        tabela = cards
     else:
         tabela = '<p style="color:#aaa;font-size:13px;text-align:center;padding:20px 0;">Nenhuma professora cadastrada ainda.</p>'
 
     lista_card = _card(_secao("👩‍🏫 Professoras cadastradas") + tabela)
 
+    # Seleção de turmas para nova professora
+    nova_checkboxes = _turma_checkboxes([], "nova")
+
     nova_card = _card(f"""
 {_secao("➕ Nova Professora")}
 <form method="POST" action="/admin/professoras/nova">
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;">
     <div>
       <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Nome completo</label>
-      <input name="nome" required placeholder="Ex: Maria Luiza" style="{_INP}"
+      <input name="nome" required placeholder="Ex: Vanessa" style="{_INP}"
         onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
     </div>
     <div>
       <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Usuário de login</label>
-      <input name="username" required placeholder="Ex: maria.luiza" style="{_INP}"
+      <input name="username" required placeholder="Ex: vanessa@escola.com" style="{_INP}"
         onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
     </div>
     <div>
@@ -98,11 +147,25 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
         onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
     </div>
   </div>
+  <div style="margin-bottom:12px;">
+    <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;margin-bottom:4px;">
+      Turmas sob responsabilidade:
+    </div>
+    {nova_checkboxes}
+  </div>
   <div style="font-size:11px;color:#aaa;margin-bottom:14px;">
-    💡 O nome deve ser idêntico ao campo <strong>Professor(a)</strong> cadastrado nos alunos para que o vínculo funcione.
+    💡 O nome deve ser idêntico ao campo <strong>Professor(a)</strong> nos alunos para que o vínculo funcione.
   </div>
   <button type="submit" style="{_BTN_AZ}">Cadastrar professora →</button>
 </form>""")
+
+    js_toggle = """
+<script>
+function toggleTurmas(id) {
+  var el = document.getElementById('turmas-form-' + id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>"""
 
     body = f"""
 <div style="max-width:960px;margin:0 auto;padding:24px 16px;">
@@ -119,6 +182,7 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
   {aviso}
   {lista_card}
   {nova_card}
+  {js_toggle}
 </div>"""
     return page_shell("Professoras — Escola Espaço Alegre", body)
 
@@ -483,3 +547,91 @@ def admin_relatorios_page(
   {tabela_html}
 </div>"""
     return page_shell("Relatórios Semestrais — Escola Espaço Alegre", body)
+
+
+# ════════════════════════════════════════════════════════════════════════
+#  PÁGINA DE RELATÓRIOS DE UM ALUNO (admin)
+# ════════════════════════════════════════════════════════════════════════
+
+def admin_aluno_relatorios_page(aluno: dict, matricula: str, rel1: dict | None, rel2: dict | None) -> str:
+    """
+    Mostra os dois relatórios semestrais de um aluno da Ed. Infantil.
+    rel1/rel2: dict do relatório ou None (não existe ainda).
+    """
+    nome      = aluno.get("nome", "")
+    turma     = aluno.get("turma", "")
+    periodo   = aluno.get("periodo", "")
+    professora= aluno.get("professora", "")
+    ano       = aluno.get("ano_letivo", "2026")
+
+    def _sem_card(sem: int, rel: dict | None) -> str:
+        sem_label = f"{sem}º Semestre"
+        if rel is None:
+            status_html = (
+                f'<span style="background:#fef2f2;border:1px solid #fecaca;color:#b52222;'
+                f'font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;">🔴 Não preenchido</span>'
+            )
+            btn = (f'<a href="/admin/relatorio/novo/{matricula}/{sem}" '
+                   f'style="background:#2b3990;color:#fff;font-family:\'Nunito\',sans-serif;'
+                   f'font-weight:800;font-size:13px;padding:9px 20px;border-radius:9px;'
+                   f'text-decoration:none;">✏️ Iniciar relatório</a>')
+            impressao = ""
+        else:
+            s = rel.get("status", "pendente")
+            cor, bg, bd = _ST_COR[s], _ST_BG[s], _ST_BD[s]
+            status_html = (
+                f'<span style="background:{bg};border:1px solid {bd};color:{cor};'
+                f'font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;">'
+                f'{_ST_ICO[s]} {_ST_LAB[s]}</span>'
+            )
+            btn = (f'<a href="/admin/relatorio/{rel["id"]}" '
+                   f'style="background:#2b3990;color:#fff;font-family:\'Nunito\',sans-serif;'
+                   f'font-weight:800;font-size:13px;padding:9px 20px;border-radius:9px;'
+                   f'text-decoration:none;">✏️ Ver / Editar</a>')
+            impressao = (f' &nbsp;<a href="/admin/relatorio/{rel["id"]}/imprimir" target="_blank"'
+                         f' style="background:#e8eaf8;color:#2b3990;font-family:\'Nunito\',sans-serif;'
+                         f'font-weight:800;font-size:13px;padding:9px 18px;border-radius:9px;'
+                         f'text-decoration:none;">🖨️ Imprimir</a>')
+
+        return f"""
+<div style="background:#fff;border-radius:12px;padding:20px 24px;margin-bottom:14px;
+            box-shadow:0 2px 10px rgba(0,0,0,.07);">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div style="font-family:'Fredoka One',cursive;font-size:17px;color:#2b3990;flex:1;">
+      {sem_label} / {ano}
+    </div>
+    {status_html}
+  </div>
+  <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+    {btn}{impressao}
+  </div>
+</div>"""
+
+    body = f"""
+<div style="max-width:820px;margin:0 auto;padding:24px 16px;">
+  <!-- Header -->
+  <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <a href="/admin" style="background:#e8eaf8;color:#2b3990;font-family:'Nunito',sans-serif;
+       font-weight:800;font-size:12px;padding:8px 14px;border-radius:8px;margin-top:2px;">
+      ← Painel
+    </a>
+    <div style="flex:1;">
+      <h1 style="font-family:'Fredoka One',cursive;font-size:20px;color:#2b3990;">{nome}</h1>
+      <div style="font-size:12px;color:#aaa;margin-top:3px;">
+        {turma} &nbsp;·&nbsp; {periodo} &nbsp;·&nbsp; Profª {professora} &nbsp;·&nbsp; Matrícula {matricula}
+      </div>
+    </div>
+    <a href="/admin/logout" style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;
+       font-weight:700;font-size:12px;padding:8px 14px;border-radius:9px;border:1px solid #dcdcd8;">
+      Sair
+    </a>
+  </div>
+
+  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;margin-bottom:14px;">
+    📋 Relatórios Semestrais
+  </div>
+
+  {_sem_card(1, rel1)}
+  {_sem_card(2, rel2)}
+</div>"""
+    return page_shell(f"Relatórios — {nome}", body)

@@ -35,6 +35,7 @@ if DATABASE_URL:
             password  VARCHAR(400) NOT NULL,
             nome      VARCHAR(255) NOT NULL DEFAULT '',
             role      VARCHAR(20)  NOT NULL DEFAULT 'professora',
+            turmas    JSONB        NOT NULL DEFAULT '[]',
             ativo     BOOLEAN DEFAULT TRUE,
             criado_em TIMESTAMP DEFAULT NOW()
         );
@@ -115,10 +116,9 @@ if DATABASE_URL:
             try:
                 with conn.cursor() as cur:
                     cur.execute(_SCHEMA)
-                    # Migração: adiciona coluna turmas se não existir
-                    cur.execute(
-                        "ALTER TABLE subtemas ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'"
-                    )
+                    # Migrações para instalações existentes
+                    cur.execute("ALTER TABLE subtemas ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'")
+                    cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'")
                 conn.commit()
                 _seed_admin(conn)
             finally:
@@ -155,18 +155,33 @@ if DATABASE_URL:
         finally:
             conn.close()
 
-    def create_usuario(username: str, password: str, nome: str, role: str = "professora") -> dict:
+    def create_usuario(username: str, password: str, nome: str, role: str = "professora", turmas: list = None) -> dict:
         _init()
         conn = _connect()
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(
-                    "INSERT INTO usuarios (username, password, nome, role) VALUES (%s,%s,%s,%s) RETURNING id, username, nome, role, ativo",
-                    (username, hash_password(password), nome, role),
+                    "INSERT INTO usuarios (username, password, nome, role, turmas) VALUES (%s,%s,%s,%s,%s) RETURNING id, username, nome, role, turmas, ativo",
+                    (username, hash_password(password), nome, role, json.dumps(turmas or [], ensure_ascii=False)),
                 )
                 user = cur.fetchone()
             conn.commit()
             return dict(user)
+        finally:
+            conn.close()
+
+    def update_usuario_turmas(user_id: int, turmas: list) -> bool:
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE usuarios SET turmas = %s WHERE id = %s",
+                    (json.dumps(turmas, ensure_ascii=False), user_id),
+                )
+                ok = cur.rowcount > 0
+            conn.commit()
+            return ok
         finally:
             conn.close()
 
@@ -332,6 +347,25 @@ if DATABASE_URL:
                 t["subtemas"] = subs
                 result.append(t)
         return result
+
+    def get_status_relatorios(matriculas: list, ano_letivo: str = "2026") -> dict:
+        """Retorna {matricula: {semestre: status}} em uma única query — eficiente para o painel admin."""
+        if not matriculas:
+            return {}
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT matricula, semestre, status FROM relatorios_semestrais WHERE matricula = ANY(%s) AND ano_letivo = %s",
+                    (list(matriculas), ano_letivo),
+                )
+                result: dict = {}
+                for r in cur.fetchall():
+                    result.setdefault(r["matricula"], {})[r["semestre"]] = r["status"]
+            return result
+        finally:
+            conn.close()
 
     # ── Relatórios Semestrais ─────────────────────────────────────────────────
 
@@ -557,7 +591,7 @@ else:
             db = _load()
             return [{k: v for k, v in u.items() if k != "password"} for u in db["usuarios"]]
 
-    def create_usuario(username: str, password: str, nome: str, role: str = "professora") -> dict:
+    def create_usuario(username: str, password: str, nome: str, role: str = "professora", turmas: list = None) -> dict:
         with _lock:
             db = _load()
             if any(u["username"] == username for u in db["usuarios"]):
@@ -569,11 +603,22 @@ else:
                 "password": hash_password(password),
                 "nome": nome,
                 "role": role,
+                "turmas": turmas or [],
                 "ativo": True,
             }
             db["usuarios"].append(user)
             _save(db)
             return {k: v for k, v in user.items() if k != "password"}
+
+    def update_usuario_turmas(user_id: int, turmas: list) -> bool:
+        with _lock:
+            db = _load()
+            for u in db["usuarios"]:
+                if u["id"] == user_id:
+                    u["turmas"] = turmas
+                    _save(db)
+                    return True
+            return False
 
     def update_usuario_senha(user_id: int, nova_senha: str) -> bool:
         with _lock:
@@ -694,6 +739,17 @@ else:
                 t["subtemas"] = subs
                 result.append(t)
         return result
+
+    def get_status_relatorios(matriculas: list, ano_letivo: str = "2026") -> dict:
+        if not matriculas:
+            return {}
+        with _lock:
+            db = _load()
+            result: dict = {}
+            for r in db["relatorios_semestrais"]:
+                if r["matricula"] in matriculas and r["ano_letivo"] == ano_letivo:
+                    result.setdefault(r["matricula"], {})[r["semestre"]] = r["status"]
+            return result
 
     # ── Relatórios Semestrais ─────────────────────────────────────────────────
 
