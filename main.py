@@ -12,9 +12,13 @@ from db_relatorio import (
     get_all_usuarios, create_usuario, delete_usuario,
     get_all_temas, create_tema, update_tema, delete_tema,
     create_subtema, delete_subtema,
+    get_relatorio,
 )
 from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import admin_professoras_page, admin_temas_page
+from templates_professora import (
+    professora_login_page, professora_dashboard, professora_turma_page, is_infantil
+)
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -400,4 +404,135 @@ async def excluir_subtema(request: Request, subtema_id: int):
         return _redir_login()
     delete_subtema(subtema_id)
     return RedirectResponse("/admin/temas?ok=Subtema+removido", status_code=302)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  FASE 3 — Área da Professora
+# ════════════════════════════════════════════════════════════════════════════
+
+def _redir_prof_login():
+    return RedirectResponse("/professora/login", status_code=302)
+
+
+def _check_prof(request: Request) -> dict | None:
+    """Retorna o usuário da sessão se for professora ou admin, senão None."""
+    user = get_session_user(request)
+    if not user or user.get("role") not in ("admin", "professora"):
+        return None
+    return user
+
+
+def _dados_turmas(nome_prof: str, ano_letivo: str = "2026") -> list:
+    """
+    Retorna lista de dicts por turma com status dos relatórios.
+    Filtra alunos cujo campo `professora` bate exatamente com nome_prof.
+    """
+    from urllib.parse import quote as _q
+    all_alunos = get_all_alunos()
+    meus = {mat: al for mat, al in all_alunos.items()
+            if al.get("professora", "").strip() == nome_prof}
+
+    # Agrupa por turma
+    por_turma: dict = {}
+    for mat, al in meus.items():
+        t = al.get("turma", "Sem turma")
+        por_turma.setdefault(t, {"periodo": al.get("periodo", ""), "alunos": []})
+        por_turma[t]["alunos"].append(mat)
+
+    resultado = []
+    for turma, info in sorted(por_turma.items()):
+        infantil = is_infantil(turma)
+        pendentes = andamento = concluidos = 0
+
+        if infantil:
+            for mat in info["alunos"]:
+                for sem in (1, 2):
+                    rel = get_relatorio(mat, sem, ano_letivo)
+                    status = rel["status"] if rel else "pendente"
+                    if status == "concluido":
+                        concluidos += 1
+                    elif status == "em_andamento":
+                        andamento += 1
+                    else:
+                        pendentes += 1
+
+        resultado.append({
+            "turma":        turma,
+            "periodo":      info["periodo"],
+            "total_alunos": len(info["alunos"]),
+            "is_infantil":  infantil,
+            "pendentes":    pendentes,
+            "andamento":    andamento,
+            "concluidos":   concluidos,
+        })
+    return resultado
+
+
+def _dados_alunos_turma(nome_prof: str, turma: str, ano_letivo: str = "2026") -> list:
+    """Retorna lista de alunos da turma com status dos seus relatórios."""
+    all_alunos = get_all_alunos()
+    infantil = is_infantil(turma)
+    resultado = []
+    for mat, al in all_alunos.items():
+        if al.get("professora", "").strip() != nome_prof:
+            continue
+        if al.get("turma", "") != turma:
+            continue
+        aluno_dict = {"matricula": mat, "nome": al["nome"], "is_infantil": infantil}
+        if infantil:
+            for sem in (1, 2):
+                rel = get_relatorio(mat, sem, ano_letivo)
+                aluno_dict[f"status_s{sem}"] = rel["status"] if rel else "pendente"
+        resultado.append(aluno_dict)
+    return resultado
+
+
+# ── Rotas ────────────────────────────────────────────────────────────────────
+
+@app.get("/professora/login", response_class=HTMLResponse)
+async def prof_get_login(request: Request, erro: str = ""):
+    user = get_session_user(request)
+    if user and user.get("role") in ("admin", "professora"):
+        return RedirectResponse("/professora", status_code=302)
+    return professora_login_page(erro="1" in erro)
+
+
+@app.post("/professora/login")
+async def prof_post_login(
+    request: Request,
+    usuario: str = Form(...),
+    senha:   str = Form(...),
+):
+    user = authenticate_user(usuario, senha)
+    if user and user.get("role") in ("admin", "professora"):
+        resp = RedirectResponse("/professora", status_code=302)
+        resp.set_cookie(COOKIE_NAME, make_session_token(user),
+                        max_age=COOKIE_MAX, httponly=True, samesite="lax")
+        return resp
+    return RedirectResponse("/professora/login?erro=1", status_code=302)
+
+
+@app.get("/professora/logout")
+async def prof_logout():
+    resp = RedirectResponse("/professora/login", status_code=302)
+    resp.delete_cookie(COOKIE_NAME)
+    return resp
+
+
+@app.get("/professora", response_class=HTMLResponse)
+async def prof_dashboard(request: Request):
+    user = _check_prof(request)
+    if not user:
+        return _redir_prof_login()
+    turmas = _dados_turmas(user["nome"])
+    return professora_dashboard(user, turmas)
+
+
+@app.get("/professora/turma/{turma}", response_class=HTMLResponse)
+async def prof_turma(request: Request, turma: str):
+    user = _check_prof(request)
+    if not user:
+        return _redir_prof_login()
+    alunos = _dados_alunos_turma(user["nome"], turma)
+    return professora_turma_page(user, turma, alunos)
 
