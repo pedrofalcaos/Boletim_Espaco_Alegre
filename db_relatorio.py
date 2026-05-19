@@ -72,14 +72,26 @@ if DATABASE_URL:
     def _connect():
         return psycopg2.connect(DATABASE_URL)
 
+    _SEED_USUARIOS = [
+        # (username, senha, nome, role)
+        (ADMIN_USER, ADMIN_PASS, "Administrador", "admin"),
+        ("vanessa@espacoalegre.com",  "EA@2026", "Vanessa",  "professora"),
+        ("erika@espacoalegre.com",    "EA@2026", "Erika",    "professora"),
+        ("cilene@espacoalegre.com",   "EA@2026", "Cilene",   "professora"),
+        ("patricia@espacoalegre.com", "EA@2026", "Patrícia", "professora"),
+        ("fabiana@espacoalegre.com",  "EA@2026", "Fabiana",  "professora"),
+        ("andrea@espacoalegre.com",   "EA@2026", "Andrea",   "professora"),
+    ]
+
     def _seed_admin(conn):
         with conn.cursor() as cur:
-            cur.execute("SELECT id FROM usuarios WHERE username = %s", (ADMIN_USER,))
-            if not cur.fetchone():
-                cur.execute(
-                    "INSERT INTO usuarios (username, password, nome, role) VALUES (%s,%s,%s,%s)",
-                    (ADMIN_USER, hash_password(ADMIN_PASS), "Administrador", "admin"),
-                )
+            for username, senha, nome, role in _SEED_USUARIOS:
+                cur.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+                if not cur.fetchone():
+                    cur.execute(
+                        "INSERT INTO usuarios (username, password, nome, role) VALUES (%s,%s,%s,%s)",
+                        (username, hash_password(senha), nome, role),
+                    )
         conn.commit()
 
     def _init():
@@ -437,6 +449,17 @@ else:
                 return json.load(f)
         return _new_db()
 
+    _SEED_USUARIOS_JSON = [
+        # (username, senha, nome, role)
+        (ADMIN_USER, ADMIN_PASS, "Administrador", "admin"),
+        ("vanessa@espacoalegre.com",  "EA@2026", "Vanessa",  "professora"),
+        ("erika@espacoalegre.com",    "EA@2026", "Erika",    "professora"),
+        ("cilene@espacoalegre.com",   "EA@2026", "Cilene",   "professora"),
+        ("patricia@espacoalegre.com", "EA@2026", "Patrícia", "professora"),
+        ("fabiana@espacoalegre.com",  "EA@2026", "Fabiana",  "professora"),
+        ("andrea@espacoalegre.com",   "EA@2026", "Andrea",   "professora"),
+    ]
+
     def _new_db() -> dict:
         db = {
             "usuarios": [],
@@ -445,21 +468,22 @@ else:
             "relatorios_semestrais": [],
             "respostas_subtemas": [],
             "_seq": {
-                "usuarios": 2,
+                "usuarios": len(_SEED_USUARIOS_JSON) + 1,
                 "temas": 1,
                 "subtemas": 1,
                 "relatorios_semestrais": 1,
                 "respostas_subtemas": 1,
             },
         }
-        db["usuarios"].append({
-            "id": 1,
-            "username": ADMIN_USER,
-            "password": hash_password(ADMIN_PASS),
-            "nome": "Administrador",
-            "role": "admin",
-            "ativo": True,
-        })
+        for i, (username, senha, nome, role) in enumerate(_SEED_USUARIOS_JSON, 1):
+            db["usuarios"].append({
+                "id": i,
+                "username": username,
+                "password": hash_password(senha),
+                "nome": nome,
+                "role": role,
+                "ativo": True,
+            })
         _save(db)
         return db
 

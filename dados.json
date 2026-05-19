@@ -1,545 +1,2442 @@
 {
   "alunos": {
-
     "20261124": {
       "nome": "Ana Clara Figueiredo Botelho",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.0", "gl1": "10"},
-        "Ciências":          {"p1": "10",  "gl1": "9.6"},
-        "História":          {"p1": "9.5", "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "8.8"},
-        "Matemática":        {"p1": "10",  "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.0",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "10",
+          "gl1": "9.6"
+        },
+        "História": {
+          "p1": "9.5",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "8.8"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20262357": {
       "nome": "Davi José da Luz de Castro",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.6", "gl1": "10"},
-        "Ciências":          {"p1": "9.4", "gl1": "10"},
-        "História":          {"p1": "9.5", "gl1": "9.4"},
-        "Geografia":         {"p1": "10",  "gl1": "8.8"},
-        "Matemática":        {"p1": "8.4", "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.6",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "9.4",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.5",
+          "gl1": "9.4"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "8.8"
+        },
+        "Matemática": {
+          "p1": "8.4",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20263480": {
       "nome": "Davi Melo Fabrício da Silva",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.0", "gl1": "10"},
-        "Ciências":          {"p1": "8.8", "gl1": "10"},
-        "História":          {"p1": "10",  "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "10"},
-        "Matemática":        {"p1": "9.6", "gl1": "9.4"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.0",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "8.8",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "9.6",
+          "gl1": "9.4"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20264591": {
       "nome": "Heitor Neiva Galdino Braynner Leite",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.8", "gl1": "9.6"},
-        "Ciências":          {"p1": "9.4", "gl1": "10"},
-        "História":          {"p1": "9.5", "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "10"},
-        "Matemática":        {"p1": "10",  "gl1": "10"},
-        "Arte":              {"p1": "9.0", "gl1": "9.0"}
+        "Língua Portuguesa": {
+          "p1": "9.8",
+          "gl1": "9.6"
+        },
+        "Ciências": {
+          "p1": "9.4",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.5",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "9.0",
+          "gl1": "9.0"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20265742": {
       "nome": "João Miguel Lima Borges Nonato",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "8.8", "gl1": "10"},
-        "Ciências":          {"p1": "8.8", "gl1": "9.6"},
-        "História":          {"p1": "9.0", "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "10"},
-        "Matemática":        {"p1": "10",  "gl1": "8.5"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "8.8",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "8.8",
+          "gl1": "9.6"
+        },
+        "História": {
+          "p1": "9.0",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "8.5"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20266835": {
       "nome": "Liz Coelho de Souza Bastos Laet",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "7.8", "gl1": "8.0"},
-        "Ciências":          {"p1": "7.6", "gl1": "8.8"},
-        "História":          {"p1": "9.5", "gl1": "9.4"},
-        "Geografia":         {"p1": "10",  "gl1": "9.4"},
-        "Matemática":        {"p1": "8.4", "gl1": "8.5"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "7.8",
+          "gl1": "8.0"
+        },
+        "Ciências": {
+          "p1": "7.6",
+          "gl1": "8.8"
+        },
+        "História": {
+          "p1": "9.5",
+          "gl1": "9.4"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "9.4"
+        },
+        "Matemática": {
+          "p1": "8.4",
+          "gl1": "8.5"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20267914": {
       "nome": "Lis Góes Maciel Rocha",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.2", "gl1": "9.6"},
-        "Ciências":          {"p1": "8.8", "gl1": "8.8"},
-        "História":          {"p1": "9.5", "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "8.8"},
-        "Matemática":        {"p1": "9.6", "gl1": "9.1"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.2",
+          "gl1": "9.6"
+        },
+        "Ciências": {
+          "p1": "8.8",
+          "gl1": "8.8"
+        },
+        "História": {
+          "p1": "9.5",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "8.8"
+        },
+        "Matemática": {
+          "p1": "9.6",
+          "gl1": "9.1"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20268103": {
       "nome": "Luan da Silva Esmeraldo",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "10",  "gl1": "10"},
-        "Ciências":          {"p1": "9.4", "gl1": "10"},
-        "História":          {"p1": "10",  "gl1": "9.4"},
-        "Geografia":         {"p1": "10",  "gl1": "10"},
-        "Matemática":        {"p1": "10",  "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "9.4",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "10",
+          "gl1": "9.4"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20269228": {
       "nome": "Lucas Guilherme de Vasconcelos Siqueira",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.6", "gl1": "10"},
-        "Ciências":          {"p1": "9.4", "gl1": "10"},
-        "História":          {"p1": "9.5", "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "10"},
-        "Matemática":        {"p1": "10",  "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.6",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "9.4",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.5",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20260351": {
       "nome": "Mariah Moraes Ananias",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "10",  "gl1": "10"},
-        "Ciências":          {"p1": "10",  "gl1": "10"},
-        "História":          {"p1": "8.5", "gl1": "8.8"},
-        "Geografia":         {"p1": "10",  "gl1": "9.4"},
-        "Matemática":        {"p1": "10",  "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "8.5",
+          "gl1": "8.8"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "9.4"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20261477": {
       "nome": "Matheus Fernando de Moraes Alencar",
-      "turma": "1º Ano A", "periodo": "Manhã", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "1º Ano A",
+      "periodo": "Manhã",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "10",  "gl1": "10"},
-        "Ciências":          {"p1": "9.4", "gl1": "9.6"},
-        "História":          {"p1": "10",  "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "10"},
-        "Matemática":        {"p1": "10",  "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "9.4",
+          "gl1": "9.6"
+        },
+        "História": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20261456": {
       "nome": "Antônio Rodrigues Vilela",
-      "turma": "2º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "2º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.6", "gl1": "10"},
-        "Matemática":        {"p1": "9.7", "gl1": "9.6"},
-        "História":          {"p1": "9.6", "gl1": "9.0"},
-        "Geografia":         {"p1": "9.4", "gl1": "10"},
-        "Ciências":          {"p1": "9.4", "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.6",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "9.7",
+          "gl1": "9.6"
+        },
+        "História": {
+          "p1": "9.6",
+          "gl1": "9.0"
+        },
+        "Geografia": {
+          "p1": "9.4",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "9.4",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20262567": {
       "nome": "Gustavo Goiana Freire Leite Torres",
-      "turma": "2º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "2º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.0", "gl1": "8.0"},
-        "Matemática":        {"p1": "7.6", "gl1": "9.6"},
-        "História":          {"p1": "6.8", "gl1": "8.0"},
-        "Geografia":         {"p1": "7.6", "gl1": "8.2"},
-        "Ciências":          {"p1": "9.8", "gl1": "8.8"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.0",
+          "gl1": "8.0"
+        },
+        "Matemática": {
+          "p1": "7.6",
+          "gl1": "9.6"
+        },
+        "História": {
+          "p1": "6.8",
+          "gl1": "8.0"
+        },
+        "Geografia": {
+          "p1": "7.6",
+          "gl1": "8.2"
+        },
+        "Ciências": {
+          "p1": "9.8",
+          "gl1": "8.8"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20263688": {
       "nome": "Heitor Marques Novaes Vieira de Melo Menezes",
-      "turma": "2º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "2º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.0", "gl1": "9.0"},
-        "Matemática":        {"p1": "9.7", "gl1": "9.0"},
-        "História":          {"p1": "10",  "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "9.1"},
-        "Ciências":          {"p1": "9.6", "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.0",
+          "gl1": "9.0"
+        },
+        "Matemática": {
+          "p1": "9.7",
+          "gl1": "9.0"
+        },
+        "História": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "9.1"
+        },
+        "Ciências": {
+          "p1": "9.6",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20264781": {
       "nome": "Gustavo Henrique Silvestre Luz Reis",
-      "turma": "2º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "2º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.6", "gl1": "10"},
-        "Matemática":        {"p1": "10",  "gl1": "10"},
-        "História":          {"p1": "9.6", "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "10"},
-        "Ciências":          {"p1": "10",  "gl1": "8.3"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.6",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.6",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "10",
+          "gl1": "8.3"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20265814": {
       "nome": "Isabela Figueirêdo Barreto",
-      "turma": "2º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "2º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "10",  "gl1": "9.8"},
-        "Matemática":        {"p1": "9.7", "gl1": "9.6"},
-        "História":          {"p1": "8.8", "gl1": "7.5"},
-        "Geografia":         {"p1": "9.6", "gl1": "9.7"},
-        "Ciências":          {"p1": "9.8", "gl1": "9.4"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "10",
+          "gl1": "9.8"
+        },
+        "Matemática": {
+          "p1": "9.7",
+          "gl1": "9.6"
+        },
+        "História": {
+          "p1": "8.8",
+          "gl1": "7.5"
+        },
+        "Geografia": {
+          "p1": "9.6",
+          "gl1": "9.7"
+        },
+        "Ciências": {
+          "p1": "9.8",
+          "gl1": "9.4"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20266937": {
       "nome": "Isabela Vasconcelos Lima",
-      "turma": "2º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "2º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.0", "gl1": "10"},
-        "Matemática":        {"p1": "10",  "gl1": "9.8"},
-        "História":          {"p1": "10",  "gl1": "10"},
-        "Geografia":         {"p1": "8.5", "gl1": "10"},
-        "Ciências":          {"p1": "9.8", "gl1": "9.4"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.0",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "9.8"
+        },
+        "História": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "8.5",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "9.8",
+          "gl1": "9.4"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20267052": {
       "nome": "Lucas Alves de Araújo Santos Melo",
-      "turma": "2º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "2º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "7.6", "gl1": "10"},
-        "Matemática":        {"p1": "9.7", "gl1": "10"},
-        "História":          {"p1": "8.0", "gl1": "8.5"},
-        "Geografia":         {"p1": "10",  "gl1": "10"},
-        "Ciências":          {"p1": "10",  "gl1": "9.4"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "7.6",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "9.7",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "8.0",
+          "gl1": "8.5"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "10",
+          "gl1": "9.4"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20268145": {
       "nome": "Mariana Freire de Oliveira Melo",
-      "turma": "2º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "2º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "8.5", "gl1": "7.4"},
-        "Matemática":        {"p1": "9.7", "gl1": "10"},
-        "História":          {"p1": "9.6", "gl1": "10"},
-        "Geografia":         {"p1": "7.6", "gl1": "9.1"},
-        "Ciências":          {"p1": "9.6", "gl1": "8.0"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "8.5",
+          "gl1": "7.4"
+        },
+        "Matemática": {
+          "p1": "9.7",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.6",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "7.6",
+          "gl1": "9.1"
+        },
+        "Ciências": {
+          "p1": "9.6",
+          "gl1": "8.0"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20261047": {
       "nome": "André Vinicius Lima Xavier",
-      "turma": "2º Ano B", "periodo": "Tarde", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "2º Ano B",
+      "periodo": "Tarde",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "8.8", "gl1": "8.0"},
-        "Ciências":          {"p1": "9.4", "gl1": "7.7"},
-        "História":          {"p1": "8.3", "gl1": "9.3"},
-        "Geografia":         {"p1": "8.8", "gl1": "9.0"},
-        "Matemática":        {"p1": "9.1", "gl1": "9.2"},
-        "Arte":              {"p1": "8.0", "gl1": "8.0"}
+        "Língua Portuguesa": {
+          "p1": "8.8",
+          "gl1": "8.0"
+        },
+        "Ciências": {
+          "p1": "9.4",
+          "gl1": "7.7"
+        },
+        "História": {
+          "p1": "8.3",
+          "gl1": "9.3"
+        },
+        "Geografia": {
+          "p1": "8.8",
+          "gl1": "9.0"
+        },
+        "Matemática": {
+          "p1": "9.1",
+          "gl1": "9.2"
+        },
+        "Arte": {
+          "p1": "8.0",
+          "gl1": "8.0"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20262183": {
       "nome": "Emanuella dos Santos Martins",
-      "turma": "2º Ano B", "periodo": "Tarde", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "2º Ano B",
+      "periodo": "Tarde",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.0", "gl1": "8.6"},
-        "Ciências":          {"p1": "10",  "gl1": "10"},
-        "História":          {"p1": "9.2", "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "8.5"},
-        "Matemática":        {"p1": "9.4", "gl1": "8.2"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.0",
+          "gl1": "8.6"
+        },
+        "Ciências": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.2",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "8.5"
+        },
+        "Matemática": {
+          "p1": "9.4",
+          "gl1": "8.2"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20263429": {
       "nome": "Henrique Martins Cysneiros Calado",
-      "turma": "2º Ano B", "periodo": "Tarde", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "2º Ano B",
+      "periodo": "Tarde",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "8.4", "gl1": "8.0"},
-        "Ciências":          {"p1": "9.0", "gl1": "8.3"},
-        "História":          {"p1": "8.8", "gl1": "7.5"},
-        "Geografia":         {"p1": "8.5", "gl1": "7.7"},
-        "Matemática":        {"p1": "9.7", "gl1": "9.0"},
-        "Arte":              {"p1": "8.0", "gl1": "8.0"}
+        "Língua Portuguesa": {
+          "p1": "8.4",
+          "gl1": "8.0"
+        },
+        "Ciências": {
+          "p1": "9.0",
+          "gl1": "8.3"
+        },
+        "História": {
+          "p1": "8.8",
+          "gl1": "7.5"
+        },
+        "Geografia": {
+          "p1": "8.5",
+          "gl1": "7.7"
+        },
+        "Matemática": {
+          "p1": "9.7",
+          "gl1": "9.0"
+        },
+        "Arte": {
+          "p1": "8.0",
+          "gl1": "8.0"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20264571": {
       "nome": "Letícia Nunes Sá de Barros Carvalho",
-      "turma": "2º Ano B", "periodo": "Tarde", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "2º Ano B",
+      "periodo": "Tarde",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.6", "gl1": "9.2"},
-        "Ciências":          {"p1": "10",  "gl1": "9.4"},
-        "História":          {"p1": "10",  "gl1": "10"},
-        "Geografia":         {"p1": "9.7", "gl1": "9.4"},
-        "Matemática":        {"p1": "9.4", "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.6",
+          "gl1": "9.2"
+        },
+        "Ciências": {
+          "p1": "10",
+          "gl1": "9.4"
+        },
+        "História": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "9.7",
+          "gl1": "9.4"
+        },
+        "Matemática": {
+          "p1": "9.4",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20265892": {
       "nome": "Yasmin Vieira Machado",
-      "turma": "2º Ano B", "periodo": "Tarde", "professora": "Maria Luiza", "ano_letivo": "2026",
+      "turma": "2º Ano B",
+      "periodo": "Tarde",
+      "professora": "Maria Luiza",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "10",  "gl1": "10"},
-        "Ciências":          {"p1": "10",  "gl1": "9.1"},
-        "História":          {"p1": "10",  "gl1": "10"},
-        "Geografia":         {"p1": "9.1", "gl1": "9.4"},
-        "Matemática":        {"p1": "10",  "gl1": "9.8"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "10",
+          "gl1": "9.1"
+        },
+        "História": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "9.1",
+          "gl1": "9.4"
+        },
+        "Matemática": {
+          "p1": "10",
+          "gl1": "9.8"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20267011": {
       "nome": "Ana Mel de Souza Nunes",
-      "turma": "3º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "3º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa":           {"p1": "6.1", "gl1": "8.0"},
-        "Matemática":                  {"p1": "9.7", "gl1": "5.6"},
-        "História":                    {"p1": "6.6", "gl1": "6.1"},
-        "Geografia":                   {"p1": "9.0", "gl1": "7.0"},
-        "Ciências":                    {"p1": "7.5", "gl1": "9.0"},
-        "Arte":                        {"p1": "10",  "gl1": "10"},
-        "Língua Estrangeira – Inglês": {"p1": "8.0", "gl1": "6.8"}
+        "Língua Portuguesa": {
+          "p1": "6.1",
+          "gl1": "8.0"
+        },
+        "Matemática": {
+          "p1": "9.7",
+          "gl1": "5.6"
+        },
+        "História": {
+          "p1": "6.6",
+          "gl1": "6.1"
+        },
+        "Geografia": {
+          "p1": "9.0",
+          "gl1": "7.0"
+        },
+        "Ciências": {
+          "p1": "7.5",
+          "gl1": "9.0"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Língua Estrangeira – Inglês": {
+          "p1": "8.0",
+          "gl1": "6.8"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20268122": {
       "nome": "Davi José de Morais e Silva Santana",
-      "turma": "3º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "3º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa":           {"p1": "7.8", "gl1": "9.2"},
-        "Matemática":                  {"p1": "8.0", "gl1": "9.5"},
-        "História":                    {"p1": "7.5", "gl1": "9.5"},
-        "Geografia":                   {"p1": "8.8", "gl1": "9.7"},
-        "Ciências":                    {"p1": "8.8", "gl1": "9.4"},
-        "Arte":                        {"p1": "10",  "gl1": "10"},
-        "Língua Estrangeira – Inglês": {"p1": "10",  "gl1": "9.2"}
+        "Língua Portuguesa": {
+          "p1": "7.8",
+          "gl1": "9.2"
+        },
+        "Matemática": {
+          "p1": "8.0",
+          "gl1": "9.5"
+        },
+        "História": {
+          "p1": "7.5",
+          "gl1": "9.5"
+        },
+        "Geografia": {
+          "p1": "8.8",
+          "gl1": "9.7"
+        },
+        "Ciências": {
+          "p1": "8.8",
+          "gl1": "9.4"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Língua Estrangeira – Inglês": {
+          "p1": "10",
+          "gl1": "9.2"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20269233": {
       "nome": "Helena Ferreira Campos",
-      "turma": "3º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "3º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa":           {"p1": "7.9", "gl1": "8.6"},
-        "Matemática":                  {"p1": "9.6", "gl1": "9.2"},
-        "História":                    {"p1": "10",  "gl1": "8.8"},
-        "Geografia":                   {"p1": "9.0", "gl1": "10"},
-        "Ciências":                    {"p1": "9.0", "gl1": "9.0"},
-        "Arte":                        {"p1": "10",  "gl1": "10"},
-        "Língua Estrangeira – Inglês": {"p1": "10",  "gl1": "9.0"}
+        "Língua Portuguesa": {
+          "p1": "7.9",
+          "gl1": "8.6"
+        },
+        "Matemática": {
+          "p1": "9.6",
+          "gl1": "9.2"
+        },
+        "História": {
+          "p1": "10",
+          "gl1": "8.8"
+        },
+        "Geografia": {
+          "p1": "9.0",
+          "gl1": "10"
+        },
+        "Ciências": {
+          "p1": "9.0",
+          "gl1": "9.0"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Língua Estrangeira – Inglês": {
+          "p1": "10",
+          "gl1": "9.0"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20260348": {
       "nome": "Joaquim Henrique Alves da Cunha",
-      "turma": "3º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "3º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa":           {"p1": "7.9", "gl1": "9.8"},
-        "Matemática":                  {"p1": "7.5", "gl1": "9.8"},
-        "História":                    {"p1": "10",  "gl1": "8.0"},
-        "Geografia":                   {"p1": "10",  "gl1": "9.1"},
-        "Ciências":                    {"p1": "9.6", "gl1": "9.6"},
-        "Arte":                        {"p1": "10",  "gl1": "10"},
-        "Língua Estrangeira – Inglês": {"p1": "10",  "gl1": "9.5"}
+        "Língua Portuguesa": {
+          "p1": "7.9",
+          "gl1": "9.8"
+        },
+        "Matemática": {
+          "p1": "7.5",
+          "gl1": "9.8"
+        },
+        "História": {
+          "p1": "10",
+          "gl1": "8.0"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "9.1"
+        },
+        "Ciências": {
+          "p1": "9.6",
+          "gl1": "9.6"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Língua Estrangeira – Inglês": {
+          "p1": "10",
+          "gl1": "9.5"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20261429": {
       "nome": "Maria Eduarda Barros de Macedo",
-      "turma": "3º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "3º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa":           {"p1": "7.9", "gl1": "8.2"},
-        "Matemática":                  {"p1": "9.6", "gl1": "9.2"},
-        "História":                    {"p1": "9.5", "gl1": "8.8"},
-        "Geografia":                   {"p1": "9.7", "gl1": "9.7"},
-        "Ciências":                    {"p1": "9.6", "gl1": "9.2"},
-        "Arte":                        {"p1": "10",  "gl1": "10"},
-        "Língua Estrangeira – Inglês": {"p1": "10",  "gl1": "9.0"}
+        "Língua Portuguesa": {
+          "p1": "7.9",
+          "gl1": "8.2"
+        },
+        "Matemática": {
+          "p1": "9.6",
+          "gl1": "9.2"
+        },
+        "História": {
+          "p1": "9.5",
+          "gl1": "8.8"
+        },
+        "Geografia": {
+          "p1": "9.7",
+          "gl1": "9.7"
+        },
+        "Ciências": {
+          "p1": "9.6",
+          "gl1": "9.2"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Língua Estrangeira – Inglês": {
+          "p1": "10",
+          "gl1": "9.0"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20262581": {
       "nome": "Maria Giovanna Nogueira Ferreira Santos",
-      "turma": "3º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "3º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa":           {"p1": "7.3", "gl1": "6.7"},
-        "Matemática":                  {"p1": "7.4", "gl1": "6.6"},
-        "História":                    {"p1": "8.9", "gl1": "7.0"},
-        "Geografia":                   {"p1": "9.3", "gl1": "8.2"},
-        "Ciências":                    {"p1": "8.6", "gl1": "8.6"},
-        "Arte":                        {"p1": "10",  "gl1": "10"},
-        "Língua Estrangeira – Inglês": {"p1": "8.0", "gl1": "6.0"}
+        "Língua Portuguesa": {
+          "p1": "7.3",
+          "gl1": "6.7"
+        },
+        "Matemática": {
+          "p1": "7.4",
+          "gl1": "6.6"
+        },
+        "História": {
+          "p1": "8.9",
+          "gl1": "7.0"
+        },
+        "Geografia": {
+          "p1": "9.3",
+          "gl1": "8.2"
+        },
+        "Ciências": {
+          "p1": "8.6",
+          "gl1": "8.6"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Língua Estrangeira – Inglês": {
+          "p1": "8.0",
+          "gl1": "6.0"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20263694": {
       "nome": "Matheus Moraes Rocha",
-      "turma": "3º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "3º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa":           {"p1": "8.8", "gl1": "9.2"},
-        "Matemática":                  {"p1": "9.0", "gl1": "9.4"},
-        "História":                    {"p1": "9.5", "gl1": "9.0"},
-        "Geografia":                   {"p1": "9.4", "gl1": "9.6"},
-        "Ciências":                    {"p1": "9.2", "gl1": "9.5"},
-        "Arte":                        {"p1": "10",  "gl1": "10"},
-        "Língua Estrangeira – Inglês": {"p1": "9.5", "gl1": "9.0"}
+        "Língua Portuguesa": {
+          "p1": "8.8",
+          "gl1": "9.2"
+        },
+        "Matemática": {
+          "p1": "9.0",
+          "gl1": "9.4"
+        },
+        "História": {
+          "p1": "9.5",
+          "gl1": "9.0"
+        },
+        "Geografia": {
+          "p1": "9.4",
+          "gl1": "9.6"
+        },
+        "Ciências": {
+          "p1": "9.2",
+          "gl1": "9.5"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Língua Estrangeira – Inglês": {
+          "p1": "9.5",
+          "gl1": "9.0"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20264752": {
       "nome": "Melissa Luiz de Figueiredo Barbosa",
-      "turma": "3º Ano A", "periodo": "Manhã", "professora": "Sandra", "ano_letivo": "2026",
+      "turma": "3º Ano A",
+      "periodo": "Manhã",
+      "professora": "Sandra",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa":           {"p1": "9.0", "gl1": "9.4"},
-        "Matemática":                  {"p1": "8.8", "gl1": "9.0"},
-        "História":                    {"p1": "9.6", "gl1": "9.8"},
-        "Geografia":                   {"p1": "9.7", "gl1": "9.5"},
-        "Ciências":                    {"p1": "9.4", "gl1": "9.6"},
-        "Arte":                        {"p1": "10",  "gl1": "10"},
-        "Língua Estrangeira – Inglês": {"p1": "10",  "gl1": "9.5"}
+        "Língua Portuguesa": {
+          "p1": "9.0",
+          "gl1": "9.4"
+        },
+        "Matemática": {
+          "p1": "8.8",
+          "gl1": "9.0"
+        },
+        "História": {
+          "p1": "9.6",
+          "gl1": "9.8"
+        },
+        "Geografia": {
+          "p1": "9.7",
+          "gl1": "9.5"
+        },
+        "Ciências": {
+          "p1": "9.4",
+          "gl1": "9.6"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Língua Estrangeira – Inglês": {
+          "p1": "10",
+          "gl1": "9.5"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20261081": {
       "nome": "Elis Meira de Lira Zelaquett",
-      "turma": "5º Ano A", "periodo": "Tarde", "professora": "Jana", "ano_letivo": "2026",
+      "turma": "5º Ano A",
+      "periodo": "Tarde",
+      "professora": "Jana",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.7", "gl1": "9.7"},
-        "Ciências":          {"p1": "9.3", "gl1": "10"},
-        "História":          {"p1": "9.8", "gl1": "10"},
-        "Geografia":         {"p1": "10",  "gl1": "10"},
-        "Matemática":        {"p1": "9.7", "gl1": "9.5"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.7",
+          "gl1": "9.7"
+        },
+        "Ciências": {
+          "p1": "9.3",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.8",
+          "gl1": "10"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "9.7",
+          "gl1": "9.5"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20262114": {
       "nome": "João Gabriel Loureiro Engelhardt Campos",
-      "turma": "5º Ano A", "periodo": "Tarde", "professora": "Jana", "ano_letivo": "2026",
+      "turma": "5º Ano A",
+      "periodo": "Tarde",
+      "professora": "Jana",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "10",  "gl1": "9.6"},
-        "Ciências":          {"p1": "8.1", "gl1": "10"},
-        "História":          {"p1": "9.7", "gl1": "9.7"},
-        "Geografia":         {"p1": "10",  "gl1": "9.7"},
-        "Matemática":        {"p1": "9.8", "gl1": "9.5"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "10",
+          "gl1": "9.6"
+        },
+        "Ciências": {
+          "p1": "8.1",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.7",
+          "gl1": "9.7"
+        },
+        "Geografia": {
+          "p1": "10",
+          "gl1": "9.7"
+        },
+        "Matemática": {
+          "p1": "9.8",
+          "gl1": "9.5"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20263247": {
       "nome": "Joaquim Ferreira Campos",
-      "turma": "5º Ano A", "periodo": "Tarde", "professora": "Jana", "ano_letivo": "2026",
+      "turma": "5º Ano A",
+      "periodo": "Tarde",
+      "professora": "Jana",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "10",  "gl1": "9.7"},
-        "Ciências":          {"p1": "9.7", "gl1": "10"},
-        "História":          {"p1": "9.7", "gl1": "9.8"},
-        "Geografia":         {"p1": "9.7", "gl1": "10"},
-        "Matemática":        {"p1": "9.0", "gl1": "10"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "10",
+          "gl1": "9.7"
+        },
+        "Ciências": {
+          "p1": "9.7",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.7",
+          "gl1": "9.8"
+        },
+        "Geografia": {
+          "p1": "9.7",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "9.0",
+          "gl1": "10"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20264352": {
       "nome": "Mateus Jorge Moura da Costa",
-      "turma": "5º Ano A", "periodo": "Tarde", "professora": "Jana", "ano_letivo": "2026",
+      "turma": "5º Ano A",
+      "periodo": "Tarde",
+      "professora": "Jana",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.2", "gl1": "9.4"},
-        "Ciências":          {"p1": "9.1", "gl1": "9.5"},
-        "História":          {"p1": "9.4", "gl1": "9.3"},
-        "Geografia":         {"p1": "7.8", "gl1": "9.7"},
-        "Matemática":        {"p1": "7.9", "gl1": "8.1"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.2",
+          "gl1": "9.4"
+        },
+        "Ciências": {
+          "p1": "9.1",
+          "gl1": "9.5"
+        },
+        "História": {
+          "p1": "9.4",
+          "gl1": "9.3"
+        },
+        "Geografia": {
+          "p1": "7.8",
+          "gl1": "9.7"
+        },
+        "Matemática": {
+          "p1": "7.9",
+          "gl1": "8.1"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20265473": {
       "nome": "Nicolas Pereira de Morais",
-      "turma": "5º Ano A", "periodo": "Tarde", "professora": "Jana", "ano_letivo": "2026",
+      "turma": "5º Ano A",
+      "periodo": "Tarde",
+      "professora": "Jana",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "10",  "gl1": "8.9"},
-        "Ciências":          {"p1": "8.5", "gl1": "9.3"},
-        "História":          {"p1": "9.2", "gl1": "8.3"},
-        "Geografia":         {"p1": "7.8", "gl1": "9.5"},
-        "Matemática":        {"p1": "8.0", "gl1": "9.0"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "10",
+          "gl1": "8.9"
+        },
+        "Ciências": {
+          "p1": "8.5",
+          "gl1": "9.3"
+        },
+        "História": {
+          "p1": "9.2",
+          "gl1": "8.3"
+        },
+        "Geografia": {
+          "p1": "7.8",
+          "gl1": "9.5"
+        },
+        "Matemática": {
+          "p1": "8.0",
+          "gl1": "9.0"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     },
-
     "20266598": {
       "nome": "Thomas Nathan Silveira Couto",
-      "turma": "5º Ano A", "periodo": "Tarde", "professora": "Jana", "ano_letivo": "2026",
+      "turma": "5º Ano A",
+      "periodo": "Tarde",
+      "professora": "Jana",
+      "ano_letivo": "2026",
       "notas": {
-        "Língua Portuguesa": {"p1": "9.8", "gl1": "9.0"},
-        "Ciências":          {"p1": "7.6", "gl1": "10"},
-        "História":          {"p1": "9.4", "gl1": "9.5"},
-        "Geografia":         {"p1": "8.3", "gl1": "10"},
-        "Matemática":        {"p1": "9.8", "gl1": "9.7"},
-        "Arte":              {"p1": "10",  "gl1": "10"}
+        "Língua Portuguesa": {
+          "p1": "9.8",
+          "gl1": "9.0"
+        },
+        "Ciências": {
+          "p1": "7.6",
+          "gl1": "10"
+        },
+        "História": {
+          "p1": "9.4",
+          "gl1": "9.5"
+        },
+        "Geografia": {
+          "p1": "8.3",
+          "gl1": "10"
+        },
+        "Matemática": {
+          "p1": "9.8",
+          "gl1": "9.7"
+        },
+        "Arte": {
+          "p1": "10",
+          "gl1": "10"
+        }
       },
-      "frequencia": {"total_aulas": "", "total_faltas": ""}, "observacoes": ""
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20261001": {
+      "nome": "Clarice Lima da Silva",
+      "turma": "Infantil 1 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20261002": {
+      "nome": "Eduardo de Luna Rodrigues",
+      "turma": "Infantil 1 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20261003": {
+      "nome": "Serena Dantas Antonino",
+      "turma": "Infantil 1 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262001": {
+      "nome": "Arthur Henrique de Aquino Assunção",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262002": {
+      "nome": "Aurora de Souza Pereira Gomes",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262003": {
+      "nome": "Bernardo Nascimento Lins",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262004": {
+      "nome": "Davi Quintela Andrade",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262005": {
+      "nome": "Fanny Luíza Cavalcanti Amorim",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262006": {
+      "nome": "Gabriel Lucas da Silva Marques",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262007": {
+      "nome": "Heitor Gomes Cavalcanti",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262008": {
+      "nome": "João Guilherme Lira Marques",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262009": {
+      "nome": "Laura Alves de Macêdo",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262010": {
+      "nome": "Laura Correia Sales",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262011": {
+      "nome": "Ravi da Silva Esmeraldo",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262012": {
+      "nome": "Samuel Marcelino de Araújo",
+      "turma": "Infantil 2 – A",
+      "periodo": "Manhã",
+      "professora": "Vanessa",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20261101": {
+      "nome": "Francisco Santos Simões de Siqueira",
+      "turma": "Infantil 1 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20261102": {
+      "nome": "Gregório Matias de Andrade Gadêlha",
+      "turma": "Infantil 1 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20261103": {
+      "nome": "Maria Isadora Santos de Almeida",
+      "turma": "Infantil 1 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262101": {
+      "nome": "Bernardo Queiroz Mousinho",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262102": {
+      "nome": "Clarice Chaves Falcão",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262103": {
+      "nome": "Davi Costa Rego Germano",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262104": {
+      "nome": "Gabriel Leite Galindo Carvalho de França",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262105": {
+      "nome": "Isabel Woolley Bezerra Vilanova",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262106": {
+      "nome": "Joaquim de Jesus Ferreira Silva",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262107": {
+      "nome": "Maria Alice de Nadal Alves de Melo",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262108": {
+      "nome": "Maria Violet Tavares Guerreiro",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262109": {
+      "nome": "Samuel Violet Tavares Guerreiro",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262110": {
+      "nome": "Sarah Pedroza Afonso Ferreira de Menezes",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20262111": {
+      "nome": "Sofia Carvalho do Nascimento",
+      "turma": "Infantil 2 – B",
+      "periodo": "Tarde",
+      "professora": "Erika",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263001": {
+      "nome": "Gabriel de Souza Barboza",
+      "turma": "Infantil 3 – A",
+      "periodo": "Manhã",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263002": {
+      "nome": "Heitor de Freitas Cavalcanti",
+      "turma": "Infantil 3 – A",
+      "periodo": "Manhã",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263003": {
+      "nome": "João Felipe Mesquita Rodrigues",
+      "turma": "Infantil 3 – A",
+      "periodo": "Manhã",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263004": {
+      "nome": "Lucas Medeiros Ferreira Lima",
+      "turma": "Infantil 3 – A",
+      "periodo": "Manhã",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263005": {
+      "nome": "Manuela de Vasconcelos Siqueira",
+      "turma": "Infantil 3 – A",
+      "periodo": "Manhã",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263006": {
+      "nome": "Maria Cecília de Lira Souza",
+      "turma": "Infantil 3 – A",
+      "periodo": "Manhã",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263007": {
+      "nome": "Maria Letícia Guerra Sales",
+      "turma": "Infantil 3 – A",
+      "periodo": "Manhã",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263008": {
+      "nome": "Martin Lucas Azevedo Almeida",
+      "turma": "Infantil 3 – A",
+      "periodo": "Manhã",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263009": {
+      "nome": "Renê Oliveira Silva",
+      "turma": "Infantil 3 – A",
+      "periodo": "Manhã",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263101": {
+      "nome": "Emanuel José de Morais e Silva Santana",
+      "turma": "Infantil 3 – B",
+      "periodo": "Tarde",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263102": {
+      "nome": "Gabriel de Moura Marx",
+      "turma": "Infantil 3 – B",
+      "periodo": "Tarde",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263103": {
+      "nome": "Isadora Melo Rey Oliveira",
+      "turma": "Infantil 3 – B",
+      "periodo": "Tarde",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263104": {
+      "nome": "Larissa Aguiar Pedrosa de Melo",
+      "turma": "Infantil 3 – B",
+      "periodo": "Tarde",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263105": {
+      "nome": "Pedro Gael de Lira Guedes",
+      "turma": "Infantil 3 – B",
+      "periodo": "Tarde",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263106": {
+      "nome": "Rui Morais Corrêa de Araújo",
+      "turma": "Infantil 3 – B",
+      "periodo": "Tarde",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20263107": {
+      "nome": "Yuri Vieira Machado",
+      "turma": "Infantil 3 – B",
+      "periodo": "Tarde",
+      "professora": "Cilene",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264001": {
+      "nome": "Adam Aleixo Pereira",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264002": {
+      "nome": "Athos Cavalcanti de Barros Lima",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264003": {
+      "nome": "Elis Lima Bené Assis",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264004": {
+      "nome": "Elisa Magalhães Nogueira",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264005": {
+      "nome": "Gabriel Camilo Mattos Galvão",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264006": {
+      "nome": "Heloísa Rodrigues Vilela",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264007": {
+      "nome": "Leonardo Benício Gonçalo Coelho",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264008": {
+      "nome": "Maria Luísa Alves Souza",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264009": {
+      "nome": "Matteo Oliveira da Veiga Pessoa",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264010": {
+      "nome": "Mateus Bezerra Gusmão",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264011": {
+      "nome": "Miguel Cavalcanti de Albuquerque Rocha",
+      "turma": "Infantil 4 – A",
+      "periodo": "Manhã",
+      "professora": "Patrícia",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264101": {
+      "nome": "Ana Beatriz Sousa Moura Lima",
+      "turma": "Infantil 4 – B",
+      "periodo": "Tarde",
+      "professora": "Fabiana",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264102": {
+      "nome": "Helena Almeida Lucena Barbosa",
+      "turma": "Infantil 4 – B",
+      "periodo": "Tarde",
+      "professora": "Fabiana",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264103": {
+      "nome": "Manuela Lins Imbelloni",
+      "turma": "Infantil 4 – B",
+      "periodo": "Tarde",
+      "professora": "Fabiana",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264104": {
+      "nome": "Maria Celina Pedrosa Ribeiro Coelho",
+      "turma": "Infantil 4 – B",
+      "periodo": "Tarde",
+      "professora": "Fabiana",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20264105": {
+      "nome": "Paulo Henrique Araújo de Godoy Brito",
+      "turma": "Infantil 4 – B",
+      "periodo": "Tarde",
+      "professora": "Fabiana",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265001": {
+      "nome": "Anthony Angelim Soares",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265002": {
+      "nome": "Beatriz da Silva Santos",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265003": {
+      "nome": "Bernardo Falcão Melo Vasconcelos",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265004": {
+      "nome": "Guilherme Nunes Pereira",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265005": {
+      "nome": "Isabela Simões de Siqueira Cavalcante",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265006": {
+      "nome": "Joaquim Paraíso Campos de Araújo",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265007": {
+      "nome": "Júlia Bezerra Mariano",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265008": {
+      "nome": "Julia Gama Beltrão",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265009": {
+      "nome": "Maria Laura Costa Rocha",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265010": {
+      "nome": "Noah Pereira Parra Araujo",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265011": {
+      "nome": "Sofia de Araújo Duarte Ricardo",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265012": {
+      "nome": "Théo de Paula Vieira dos Anjos",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
+    },
+    "20265013": {
+      "nome": "Yasmin Angelim Soares",
+      "turma": "Infantil 5 – A",
+      "periodo": "Manhã",
+      "professora": "Andrea",
+      "ano_letivo": "2026",
+      "notas": {},
+      "frequencia": {
+        "total_aulas": "",
+        "total_faltas": ""
+      },
+      "observacoes": ""
     }
-
   }
 }
