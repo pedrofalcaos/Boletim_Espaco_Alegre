@@ -105,8 +105,21 @@ def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
         t = al.get('turma','Sem turma')
         turmas.setdefault(t, []).append((mat, al))
 
+    def _sort_turma(t: str):
+        import re
+        low = t.lower()
+        if low.startswith("infantil"):
+            m = re.search(r'(\d+)', t)
+            num = int(m.group(1)) if m else 99
+            letra = 0 if t.strip().endswith("A") else 1
+            return (0, num, letra)          # Infantil vem primeiro
+        m = re.search(r'(\d+)', t)
+        num = int(m.group(1)) if m else 99
+        letra = 0 if t.strip().endswith("A") else 1
+        return (1, num, letra)             # Fundamental vem depois
+
     turma_blocks = ""
-    for turma, lista in sorted(turmas.items()):
+    for turma, lista in sorted(turmas.items(), key=lambda x: _sort_turma(x[0])):
         rows = ""
         for i, (mat, al) in enumerate(lista, 1):
             nome = al['nome']
