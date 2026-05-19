@@ -308,6 +308,17 @@ async def resetar_banco(request: Request):
     return RedirectResponse("/admin?resetado=1", status_code=302)
 
 
+@app.post("/admin/seed-infantil")
+async def seed_infantil_route(request: Request):
+    """Importa alunos e professoras da Ed. Infantil — idempotente, seguro para rodar várias vezes."""
+    if not check_session(request):
+        return _redir_login()
+    from seed_infantil import run_seed
+    r = run_seed()
+    msg = f"{r['alunos']}+alunos+e+{r['professoras']}+professoras+importados"
+    return RedirectResponse(f"/admin?resetado=1&seed_msg={msg}", status_code=302)
+
+
 # ════════════════════════════════════════════════════════════════════════════
 #  FASE 2 — Professoras
 # ════════════════════════════════════════════════════════════════════════════
@@ -538,7 +549,8 @@ def _dados_alunos_turma(nome_prof: str, turma: str, ano_letivo: str = "2026") ->
 @app.get("/professora/login", response_class=HTMLResponse)
 async def prof_get_login(request: Request, erro: str = ""):
     user = get_session_user(request)
-    if user and user.get("role") in ("admin", "professora"):
+    # Apenas professoras já autenticadas pulam o login; admin sempre vê o formulário
+    if user and user.get("role") == "professora":
         return RedirectResponse("/professora", status_code=302)
     return professora_login_page(erro="1" in erro)
 

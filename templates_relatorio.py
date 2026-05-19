@@ -90,21 +90,61 @@ def relatorio_form_page(
   </div>
 </div>"""
 
+    # ── Campo de observações — sempre visível ──
+    _obs_style = ("width:100%;font-family:'Nunito',sans-serif;font-size:13px;color:#4a4a4a;"
+                  "padding:12px 14px;border:1.5px solid #dcdcd8;border-radius:9px;outline:none;"
+                  "resize:vertical;line-height:1.6;")
+    if is_readonly:
+        obs_html = f"""
+<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
+              margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
+    📝 Observações Pedagógicas
+  </div>
+  <p style="font-size:13px;color:#4a4a4a;line-height:1.7;white-space:pre-wrap;">{descricao or '—'}</p>
+</div>"""
+    else:
+        obs_html = f"""
+<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
+              margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
+    📝 Observações Pedagógicas
+    <span style="font-size:10px;font-weight:700;color:#aaa;margin-left:8px;">obrigatória para confirmar</span>
+  </div>
+  <textarea id="descricao_final" name="descricao_final" rows="6"
+    placeholder="Descreva o desenvolvimento do aluno: pontos fortes, áreas a desenvolver, comportamento, socialização, conquistas do semestre..."
+    style="{_obs_style}"
+    onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#dcdcd8'">{descricao}</textarea>
+</div>"""
+
+    _btn_salvar = """
+<button type="submit"
+  style="font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;
+         background:#f7f7f5;color:#2b3990;border:2px solid #2b3990;
+         border-radius:10px;padding:12px 28px;cursor:pointer;">
+  💾 Salvar Rascunho
+</button>"""
+
     # ── Sem temas configurados ──
     if not temas:
-        corpo = """
-<div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:12px;padding:24px;text-align:center;color:#c25b0d;font-size:14px;font-weight:700;">
-  ⚠️ Nenhum tema avaliativo cadastrado ainda.<br>
-  <span style="font-size:12px;font-weight:600;">Entre em contato com a coordenação para configurar os temas.</span>
+        aviso_temas = """
+<div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:12px;padding:18px;
+            margin-bottom:16px;color:#c25b0d;font-size:13px;font-weight:700;">
+  ⚠️ Nenhum tema avaliativo configurado para esta turma ainda.<br>
+  <span style="font-size:11px;font-weight:600;">O administrador precisa cadastrar os temas e configurar as turmas.</span>
 </div>"""
-        botoes = ""
+        if is_readonly:
+            corpo  = aviso_temas
+            botoes = ""
+        else:
+            corpo  = f'<form id="frm-relatorio" method="POST" action="{prefix}/salvar">\n{aviso_temas}'
+            botoes = f'<div style="display:flex;gap:12px;padding-bottom:32px;">{_btn_salvar}</div>\n</form>'
     elif is_readonly:
         # ── Modo leitura (concluido + professora) ──
-        corpo = _render_readonly(temas, respostas, descricao)
+        corpo  = _render_readonly(temas, respostas)
         botoes = ""
     else:
-        # ── Modo edição ──
-        corpo, botoes = _render_form(prefix, temas, respostas, descricao, status, is_admin)
+        corpo, botoes = _render_form(prefix, temas, respostas, status, is_admin)
 
     # ── Banner read-only ──
     banner_concluido = ""
@@ -165,6 +205,7 @@ def relatorio_form_page(
   {banner_concluido}
   {barra_html if not is_readonly else ""}
   {corpo}
+  {obs_html}
   {botoes}
 
 </div>
@@ -222,7 +263,8 @@ function confirmar() {{
 
 # ── Modo leitura ──────────────────────────────────────────────────────────────
 
-def _render_readonly(temas: list, respostas: dict, descricao: str) -> str:
+def _render_readonly(temas: list, respostas: dict) -> str:
+    """Retorna temas em modo leitura. Observações são exibidas pelo chamador."""
     secoes = ""
     for tema in temas:
         linhas = ""
@@ -241,22 +283,12 @@ def _render_readonly(temas: list, respostas: dict, descricao: str) -> str:
   </div>
   {linhas}
 </div>"""
-
-    desc_html = f"""
-<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
-              margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
-    💬 Descrição final do semestre
-  </div>
-  <p style="font-size:13px;color:#4a4a4a;line-height:1.7;white-space:pre-wrap;">{descricao or '—'}</p>
-</div>"""
-
-    return secoes + desc_html
+    return secoes
 
 
 # ── Modo edição ───────────────────────────────────────────────────────────────
 
-def _render_form(prefix, temas, respostas, descricao, status, is_admin):
+def _render_form(prefix, temas, respostas, status, is_admin):
     _INP_RD = ("position:absolute;opacity:0;width:0;height:0;")
 
     def _opcao(subtema_id: int, valor: str, resp_atual: str) -> str:
@@ -300,23 +332,8 @@ def _render_form(prefix, temas, respostas, descricao, status, is_admin):
   {linhas}
 </div>"""
 
-    desc_card = f"""
-<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
-              margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
-    💬 Descrição final do semestre
-    <span style="font-size:10px;font-weight:700;color:#aaa;margin-left:8px;">obrigatória para confirmar</span>
-  </div>
-  <textarea id="descricao_final" name="descricao_final" rows="5"
-    placeholder="Descreva o desenvolvimento geral do aluno no semestre: pontos fortes, áreas a desenvolver, observações relevantes..."
-    style="width:100%;font-family:'Nunito',sans-serif;font-size:13px;color:#4a4a4a;
-           padding:12px 14px;border:1.5px solid #dcdcd8;border-radius:9px;outline:none;resize:vertical;line-height:1.6;"
-    onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#dcdcd8'">{descricao}</textarea>
-</div>"""
-
     form_html = f"""<form id="frm-relatorio" method="POST" action="{prefix}/salvar">
-{secoes}
-{desc_card}"""
+{secoes}"""
 
     botoes = f"""
 <div style="display:flex;gap:12px;flex-wrap:wrap;padding-bottom:32px;">

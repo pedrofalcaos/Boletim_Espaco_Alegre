@@ -134,49 +134,44 @@ ALUNOS = [
 ]
 
 
+def run_seed() -> dict:
+    """
+    Executa o seed de forma idempotente.
+    Retorna contadores para exibição no admin.
+    """
+    existentes = {u["username"] for u in get_all_usuarios()}
+    prof_criadas = 0
+    for nome, username, senha in PROFESSORAS:
+        if username not in existentes:
+            create_usuario(username, senha, nome, role="professora")
+            prof_criadas += 1
+
+    alunos_criados = 0
+    for mat, nome_caps, turma, periodo, professora in ALUNOS:
+        if get_aluno(mat) is None:
+            upsert_aluno(mat, {
+                "nome":       _fmt(nome_caps),
+                "turma":      turma,
+                "periodo":    periodo,
+                "professora": professora,
+                "ano_letivo": "2026",
+                "notas":      {},
+                "frequencia": {"total_aulas": "", "total_faltas": ""},
+                "observacoes":"",
+            })
+            alunos_criados += 1
+
+    return {"professoras": prof_criadas, "alunos": alunos_criados}
+
+
 def main():
     print("=" * 56)
     print("  Seed - Educacao Infantil 2026 - Espaco Alegre")
     print("=" * 56)
-
-    # ── 1. Professoras ──────────────────────────────────────────
-    print("\n[PROFESSORAS] Cadastrando...")
-    existentes = {u["username"] for u in get_all_usuarios()}
-    criadas = 0
-    for nome, username, senha in PROFESSORAS:
-        if username in existentes:
-            print(f"  SKIP  {nome:<12} ({username}) - ja existe")
-        else:
-            create_usuario(username, senha, nome, role="professora")
-            print(f"  OK    {nome:<12} ({username}) - criada")
-            criadas += 1
-    print(f"  -> {criadas} nova(s) professora(s) cadastrada(s)")
-
-    # ── 2. Alunos ───────────────────────────────────────────────
-    print("\n[ALUNOS] Cadastrando...")
-    novos = atualizados = 0
-    for mat, nome_caps, turma, periodo, professora in ALUNOS:
-        nome = _fmt(nome_caps)
-        existia = get_aluno(mat) is not None
-        upsert_aluno(mat, {
-            "nome":       nome,
-            "turma":      turma,
-            "periodo":    periodo,
-            "professora": professora,
-            "ano_letivo": "2026",
-            "notas":      {},
-            "frequencia": {"total_aulas": "", "total_faltas": ""},
-            "observacoes":"",
-        })
-        if existia:
-            print(f"  SKIP  {mat} | {nome:<44} ({turma})")
-            atualizados += 1
-        else:
-            print(f"  OK    {mat} | {nome:<44} ({turma})")
-            novos += 1
-
-    print(f"\n  -> {novos} novo(s), {atualizados} ja existia(m)")
-    print(f"\n{'=' * 56}")
+    result = run_seed()
+    print(f"  Professoras criadas: {result['professoras']}")
+    print(f"  Alunos criados:      {result['alunos']}")
+    print("=" * 56)
     print(f"  Seed concluido: {len(ALUNOS)} alunos, {len(PROFESSORAS)} professoras")
     print(f"{'=' * 56}\n")
 

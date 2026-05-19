@@ -222,9 +222,31 @@ def admin_dashboard(alunos: dict, resetado: bool = False) -> str:
 
   {turma_blocks}
 
+  <!-- Importar Ed. Infantil -->
+  <div style="background:#e8eaf8;border:1px solid #b0b8e8;border-radius:12px;
+              padding:16px 20px;margin-top:24px;">
+    <div style="font-family:'Fredoka One',cursive;font-size:14px;color:var(--azul);margin-bottom:6px;">
+      📥 Importar alunos da Ed. Infantil
+    </div>
+    <p style="font-size:12px;color:#666;margin-bottom:12px;">
+      Importa os 74 alunos e 6 professoras da Ed. Infantil 2026.
+      <strong>Seguro para rodar várias vezes</strong> — não duplica registros existentes.
+      Use quando o banco ainda não tiver os alunos do Infantil (ex: após novo deploy no Railway).
+    </p>
+    <form method="POST" action="/admin/seed-infantil"
+          onsubmit="return confirm('Importar alunos da Ed. Infantil? Registros existentes não serão alterados.');">
+      <button type="submit"
+        style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;
+               background:var(--azul);color:#fff;border:none;border-radius:8px;
+               padding:10px 22px;cursor:pointer;">
+        📥 Importar Ed. Infantil
+      </button>
+    </form>
+  </div>
+
   <!-- Reset banco -->
   <div style="background:var(--vermelho-lt);border:1px solid #fecaca;border-radius:12px;
-              padding:16px 20px;margin-top:24px;">
+              padding:16px 20px;margin-top:16px;">
     <div style="font-family:'Fredoka One',cursive;font-size:14px;color:var(--vermelho);margin-bottom:6px;">
       ⚠️ Zona de perigo — Resetar banco de dados
     </div>
