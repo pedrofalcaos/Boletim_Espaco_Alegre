@@ -14,6 +14,7 @@ from db_relatorio import (
     create_subtema, delete_subtema,
     get_relatorio, get_relatorio_by_id, upsert_relatorio, update_relatorio,
     get_respostas, save_respostas,
+    update_subtema_turmas, get_temas_para_turma,
 )
 from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import admin_professoras_page, admin_temas_page, admin_relatorios_page
@@ -42,7 +43,7 @@ INDEX_HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Escola Espaço Alegre – Consulta de Boletim</title>
+<title>Escola Espaço Alegre – Portal do Responsável</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -54,7 +55,7 @@ body{font-family:'Nunito',sans-serif;
 .top img{height:64px;object-fit:contain;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;}
 .top h1{font-family:'Fredoka One',cursive;font-size:21px;color:#fff;}
 .top p{font-size:11.5px;color:#b0b8e8;margin-top:4px;}
-.body{padding:28px 32px 32px;}
+.body{padding:28px 32px 24px;}
 label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#aaa;margin-bottom:6px;}
 .inp-wrap{position:relative;margin-bottom:18px;}
 input[type=text]{width:100%;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;
@@ -71,7 +72,13 @@ input:not(:placeholder-shown)~.clr{display:block;}
 .erro{display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;
   padding:12px 16px;margin-top:14px;font-size:13px;color:#991b1b;font-weight:600;text-align:center;}
 .erro.show{display:block;}
-.footer{border-top:1px solid #f0f0ee;padding:13px 32px;text-align:center;font-size:11px;color:#ccc;}
+.divider{border-top:1px solid #f0f0ee;margin:20px 0 0;}
+.prof-link{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:16px 32px;text-decoration:none;color:#2b3990;font-size:13px;font-weight:800;
+  transition:background .15s;}
+.prof-link:hover{background:#f7f8ff;}
+.prof-link span{background:#e8eaf8;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:900;}
+.footer{border-top:1px solid #f0f0ee;padding:11px 32px;text-align:center;font-size:11px;color:#ccc;}
 .loading{display:none;text-align:center;padding:16px 0 2px;}
 .loading.show{display:block;}
 .spinner{width:26px;height:26px;border:3px solid #e8eaf8;border-top-color:#2b3990;
@@ -83,8 +90,8 @@ input:not(:placeholder-shown)~.clr{display:block;}
 <div class="card">
   <div class="top">
     <img src="/static/logo.jpg" alt="Escola Espaço Alegre">
-    <h1>Consulta de Boletim</h1>
-    <p>Digite a matrícula do aluno para visualizar o boletim</p>
+    <h1>Área do Responsável</h1>
+    <p>Informe a matrícula para acompanhar o desempenho do seu filho</p>
   </div>
   <div class="body">
     <form id="frm" onsubmit="buscar(event)">
@@ -95,11 +102,15 @@ input:not(:placeholder-shown)~.clr{display:block;}
                oninput="limpaErro()">
         <button type="button" class="clr" onclick="limpar()">✕</button>
       </div>
-      <button type="submit" class="btn">🔍 &nbsp;Ver Boletim</button>
+      <button type="submit" class="btn">🔍 &nbsp;Consultar</button>
     </form>
     <div class="loading" id="loading"><div class="spinner"></div><p style="font-size:12px;color:#aaa;">Buscando...</p></div>
     <div class="erro" id="erro">❌ Matrícula não encontrada. Verifique o número e tente novamente.</div>
   </div>
+  <div class="divider"></div>
+  <a href="/professora/login" class="prof-link">
+    👩‍🏫 &nbsp;Sou Professor(a) &nbsp;<span>Acessar →</span>
+  </a>
   <div class="footer">Escola Espaço Alegre &nbsp;|&nbsp; Ed. Infantil e Fundamental Anos Iniciais &nbsp;|&nbsp; Bilíngue &nbsp;|&nbsp; 2026</div>
 </div>
 <script>
@@ -409,6 +420,38 @@ async def excluir_subtema(request: Request, subtema_id: int):
     return RedirectResponse("/admin/temas?ok=Subtema+removido", status_code=302)
 
 
+@app.post("/admin/temas/{tema_id}/turmas")
+async def salvar_turmas_tema(request: Request, tema_id: int):
+    """Salva a configuração turma×subtema de um tema inteiro."""
+    if not check_session(request):
+        return _redir_login()
+
+    form = await request.form()
+    # Coleta todas as entradas: st_{subtema_id} → [turma1, turma2, ...]
+    mapa: dict = {}
+    for key, valor in form.multi_items():
+        if key.startswith("st_"):
+            try:
+                sid = int(key[3:])
+                mapa.setdefault(sid, []).append(valor)
+            except ValueError:
+                pass
+
+    # Atualiza cada subtema com as turmas selecionadas
+    for subtema_id, turmas in mapa.items():
+        update_subtema_turmas(subtema_id, turmas)
+
+    # Subtemas cujos checkboxes não vieram = nenhuma turma selecionada
+    temas = get_all_temas()
+    tema_atual = next((t for t in temas if t["id"] == tema_id), None)
+    if tema_atual:
+        for st in tema_atual.get("subtemas", []):
+            if st["id"] not in mapa:
+                update_subtema_turmas(st["id"], [])
+
+    return RedirectResponse("/admin/temas?ok=Configura%C3%A7%C3%A3o+de+turmas+salva", status_code=302)
+
+
 # ════════════════════════════════════════════════════════════════════════════
 #  FASE 3 — Área da Professora
 # ════════════════════════════════════════════════════════════════════════════
@@ -591,7 +634,8 @@ async def prof_relatorio_get(request: Request, matricula: str, semestre: int, ms
         return RedirectResponse("/professora", status_code=302)
 
     ano = aluno.get("ano_letivo", "2026")
-    temas = get_all_temas()
+    turma = aluno.get("turma", "")
+    temas = get_temas_para_turma(turma)  # só subtemas configurados para esta turma
 
     # Cria o relatório se não existir ainda
     relatorio = upsert_relatorio(matricula, semestre, user["user_id"], ano)
@@ -657,8 +701,9 @@ async def prof_relatorio_confirmar(request: Request, matricula: str, semestre: i
     respostas = _parse_respostas(form)
     descricao = form.get("descricao_final", "").strip()
 
-    # Validação server-side: todos os subtemas respondidos
-    temas = get_all_temas()
+    # Validação server-side: todos os subtemas da turma respondidos
+    turma = aluno.get("turma", "")
+    temas = get_temas_para_turma(turma)
     todos_ids = [st["id"] for t in temas for st in t.get("subtemas", [])]
     faltando  = [sid for sid in todos_ids if sid not in respostas or not respostas[sid]]
     if faltando:
@@ -824,7 +869,9 @@ async def admin_confirmar_relatorio(request: Request, rel_id: int):
     respostas = _parse_respostas(form)
     descricao = form.get("descricao_final", "").strip()
 
-    temas    = get_all_temas()
+    aluno_rel = get_aluno(relatorio["matricula"])
+    turma_rel = aluno_rel.get("turma", "") if aluno_rel else ""
+    temas    = get_temas_para_turma(turma_rel)
     todos_ids = [st["id"] for t in temas for st in t.get("subtemas", [])]
     faltando  = [sid for sid in todos_ids if sid not in respostas]
 

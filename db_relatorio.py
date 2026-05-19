@@ -8,6 +8,15 @@ from auth import hash_password, verify_password, ADMIN_USER, ADMIN_PASS
 DATABASE_URL = os.environ.get("DATABASE_URL")
 _lock = threading.Lock()
 
+# Turmas de Ed. Infantil — usadas no filtro de subtemas e na UI admin
+TURMAS_INFANTIL = [
+    "Infantil 1 – A", "Infantil 1 – B",
+    "Infantil 2 – A", "Infantil 2 – B",
+    "Infantil 3 – A", "Infantil 3 – B",
+    "Infantil 4 – A", "Infantil 4 – B",
+    "Infantil 5 – A",
+]
+
 
 # ══════════════════════════════════════════════════════════════════
 #  BACKEND  PostgreSQL
@@ -43,7 +52,8 @@ if DATABASE_URL:
             tema_id   INTEGER REFERENCES temas(id) ON DELETE CASCADE,
             descricao TEXT NOT NULL,
             ordem     INTEGER DEFAULT 0,
-            ativo     BOOLEAN DEFAULT TRUE
+            ativo     BOOLEAN DEFAULT TRUE,
+            turmas    JSONB DEFAULT '[]'
         );
 
         CREATE TABLE IF NOT EXISTS relatorios_semestrais (
@@ -105,6 +115,10 @@ if DATABASE_URL:
             try:
                 with conn.cursor() as cur:
                     cur.execute(_SCHEMA)
+                    # Migração: adiciona coluna turmas se não existir
+                    cur.execute(
+                        "ALTER TABLE subtemas ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'"
+                    )
                 conn.commit()
                 _seed_admin(conn)
             finally:
@@ -287,6 +301,37 @@ if DATABASE_URL:
             return ok
         finally:
             conn.close()
+
+    def update_subtema_turmas(subtema_id: int, turmas: list) -> bool:
+        """Define quais turmas este subtema avalia. Lista vazia = todas as turmas."""
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE subtemas SET turmas = %s WHERE id = %s",
+                    (json.dumps(turmas, ensure_ascii=False), subtema_id),
+                )
+                ok = cur.rowcount > 0
+            conn.commit()
+            return ok
+        finally:
+            conn.close()
+
+    def get_temas_para_turma(turma: str) -> list:
+        """Retorna temas com apenas os subtemas configurados para a turma."""
+        temas = get_all_temas()
+        result = []
+        for tema in temas:
+            subs = [
+                st for st in tema.get("subtemas", [])
+                if not st.get("turmas") or turma in st["turmas"]
+            ]
+            if subs:
+                t = dict(tema)
+                t["subtemas"] = subs
+                result.append(t)
+        return result
 
     # ── Relatórios Semestrais ─────────────────────────────────────────────────
 
@@ -568,10 +613,13 @@ else:
                 key=lambda t: (t.get("ordem", 0), t["id"]),
             )
             for tema in temas:
-                tema["subtemas"] = sorted(
-                    [dict(s) for s in db["subtemas"] if s["tema_id"] == tema["id"] and s.get("ativo", True)],
-                    key=lambda s: (s.get("ordem", 0), s["id"]),
-                )
+                subs = []
+                for s in db["subtemas"]:
+                    if s["tema_id"] == tema["id"] and s.get("ativo", True):
+                        sd = dict(s)
+                        sd.setdefault("turmas", [])  # compatibilidade com registros antigos
+                        subs.append(sd)
+                tema["subtemas"] = sorted(subs, key=lambda s: (s.get("ordem", 0), s["id"]))
             return temas
 
     def create_tema(nome: str, ordem: int = 0) -> dict:
@@ -607,7 +655,8 @@ else:
         with _lock:
             db = _load()
             new_id = _next_id(db, "subtemas")
-            st = {"id": new_id, "tema_id": tema_id, "descricao": descricao, "ordem": ordem, "ativo": True}
+            st = {"id": new_id, "tema_id": tema_id, "descricao": descricao,
+                  "ordem": ordem, "ativo": True, "turmas": []}
             db["subtemas"].append(st)
             _save(db)
             return st
@@ -621,6 +670,30 @@ else:
                     _save(db)
                     return True
             return False
+
+    def update_subtema_turmas(subtema_id: int, turmas: list) -> bool:
+        with _lock:
+            db = _load()
+            for s in db["subtemas"]:
+                if s["id"] == subtema_id:
+                    s["turmas"] = turmas
+                    _save(db)
+                    return True
+            return False
+
+    def get_temas_para_turma(turma: str) -> list:
+        temas = get_all_temas()
+        result = []
+        for tema in temas:
+            subs = [
+                st for st in tema.get("subtemas", [])
+                if not st.get("turmas") or turma in st["turmas"]
+            ]
+            if subs:
+                t = dict(tema)
+                t["subtemas"] = subs
+                result.append(t)
+        return result
 
     # ── Relatórios Semestrais ─────────────────────────────────────────────────
 
