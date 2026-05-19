@@ -171,7 +171,7 @@ def professora_dashboard(user: dict, turmas_data: list) -> str:
 #  LISTA DE ALUNOS DA TURMA
 # ════════════════════════════════════════════════════════════════════════
 
-def professora_turma_page(user: dict, turma: str, alunos: list) -> str:
+def professora_turma_page(user: dict, turma: str, alunos: list, msg: str = "") -> str:
     """
     alunos: lista de dicts com:
       matricula, nome, is_infantil, status_s1, status_s2, rel_id_s1, rel_id_s2
@@ -284,6 +284,8 @@ def professora_turma_page(user: dict, turma: str, alunos: list) -> str:
       Sair
     </a>
   </div>
+
+  {f'<div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:11px 16px;margin-bottom:16px;font-size:13px;color:#0a7c3e;font-weight:700;">✔ {msg}</div>' if msg else ""}
 
   <!-- Legenda (só Infantil) -->
   {"" if not infantil else """

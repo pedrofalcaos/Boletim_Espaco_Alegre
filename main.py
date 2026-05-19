@@ -12,15 +12,16 @@ from db_relatorio import (
     get_all_usuarios, create_usuario, delete_usuario,
     get_all_temas, create_tema, update_tema, delete_tema,
     create_subtema, delete_subtema,
-    get_relatorio, upsert_relatorio, update_relatorio,
+    get_relatorio, get_relatorio_by_id, upsert_relatorio, update_relatorio,
     get_respostas, save_respostas,
 )
 from templates import login_page, admin_dashboard, aluno_form
-from templates_admin_extras import admin_professoras_page, admin_temas_page
+from templates_admin_extras import admin_professoras_page, admin_temas_page, admin_relatorios_page
 from templates_professora import (
     professora_login_page, professora_dashboard, professora_turma_page, is_infantil
 )
 from templates_relatorio import relatorio_form_page
+from relatorio_print import gerar_relatorio_print_html
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -531,12 +532,12 @@ async def prof_dashboard(request: Request):
 
 
 @app.get("/professora/turma/{turma}", response_class=HTMLResponse)
-async def prof_turma(request: Request, turma: str):
+async def prof_turma(request: Request, turma: str, ok: str = ""):
     user = _check_prof(request)
     if not user:
         return _redir_prof_login()
     alunos = _dados_alunos_turma(user["nome"], turma)
-    return professora_turma_page(user, turma, alunos)
+    return professora_turma_page(user, turma, alunos, msg=ok)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -684,4 +685,177 @@ async def prof_relatorio_confirmar(request: Request, matricula: str, semestre: i
         f"/professora/turma/{turma_enc}?ok=Relat%C3%B3rio+de+{matricula}+confirmado+com+sucesso",
         status_code=302,
     )
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  FASE 5 — Painel de relatórios do admin + edição + impressão
+# ════════════════════════════════════════════════════════════════════════════
+
+def _painel_relatorios_data(turma_f: str = "", semestre_f: str = "", status_f: str = "", ano: str = "2026"):
+    """Agrega alunos de Ed. Infantil com status dos seus relatórios."""
+    all_alunos = get_all_alunos()
+
+    # Coleta turmas Infantil disponíveis (para o filtro)
+    turmas_inf = sorted({
+        al.get("turma", "") for al in all_alunos.values()
+        if is_infantil(al.get("turma", ""))
+    })
+
+    rows = []
+    pend_total = and_total = conc_total = 0
+
+    for mat, al in sorted(all_alunos.items(), key=lambda x: (x[1].get("turma",""), x[1].get("nome",""))):
+        turma = al.get("turma", "")
+        if not is_infantil(turma):
+            continue
+        if turma_f and turma != turma_f:
+            continue
+
+        rel1 = get_relatorio(mat, 1, ano)
+        rel2 = get_relatorio(mat, 2, ano)
+        s1   = rel1["status"] if rel1 else "pendente"
+        s2   = rel2["status"] if rel2 else "pendente"
+
+        # Filtro por semestre + status
+        if semestre_f == "1" and status_f and s1 != status_f:
+            continue
+        if semestre_f == "2" and status_f and s2 != status_f:
+            continue
+        if not semestre_f and status_f:
+            if s1 != status_f and s2 != status_f:
+                continue
+
+        # Contadores globais (sem filtro de status)
+        for s in (s1, s2):
+            if s == "concluido":
+                conc_total += 1
+            elif s == "em_andamento":
+                and_total += 1
+            else:
+                pend_total += 1
+
+        rows.append({
+            "matricula": mat,
+            "nome":      al.get("nome", ""),
+            "turma":     turma,
+            "professora":al.get("professora", ""),
+            "s1_status": s1,
+            "s1_id":     rel1["id"] if rel1 else None,
+            "s2_status": s2,
+            "s2_id":     rel2["id"] if rel2 else None,
+        })
+
+    contadores = {
+        "total":     len(rows),
+        "pendentes": pend_total,
+        "andamento": and_total,
+        "concluidos":conc_total,
+    }
+    return rows, turmas_inf, contadores
+
+
+@app.get("/admin/relatorios", response_class=HTMLResponse)
+async def admin_relatorios(
+    request: Request,
+    turma: str = "", semestre: str = "", status: str = "",
+    ok: str = "", erro: str = "",
+):
+    if not check_session(request):
+        return _redir_login()
+    rows, turmas_inf, cont = _painel_relatorios_data(turma, semestre, status)
+    filtros = {"turma": turma, "semestre": semestre, "status": status}
+    return admin_relatorios_page(rows, turmas_inf, filtros, cont, msg=ok, erro=erro)
+
+
+@app.get("/admin/relatorio/{rel_id}", response_class=HTMLResponse)
+async def admin_ver_relatorio(request: Request, rel_id: int, msg: str = "", erro: str = ""):
+    if not check_session(request):
+        return _redir_login()
+
+    relatorio = get_relatorio_by_id(rel_id)
+    if not relatorio:
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    aluno = get_aluno(relatorio["matricula"])
+    if not aluno:
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    temas    = get_all_temas()
+    respostas = get_respostas(rel_id)
+    user_admin = get_session_user(request)
+    prefix   = f"/admin/relatorio/{rel_id}"
+
+    return relatorio_form_page(
+        user_admin, aluno, relatorio["matricula"], relatorio["semestre"],
+        relatorio, temas, respostas, msg=msg, erro=erro, form_prefix=prefix,
+    )
+
+
+@app.post("/admin/relatorio/{rel_id}/salvar")
+async def admin_salvar_relatorio(request: Request, rel_id: int):
+    if not check_session(request):
+        return _redir_login()
+
+    relatorio = get_relatorio_by_id(rel_id)
+    if not relatorio:
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    form      = dict(await request.form())
+    respostas = _parse_respostas(form)
+    descricao = form.get("descricao_final", "").strip()
+    novo_status = "em_andamento" if relatorio["status"] == "pendente" else relatorio["status"]
+
+    save_respostas(rel_id, respostas)
+    update_relatorio(rel_id, novo_status, descricao)
+
+    return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Alterações+salvas+com+sucesso", status_code=302)
+
+
+@app.post("/admin/relatorio/{rel_id}/confirmar")
+async def admin_confirmar_relatorio(request: Request, rel_id: int):
+    if not check_session(request):
+        return _redir_login()
+
+    relatorio = get_relatorio_by_id(rel_id)
+    if not relatorio:
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    form      = dict(await request.form())
+    respostas = _parse_respostas(form)
+    descricao = form.get("descricao_final", "").strip()
+
+    temas    = get_all_temas()
+    todos_ids = [st["id"] for t in temas for st in t.get("subtemas", [])]
+    faltando  = [sid for sid in todos_ids if sid not in respostas]
+
+    if faltando:
+        save_respostas(rel_id, respostas)
+        update_relatorio(rel_id, "em_andamento", descricao)
+        return RedirectResponse(
+            f"/admin/relatorio/{rel_id}?erro=Preencha+todos+os+subtemas+antes+de+confirmar",
+            status_code=302,
+        )
+
+    save_respostas(rel_id, respostas)
+    update_relatorio(rel_id, "concluido", descricao)
+    return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+confirmado+com+sucesso", status_code=302)
+
+
+@app.get("/admin/relatorio/{rel_id}/imprimir", response_class=HTMLResponse)
+async def admin_imprimir_relatorio(request: Request, rel_id: int):
+    if not check_session(request):
+        return _redir_login()
+
+    relatorio = get_relatorio_by_id(rel_id)
+    if not relatorio:
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    aluno    = get_aluno(relatorio["matricula"])
+    temas    = get_all_temas()
+    respostas = get_respostas(rel_id)
+
+    return HTMLResponse(gerar_relatorio_print_html(
+        aluno, relatorio["matricula"], relatorio["semestre"],
+        relatorio, temas, respostas,
+    ))
 

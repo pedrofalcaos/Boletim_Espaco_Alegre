@@ -221,3 +221,167 @@ def admin_temas_page(temas: list, msg: str = "", erro: str = "") -> str:
   {temas_html}
 </div>"""
     return page_shell("Temas Avaliativos — Escola Espaço Alegre", body)
+
+
+# ════════════════════════════════════════════════════════════════════════
+#  PAINEL DE RELATÓRIOS SEMESTRAIS (ADMIN)
+# ════════════════════════════════════════════════════════════════════════
+
+_ST = {
+    "pendente":     ("#b52222", "#fef2f2", "#fecaca", "🔴", "Pendente"),
+    "em_andamento": ("#c25b0d", "#fef0e4", "#f8d4a8", "🟡", "Em andamento"),
+    "concluido":    ("#0a7c3e", "#e3f5ec", "#a8ddc0", "🟢", "Concluído"),
+}
+
+def _pill_status(status: str, rel_id: int | None = None) -> str:
+    cor, bg, bd, ico, label = _ST.get(status, _ST["pendente"])
+    pill = (f'<span style="background:{bg};border:1px solid {bd};color:{cor};'
+            f'font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;'
+            f'white-space:nowrap;">{ico} {label}</span>')
+    if rel_id:
+        return f'<a href="/admin/relatorio/{rel_id}" style="text-decoration:none;">{pill}</a>'
+    return pill
+
+
+def admin_relatorios_page(
+    rows: list,           # lista de dicts: nome, turma, professora, s1_status, s1_id, s2_status, s2_id
+    turmas_disponiveis: list,
+    filtros: dict,        # {turma, semestre, status}
+    contadores: dict,     # {total, pendentes, andamento, concluidos}
+    msg: str = "",
+    erro: str = "",
+) -> str:
+    nav   = admin_nav("relatorios")
+    aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
+
+    # ── Cards de resumo ──
+    resumo = f"""
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+  <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.07);text-align:center;">
+    <div style="font-size:28px;font-weight:900;color:#2b3990;">{contadores['total']}</div>
+    <div style="font-size:11px;color:#aaa;font-weight:700;margin-top:2px;">Total de alunos</div>
+  </div>
+  <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px 18px;text-align:center;">
+    <div style="font-size:28px;font-weight:900;color:#b52222;">{contadores['pendentes']}</div>
+    <div style="font-size:11px;color:#b52222;font-weight:700;margin-top:2px;">🔴 Pendentes</div>
+  </div>
+  <div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:12px;padding:16px 18px;text-align:center;">
+    <div style="font-size:28px;font-weight:900;color:#c25b0d;">{contadores['andamento']}</div>
+    <div style="font-size:11px;color:#c25b0d;font-weight:700;margin-top:2px;">🟡 Em andamento</div>
+  </div>
+  <div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:12px;padding:16px 18px;text-align:center;">
+    <div style="font-size:28px;font-weight:900;color:#0a7c3e;">{contadores['concluidos']}</div>
+    <div style="font-size:11px;color:#0a7c3e;font-weight:700;margin-top:2px;">🟢 Concluídos</div>
+  </div>
+</div>"""
+
+    # ── Filtros ──
+    def _opt_turma(val, label):
+        sel = "selected" if filtros.get("turma","") == val else ""
+        return f'<option value="{val}" {sel}>{label}</option>'
+
+    def _opt_sem(val, label):
+        sel = "selected" if str(filtros.get("semestre","")) == str(val) else ""
+        return f'<option value="{val}" {sel}>{label}</option>'
+
+    def _opt_st(val, label):
+        sel = "selected" if filtros.get("status","") == val else ""
+        return f'<option value="{val}" {sel}>{label}</option>'
+
+    opts_turma = _opt_turma("", "Todas as turmas") + "".join(_opt_turma(t, t) for t in turmas_disponiveis)
+    opts_sem   = _opt_sem("", "1º e 2º Sem.") + _opt_sem("1", "1º Semestre") + _opt_sem("2", "2º Semestre")
+    opts_st    = (_opt_st("", "Todos os status") + _opt_st("pendente", "🔴 Pendente")
+                  + _opt_st("em_andamento", "🟡 Em andamento") + _opt_st("concluido", "🟢 Concluído"))
+
+    filtros_card = _card(f"""
+<form method="GET" action="/admin/relatorios"
+      style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+  <div style="flex:1;min-width:180px;">
+    <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#aaa;display:block;margin-bottom:4px;">Turma</label>
+    <select name="turma" style="{_INP}background:#fff;">
+      {opts_turma}
+    </select>
+  </div>
+  <div style="min-width:140px;">
+    <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#aaa;display:block;margin-bottom:4px;">Semestre</label>
+    <select name="semestre" style="{_INP}background:#fff;">
+      {opts_sem}
+    </select>
+  </div>
+  <div style="min-width:160px;">
+    <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#aaa;display:block;margin-bottom:4px;">Status</label>
+    <select name="status" style="{_INP}background:#fff;">
+      {opts_st}
+    </select>
+  </div>
+  <button type="submit" style="{_BTN_AZ}">Filtrar</button>
+  <a href="/admin/relatorios" style="{_BTN_CINZA}">Limpar</a>
+</form>""")
+
+    # ── Tabela de alunos ──
+    sem_filtro = str(filtros.get("semestre", ""))
+    mostrar_s1 = sem_filtro in ("", "1")
+    mostrar_s2 = sem_filtro in ("", "2")
+
+    if rows:
+        th_s1 = '<th style="padding:9px 12px;text-align:center;">1º Semestre</th>' if mostrar_s1 else ""
+        th_s2 = '<th style="padding:9px 12px;text-align:center;">2º Semestre</th>' if mostrar_s2 else ""
+
+        linhas = ""
+        for r in rows:
+            td_s1 = ""
+            td_s2 = ""
+            if mostrar_s1:
+                pill = _pill_status(r["s1_status"], r.get("s1_id"))
+                imp  = f'<a href="/admin/relatorio/{r["s1_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s1_id") else ""
+                td_s1 = f'<td style="padding:9px 12px;text-align:center;">{pill}{imp}</td>'
+            if mostrar_s2:
+                pill = _pill_status(r["s2_status"], r.get("s2_id"))
+                imp  = f'<a href="/admin/relatorio/{r["s2_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s2_id") else ""
+                td_s2 = f'<td style="padding:9px 12px;text-align:center;">{pill}{imp}</td>'
+
+            linhas += f"""
+<tr style="border-bottom:.5px solid #f0f0ee;">
+  <td style="padding:9px 12px;font-weight:800;color:#2b3990;">{r['nome']}</td>
+  <td style="padding:9px 12px;font-size:12px;color:#555;">{r['turma']}</td>
+  <td style="padding:9px 12px;font-size:12px;color:#888;">{r['professora']}</td>
+  {td_s1}
+  {td_s2}
+</tr>"""
+
+        tabela_html = _card(f"""
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  <thead>
+    <tr style="background:#e8eaf8;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#2b3990;">
+      <th style="padding:9px 12px;text-align:left;">Aluno</th>
+      <th style="padding:9px 12px;text-align:left;">Turma</th>
+      <th style="padding:9px 12px;text-align:left;">Professora</th>
+      {th_s1}
+      {th_s2}
+    </tr>
+  </thead>
+  <tbody>{linhas}</tbody>
+</table>
+</div>""")
+    else:
+        tabela_html = _card('<p style="text-align:center;color:#aaa;padding:24px;">Nenhum aluno de Ed. Infantil encontrado com esses filtros.</p>')
+
+    body = f"""
+<div style="max-width:1000px;margin:0 auto;padding:24px 16px;">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
+    <img src="/static/logo.jpg" style="height:44px;object-fit:contain;">
+    <div style="flex:1;">
+      <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Relatórios Semestrais</h1>
+      <p style="font-size:12px;color:#888;">Ed. Infantil — {contadores['total']} aluno(s)</p>
+    </div>
+    <a href="/admin/logout" style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;padding:9px 16px;border-radius:10px;border:1px solid #dcdcd8;">Sair</a>
+  </div>
+
+  {nav}
+  {aviso}
+  {resumo}
+  {filtros_card}
+  {tabela_html}
+</div>"""
+    return page_shell("Relatórios Semestrais — Escola Espaço Alegre", body)

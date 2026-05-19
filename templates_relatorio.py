@@ -46,6 +46,7 @@ def relatorio_form_page(
     respostas: dict,     # {subtema_id: resposta_str}
     msg: str = "",
     erro: str = "",
+    form_prefix: str = None,   # ex: "/admin/relatorio/42" para rotas do admin
 ) -> str:
     nome_aluno   = aluno.get("nome", "")
     turma        = aluno.get("turma", "")
@@ -59,6 +60,7 @@ def relatorio_form_page(
     is_admin     = user.get("role") == "admin"
     is_readonly  = (status == "concluido") and not is_admin
     nome_prof    = user.get("nome", "")
+    prefix       = form_prefix or f"/professora/relatorio/{matricula}/{semestre}"
 
     total_subtemas = sum(len(t.get("subtemas", [])) for t in temas)
     respondidos    = sum(1 for sid in respostas if respostas[sid])
@@ -102,7 +104,7 @@ def relatorio_form_page(
         botoes = ""
     else:
         # ── Modo edição ──
-        corpo, botoes = _render_form(matricula, semestre, temas, respostas, descricao, status, is_admin)
+        corpo, botoes = _render_form(prefix, temas, respostas, descricao, status, is_admin)
 
     # ── Banner read-only ──
     banner_concluido = ""
@@ -211,7 +213,7 @@ function confirmar() {{
   }}
   if (!confirm('Confirmar o relatório de {nome_aluno}?\\n\\nApós confirmar, você não poderá mais editar.')) return;
   var frm = document.getElementById('frm-relatorio');
-  frm.action = '/professora/relatorio/{matricula}/{semestre}/confirmar';
+  frm.action = '{prefix}/confirmar';
   frm.submit();
 }}
 </script>"""
@@ -254,7 +256,7 @@ def _render_readonly(temas: list, respostas: dict, descricao: str) -> str:
 
 # ── Modo edição ───────────────────────────────────────────────────────────────
 
-def _render_form(matricula, semestre, temas, respostas, descricao, status, is_admin):
+def _render_form(prefix, temas, respostas, descricao, status, is_admin):
     _INP_RD = ("position:absolute;opacity:0;width:0;height:0;")
 
     def _opcao(subtema_id: int, valor: str, resp_atual: str) -> str:
@@ -312,7 +314,7 @@ def _render_form(matricula, semestre, temas, respostas, descricao, status, is_ad
     onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#dcdcd8'">{descricao}</textarea>
 </div>"""
 
-    form_html = f"""<form id="frm-relatorio" method="POST" action="/professora/relatorio/{matricula}/{semestre}/salvar">
+    form_html = f"""<form id="frm-relatorio" method="POST" action="{prefix}/salvar">
 {secoes}
 {desc_card}"""
 
