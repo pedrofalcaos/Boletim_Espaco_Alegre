@@ -21,7 +21,7 @@ from db_relatorio import (
 from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import (
     admin_professoras_page, admin_temas_page, admin_relatorios_page,
-    admin_aluno_relatorios_page,
+    admin_aluno_relatorios_page, aluno_infantil_form,
 )
 from templates_professora import (
     professora_login_page, professora_dashboard, professora_turma_page, is_infantil
@@ -307,6 +307,30 @@ async def excluir_aluno(request: Request, matricula: str):
         return _redir_login()
     delete_aluno(matricula)
     return RedirectResponse("/admin", status_code=302)
+
+@app.get("/admin/aluno/{matricula}/editar-infantil", response_class=HTMLResponse)
+async def editar_aluno_infantil(request: Request, matricula: str, ok: str = ""):
+    if not check_session(request):
+        return _redir_login()
+    al = get_aluno(matricula)
+    if not al:
+        return RedirectResponse("/admin", status_code=302)
+    turma = al.get("turma", "")
+    temas = get_temas_para_turma(turma)
+    msg = "Observações salvas com sucesso!" if ok else ""
+    return aluno_infantil_form(matricula, al, temas, msg=msg)
+
+@app.post("/admin/aluno/{matricula}/editar-infantil/salvar")
+async def salvar_aluno_infantil(request: Request, matricula: str):
+    if not check_session(request):
+        return _redir_login()
+    al = get_aluno(matricula)
+    if not al:
+        return RedirectResponse("/admin", status_code=302)
+    form = dict(await request.form())
+    al["observacoes"] = form.get("observacoes", "").strip()
+    upsert_aluno(matricula, al)
+    return RedirectResponse(f"/admin/aluno/{matricula}/editar-infantil?ok=1", status_code=302)
 
 @app.post("/admin/resetar")
 async def resetar_banco(request: Request):

@@ -635,3 +635,123 @@ def admin_aluno_relatorios_page(aluno: dict, matricula: str, rel1: dict | None, 
   {_sem_card(2, rel2)}
 </div>"""
     return page_shell(f"Relatórios — {nome}", body)
+
+
+# ════════════════════════════════════════════════════════════════════════
+#  PÁGINA DE EDIÇÃO DO ALUNO INFANTIL (admin)
+# ════════════════════════════════════════════════════════════════════════
+
+def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "") -> str:
+    nome      = aluno.get("nome", "")
+    turma     = aluno.get("turma", "")
+    periodo   = aluno.get("periodo", "")
+    professora= aluno.get("professora", "")
+    ano       = aluno.get("ano_letivo", "2026")
+    obs       = aluno.get("observacoes", "")
+
+    msg_html = _msg_ok(msg) if msg else ""
+
+    # ── Subtemas por tema ──
+    if not temas:
+        subtemas_html = """
+<div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:12px;padding:20px;
+            color:#c25b0d;font-size:13px;font-weight:700;text-align:center;">
+  ⚠️ Nenhum tema cadastrado para esta turma.<br>
+  <span style="font-size:11px;font-weight:600;">Acesse <strong>Temas Avaliativos</strong> no menu para configurar.</span>
+</div>"""
+    else:
+        secoes = ""
+        for tema in temas:
+            linhas = ""
+            for st in tema.get("subtemas", []):
+                linhas += f"""
+<div style="padding:8px 0;border-bottom:.5px solid #f0f0ee;font-size:13px;color:#4a4a4a;">
+  • {st['descricao']}
+</div>"""
+            secoes += f"""
+<div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:14px;color:#2b3990;
+              margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f7d800;">
+    🏷️ {tema['nome']}
+    <span style="font-size:11px;font-family:'Nunito',sans-serif;font-weight:700;color:#aaa;margin-left:6px;">
+      ({len(tema.get('subtemas',[]))} subtemas)
+    </span>
+  </div>
+  {linhas}
+</div>"""
+        subtemas_html = secoes
+
+    # ── Campo de observações ──
+    inp_s = ("width:100%;font-family:'Nunito',sans-serif;font-size:13px;color:#4a4a4a;"
+             "padding:12px 14px;border:1.5px solid #dcdcd8;border-radius:9px;outline:none;"
+             "resize:vertical;line-height:1.6;")
+    obs_html = f"""
+<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:18px;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
+              margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
+    📝 Observações
+    <span style="font-size:10px;font-weight:700;color:#aaa;margin-left:8px;">
+      anotações livres durante o semestre
+    </span>
+  </div>
+  <textarea name="observacoes" rows="6"
+    placeholder="Anote o desenvolvimento do aluno, conquistas, pontos de atenção..."
+    style="{inp_s}"
+    onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#dcdcd8'">{obs}</textarea>
+</div>"""
+
+    body = f"""
+<div style="max-width:820px;margin:0 auto;padding:24px 16px;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <a href="/admin" style="background:#e8eaf8;color:#2b3990;font-family:'Nunito',sans-serif;
+       font-weight:800;font-size:12px;padding:8px 14px;border-radius:8px;margin-top:2px;">
+      ← Painel
+    </a>
+    <div style="flex:1;">
+      <h1 style="font-family:'Fredoka One',cursive;font-size:20px;color:#2b3990;">{nome}</h1>
+      <div style="font-size:12px;color:#aaa;margin-top:3px;">
+        {turma} &nbsp;·&nbsp; {periodo} &nbsp;·&nbsp; Profª {professora}
+        &nbsp;·&nbsp; Matrícula {matricula} &nbsp;·&nbsp; {ano}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a href="/admin/aluno/{matricula}/relatorios"
+         style="background:#e3f5ec;color:#0a7c3e;font-family:'Nunito',sans-serif;
+                font-weight:800;font-size:12px;padding:8px 14px;border-radius:8px;white-space:nowrap;">
+        📋 Relatórios
+      </a>
+      <a href="/admin/logout" style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;
+         font-weight:700;font-size:12px;padding:8px 14px;border-radius:9px;border:1px solid #dcdcd8;">
+        Sair
+      </a>
+    </div>
+  </div>
+
+  {msg_html}
+
+  <!-- Subtemas -->
+  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
+              margin-bottom:12px;">
+    🏷️ Temas e Subtemas da Turma
+  </div>
+  {subtemas_html}
+
+  <!-- Observações (sempre aberto) -->
+  <div style="margin-top:20px;">
+    <form method="POST" action="/admin/aluno/{matricula}/editar-infantil/salvar">
+      {obs_html}
+      <button type="submit"
+        style="font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;
+               background:#2b3990;color:#fff;border:none;border-radius:10px;
+               padding:12px 32px;cursor:pointer;">
+        💾 Salvar Observações
+      </button>
+    </form>
+  </div>
+
+</div>"""
+    return page_shell(f"Editar — {nome}", body)

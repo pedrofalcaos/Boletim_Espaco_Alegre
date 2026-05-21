@@ -164,7 +164,8 @@ def admin_dashboard(alunos: dict, resetado: bool = False, rel_status: dict = Non
   <td style="font-size:12px;color:#888;">{prof}</td>
   <td style="text-align:center;">{badge_html}</td>
   <td style="text-align:center;white-space:nowrap;">
-    <a href="/admin/aluno/{mat}" style="background:var(--azul-lt);color:var(--azul);
+    <a href="/admin/aluno/{mat}{'/editar-infantil' if e_infantil else ''}"
+       style="background:var(--azul-lt);color:var(--azul);
        font-size:11px;font-weight:800;padding:4px 12px;border-radius:7px;display:inline-block;">
       ✏️ Editar
     </a>
