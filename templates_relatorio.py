@@ -1,12 +1,18 @@
 """Formulário de preenchimento e visualização do Relatório Semestral da Ed. Infantil."""
 from templates import page_shell
 
-_OPCOES = ["Sim", "Não", "Em desenvolvimento"]
+_OPCOES = ["CA", "CC", "ED"]
+
+_LEGENDA = {
+    "CA": "Com Autonomia",
+    "CC": "Com Colaboração",
+    "ED": "Em Desenvolvimento",
+}
 
 _COR_OPCAO = {
-    "Sim":               ("#0a7c3e", "#e3f5ec", "#a8ddc0"),
-    "Não":               ("#b52222", "#fef2f2", "#fecaca"),
-    "Em desenvolvimento":("#c25b0d", "#fef0e4", "#f8d4a8"),
+    "CA": ("#0a7c3e", "#e3f5ec", "#a8ddc0"),
+    "CC": ("#2b3990", "#e8eaf8", "#b0b8e8"),
+    "ED": ("#c25b0d", "#fef0e4", "#f8d4a8"),
 }
 
 _STATUS_LABEL = {
@@ -27,9 +33,10 @@ def _badge_resposta(resp: str) -> str:
     if not resp:
         return '<span style="color:#ccc;font-size:12px;">— não respondido</span>'
     cor, bg, borda = _COR_OPCAO.get(resp, ("#888", "#f5f5f5", "#ddd"))
+    label = _LEGENDA.get(resp, resp)
     return (f'<span style="background:{bg};color:{cor};border:1px solid {borda};'
             f'font-size:12px;font-weight:800;padding:3px 12px;border-radius:20px;">'
-            f'{resp}</span>')
+            f'{resp} — {label}</span>')
 
 
 # ════════════════════════════════════════════════════════════════════════
@@ -72,6 +79,26 @@ def relatorio_form_page(
         aviso = f'<div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:11px 16px;margin-bottom:18px;font-size:13px;color:#0a7c3e;font-weight:700;">✔ {msg}</div>'
     elif erro:
         aviso = f'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:11px 16px;margin-bottom:18px;font-size:13px;color:#b52222;font-weight:700;">✖ {erro}</div>'
+
+    # ── Legenda de avaliação ──
+    legenda_html = """
+<div style="background:#fff;border-radius:12px;padding:14px 20px;margin-bottom:16px;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+  <span style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;
+               letter-spacing:.5px;white-space:nowrap;margin-right:4px;">Legenda:</span>
+  <span style="background:#e3f5ec;color:#0a7c3e;border:1px solid #a8ddc0;
+               font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;white-space:nowrap;">
+    CA — Com Autonomia
+  </span>
+  <span style="background:#e8eaf8;color:#2b3990;border:1px solid #b0b8e8;
+               font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;white-space:nowrap;">
+    CC — Com Colaboração
+  </span>
+  <span style="background:#fef0e4;color:#c25b0d;border:1px solid #f8d4a8;
+               font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;white-space:nowrap;">
+    ED — Em Desenvolvimento
+  </span>
+</div>"""
 
     # ── Barra de progresso ──
     cor_barra = "#0a7c3e" if pct == 100 else ("#c25b0d" if pct > 0 else "#dcdcd8")
@@ -203,6 +230,7 @@ def relatorio_form_page(
 
   {aviso}
   {banner_concluido}
+  {legenda_html}
   {barra_html if not is_readonly else ""}
   {corpo}
   {obs_html}
@@ -359,9 +387,9 @@ def _render_form(prefix, temas, respostas, status, is_admin):
     pill_js = f"""
 <script>
 var _opcoes = {pill_js_vals};
-var _corAtivo = {{"Sim":"#0a7c3e","Não":"#b52222","Em desenvolvimento":"#c25b0d"}};
-var _bgAtivo  = {{"Sim":"#e3f5ec","Não":"#fef2f2","Em desenvolvimento":"#fef0e4"}};
-var _bdAtivo  = {{"Sim":"#a8ddc0","Não":"#fecaca","Em desenvolvimento":"#f8d4a8"}};
+var _corAtivo = {{"CA":"#0a7c3e","CC":"#2b3990","ED":"#c25b0d"}};
+var _bgAtivo  = {{"CA":"#e3f5ec","CC":"#e8eaf8","ED":"#fef0e4"}};
+var _bdAtivo  = {{"CA":"#a8ddc0","CC":"#b0b8e8","ED":"#f8d4a8"}};
 function updatePills(sid) {{
   _opcoes.forEach(function(v) {{
     var key = v.replace(/ /g,'_');

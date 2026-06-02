@@ -1,9 +1,15 @@
 """HTML otimizado para impressão/PDF do Relatório Semestral da Ed. Infantil."""
 
 _COR_RESP = {
-    "Sim":               ("#0a7c3e", "#e3f5ec"),
-    "Não":               ("#b52222", "#fef2f2"),
-    "Em desenvolvimento":("#c25b0d", "#fef0e4"),
+    "CA": ("#0a7c3e", "#e3f5ec"),
+    "CC": ("#2b3990", "#e8eaf8"),
+    "ED": ("#c25b0d", "#fef0e4"),
+}
+
+_LEGENDA_RESP = {
+    "CA": "Com Autonomia",
+    "CC": "Com Colaboração",
+    "ED": "Em Desenvolvimento",
 }
 
 
@@ -36,7 +42,7 @@ def gerar_relatorio_print_html(
         for i, st in enumerate(subtemas, 1):
             resp = respostas.get(st["id"], "")
             cor, bg = _COR_RESP.get(resp, ("#888", "#f5f5f5"))
-            resp_label = resp if resp else "Não respondido"
+            resp_label = f"{resp} — {_LEGENDA_RESP[resp]}" if resp in _LEGENDA_RESP else "Não respondido"
             linhas += f"""
 <tr style="border-bottom:1px solid #eee;">
   <td style="padding:6px 10px;font-size:11px;color:#555;width:28px;text-align:center;">{i}</td>
@@ -180,6 +186,25 @@ body{{font-family:'Nunito',sans-serif;background:#fff;color:#333;}}
       <span style="font-size:11px;color:#888;">Matrícula: <strong>{matricula}</strong></span>
       {confirmado_info}
     </div>
+  </div>
+
+  <!-- Legenda de avaliação -->
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;
+              padding:10px 14px;background:#f7f7f5;border-radius:8px;border:1px solid #e0e0e0;">
+    <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+                 color:#aaa;white-space:nowrap;margin-right:4px;">Legenda:</span>
+    <span style="background:#e3f5ec;color:#0a7c3e;font-size:10px;font-weight:800;
+                 padding:2px 10px;border-radius:12px;border:1px solid #a8ddc0;white-space:nowrap;">
+      CA — Com Autonomia
+    </span>
+    <span style="background:#e8eaf8;color:#2b3990;font-size:10px;font-weight:800;
+                 padding:2px 10px;border-radius:12px;border:1px solid #b0b8e8;white-space:nowrap;">
+      CC — Com Colaboração
+    </span>
+    <span style="background:#fef0e4;color:#c25b0d;font-size:10px;font-weight:800;
+                 padding:2px 10px;border-radius:12px;border:1px solid #f8d4a8;white-space:nowrap;">
+      ED — Em Desenvolvimento
+    </span>
   </div>
 
   <!-- Temas e subtemas -->
