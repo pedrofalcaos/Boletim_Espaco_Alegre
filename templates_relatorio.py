@@ -69,7 +69,11 @@ def relatorio_form_page(
     nome_prof    = user.get("nome", "")
     prefix       = form_prefix or f"/professora/relatorio/{matricula}/{semestre}"
 
-    total_subtemas = sum(len(t.get("subtemas", [])) for t in temas)
+    # temas é agora lista de tópicos: [{id, nome, temas:[{id, nome, subtemas:[...]}]}]
+    total_subtemas = sum(
+        len(t.get("subtemas", []))
+        for tp in temas for t in tp.get("temas", [])
+    )
     respondidos    = sum(1 for sid in respostas if respostas[sid])
     pct            = int(respondidos / total_subtemas * 100) if total_subtemas else 0
 
@@ -292,24 +296,33 @@ function confirmar() {{
 # ── Modo leitura ──────────────────────────────────────────────────────────────
 
 def _render_readonly(temas: list, respostas: dict) -> str:
-    """Retorna temas em modo leitura. Observações são exibidas pelo chamador."""
+    """Renderiza Tópico→Tema→Subtema em modo leitura. temas é lista de tópicos."""
     secoes = ""
-    for tema in temas:
-        linhas = ""
-        for st in tema.get("subtemas", []):
-            resp = respostas.get(st["id"], "")
-            linhas += f"""
+    for topico in temas:
+        temas_html = ""
+        for tema in topico.get("temas", []):
+            linhas = ""
+            for st in tema.get("subtemas", []):
+                resp = respostas.get(st["id"], "")
+                linhas += f"""
 <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:.5px solid #f5f5f5;">
   <span style="flex:1;font-size:13px;color:#4a4a4a;">{st['descricao']}</span>
   {_badge_resposta(resp)}
 </div>"""
-        secoes += f"""
-<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
-              margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
+            temas_html += f"""
+<div style="margin-bottom:10px;border-left:3px solid #f7d800;padding-left:12px;">
+  <div style="font-family:'Fredoka One',cursive;font-size:13px;color:#2b3990;margin-bottom:6px;">
     🏷️ {tema['nome']}
   </div>
   {linhas}
+</div>"""
+        secoes += f"""
+<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:16px;color:#2b3990;
+              margin-bottom:14px;padding-bottom:8px;border-bottom:3px solid #f7d800;">
+    📂 {topico['nome']}
+  </div>
+  {temas_html}
 </div>"""
     return secoes
 
@@ -317,13 +330,13 @@ def _render_readonly(temas: list, respostas: dict) -> str:
 # ── Modo edição ───────────────────────────────────────────────────────────────
 
 def _render_form(prefix, temas, respostas, status, is_admin):
+    """temas é lista de tópicos: [{id, nome, temas:[{id, nome, subtemas:[...]}]}]"""
     _INP_RD = ("position:absolute;opacity:0;width:0;height:0;")
 
     def _opcao(subtema_id: int, valor: str, resp_atual: str) -> str:
         checked = "checked" if resp_atual == valor else ""
         cor, bg, borda = _COR_OPCAO[valor]
         nome_campo = f"resposta_{subtema_id}"
-        # Estilo base do pill
         base = (f"display:inline-block;font-size:12px;font-weight:800;padding:6px 14px;"
                 f"border-radius:20px;cursor:pointer;border:2px solid;transition:all .15s;"
                 f"border-color:{borda};background:#f9f9f9;color:#aaa;")
@@ -339,25 +352,34 @@ def _render_form(prefix, temas, respostas, status, is_admin):
 </label>"""
 
     secoes = ""
-    for tema in temas:
-        linhas = ""
-        for st in tema.get("subtemas", []):
-            sid = st["id"]
-            resp_atual = respostas.get(sid, "")
-            opcoes_html = "".join(_opcao(sid, v, resp_atual) for v in _OPCOES)
-            linhas += f"""
+    for topico in temas:
+        temas_html = ""
+        for tema in topico.get("temas", []):
+            linhas = ""
+            for st in tema.get("subtemas", []):
+                sid = st["id"]
+                resp_atual = respostas.get(sid, "")
+                opcoes_html = "".join(_opcao(sid, v, resp_atual) for v in _OPCOES)
+                linhas += f"""
 <div style="padding:10px 0;border-bottom:.5px solid #f5f5f5;">
   <div style="font-size:13px;color:#4a4a4a;margin-bottom:8px;font-weight:600;">{st['descricao']}</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">{opcoes_html}</div>
 </div>"""
-
-        secoes += f"""
-<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-  <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
-              margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
+            temas_html += f"""
+<div style="margin-bottom:10px;border-left:3px solid #f7d800;padding-left:12px;">
+  <div style="font-family:'Fredoka One',cursive;font-size:13px;color:#2b3990;margin-bottom:6px;">
     🏷️ {tema['nome']}
   </div>
   {linhas}
+</div>"""
+
+        secoes += f"""
+<div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-family:'Fredoka One',cursive;font-size:16px;color:#2b3990;
+              margin-bottom:14px;padding-bottom:8px;border-bottom:3px solid #f7d800;">
+    📂 {topico['nome']}
+  </div>
+  {temas_html}
 </div>"""
 
     form_html = f"""<form id="frm-relatorio" method="POST" action="{prefix}/salvar">
@@ -381,8 +403,7 @@ def _render_form(prefix, temas, respostas, status, is_admin):
 </div>
 </form>"""
 
-    # JS para atualizar visual dos pills ao mudar seleção
-    ids_subtemas = [st["id"] for t in temas for st in t.get("subtemas", [])]
+    ids_subtemas = [st["id"] for tp in temas for t in tp.get("temas", []) for st in t.get("subtemas", [])]
     pill_js_vals = '["' + '","'.join(_OPCOES) + '"]'
     pill_js = f"""
 <script>

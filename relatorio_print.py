@@ -32,47 +32,63 @@ def gerar_relatorio_print_html(
     if confirmado and isinstance(confirmado, str):
         confirmado = confirmado[:10]  # só a data
 
-    # ── Temas e subtemas ──
+    # ── Tópicos → Temas → Subtemas ──
+    # temas é lista de tópicos: [{id, nome, temas:[{id, nome, subtemas:[...]}]}]
     temas_html = ""
-    for tema in temas:
-        subtemas = tema.get("subtemas", [])
-        if not subtemas:
+    for topico in temas:
+        temas_do_topico = topico.get("temas", [])
+        if not temas_do_topico:
             continue
-        linhas = ""
-        for i, st in enumerate(subtemas, 1):
-            resp = respostas.get(st["id"], "")
-            cor, bg = _COR_RESP.get(resp, ("#888", "#f5f5f5"))
-            resp_label = f"{resp} — {_LEGENDA_RESP[resp]}" if resp in _LEGENDA_RESP else "Não respondido"
-            linhas += f"""
+        subtemas_bloco = ""
+        for tema in temas_do_topico:
+            subtemas = tema.get("subtemas", [])
+            if not subtemas:
+                continue
+            linhas = ""
+            for i, st in enumerate(subtemas, 1):
+                resp = respostas.get(st["id"], "")
+                cor, bg = _COR_RESP.get(resp, ("#888", "#f5f5f5"))
+                resp_label = f"{resp} — {_LEGENDA_RESP[resp]}" if resp in _LEGENDA_RESP else "Não respondido"
+                linhas += f"""
 <tr style="border-bottom:1px solid #eee;">
-  <td style="padding:6px 10px;font-size:11px;color:#555;width:28px;text-align:center;">{i}</td>
-  <td style="padding:6px 10px;font-size:12px;color:#333;">{st['descricao']}</td>
-  <td style="padding:6px 10px;text-align:center;white-space:nowrap;">
+  <td style="padding:5px 8px;font-size:11px;color:#555;width:24px;text-align:center;">{i}</td>
+  <td style="padding:5px 8px;font-size:11px;color:#333;">{st['descricao']}</td>
+  <td style="padding:5px 8px;text-align:center;white-space:nowrap;">
     <span style="background:{bg};color:{cor};font-size:10px;font-weight:800;
-                 padding:2px 10px;border-radius:12px;border:1px solid {cor}30;">
+                 padding:2px 9px;border-radius:12px;border:1px solid {cor}30;">
       {resp_label}
     </span>
   </td>
 </tr>"""
+            subtemas_bloco += f"""
+<div style="margin-bottom:10px;border-left:3px solid #f7d800;padding-left:10px;">
+  <div style="font-family:'Fredoka One',cursive;font-size:11px;color:#2b3990;
+              padding:4px 0 6px;text-transform:uppercase;letter-spacing:.3px;">
+    🏷️ {tema['nome']}
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <thead>
+      <tr style="background:#f7f7f5;font-size:9px;font-weight:800;text-transform:uppercase;
+                 letter-spacing:.3px;color:#aaa;">
+        <th style="padding:4px 8px;width:24px;">#</th>
+        <th style="padding:4px 8px;text-align:left;">Critério</th>
+        <th style="padding:4px 8px;width:130px;">Avaliação</th>
+      </tr>
+    </thead>
+    <tbody>{linhas}</tbody>
+  </table>
+</div>"""
 
         temas_html += f"""
 <div style="margin-bottom:18px;break-inside:avoid;">
   <div style="background:#2b3990;color:#fff;font-family:'Fredoka One',cursive;
               font-size:13px;padding:7px 14px;border-radius:6px 6px 0 0;">
-    {tema['nome']}
+    📂 {topico['nome']}
   </div>
-  <table style="width:100%;border-collapse:collapse;border:1px solid #ddd;border-top:none;
-                border-radius:0 0 6px 6px;overflow:hidden;">
-    <thead>
-      <tr style="background:#f7f7f5;font-size:9px;font-weight:800;text-transform:uppercase;
-                 letter-spacing:.4px;color:#aaa;">
-        <th style="padding:5px 10px;width:28px;">#</th>
-        <th style="padding:5px 10px;text-align:left;">Critério</th>
-        <th style="padding:5px 10px;width:140px;">Avaliação</th>
-      </tr>
-    </thead>
-    <tbody>{linhas}</tbody>
-  </table>
+  <div style="border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px;
+              padding:10px 12px;">
+    {subtemas_bloco}
+  </div>
 </div>"""
 
     # ── Descrição final ──

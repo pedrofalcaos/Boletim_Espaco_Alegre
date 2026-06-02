@@ -40,8 +40,17 @@ if DATABASE_URL:
             criado_em TIMESTAMP DEFAULT NOW()
         );
 
+        CREATE TABLE IF NOT EXISTS topicos (
+            id        SERIAL PRIMARY KEY,
+            nome      VARCHAR(255) NOT NULL,
+            ordem     INTEGER DEFAULT 0,
+            ativo     BOOLEAN DEFAULT TRUE,
+            criado_em TIMESTAMP DEFAULT NOW()
+        );
+
         CREATE TABLE IF NOT EXISTS temas (
             id        SERIAL PRIMARY KEY,
+            topico_id INTEGER REFERENCES topicos(id) ON DELETE SET NULL,
             nome      VARCHAR(255) NOT NULL,
             ordem     INTEGER DEFAULT 0,
             ativo     BOOLEAN DEFAULT TRUE,
@@ -119,6 +128,7 @@ if DATABASE_URL:
                     # Migrações para instalações existentes
                     cur.execute("ALTER TABLE subtemas ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'")
                     cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'")
+                    cur.execute("ALTER TABLE temas ADD COLUMN IF NOT EXISTS topico_id INTEGER REFERENCES topicos(id) ON DELETE SET NULL")
                 conn.commit()
                 _seed_admin(conn)
             finally:
@@ -228,6 +238,80 @@ if DATABASE_URL:
         finally:
             conn.close()
 
+    # ── Tópicos ───────────────────────────────────────────────────────────────
+
+    def get_all_topicos() -> list:
+        """Retorna hierarquia completa: Tópico → Tema → Subtema."""
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("SELECT * FROM topicos WHERE ativo = TRUE ORDER BY ordem, id")
+                topicos = [dict(r) for r in cur.fetchall()]
+                cur.execute("SELECT * FROM temas WHERE ativo = TRUE ORDER BY ordem, id")
+                temas = [dict(r) for r in cur.fetchall()]
+                for tema in temas:
+                    cur.execute(
+                        "SELECT * FROM subtemas WHERE tema_id = %s AND ativo = TRUE ORDER BY ordem, id",
+                        (tema["id"],),
+                    )
+                    tema["subtemas"] = [dict(r) for r in cur.fetchall()]
+            topico_map = {tp["id"]: tp for tp in topicos}
+            for tp in topicos:
+                tp["temas"] = []
+            sem_topico = {"id": None, "nome": "Sem tópico", "temas": []}
+            for tema in temas:
+                tid = tema.get("topico_id")
+                if tid and tid in topico_map:
+                    topico_map[tid]["temas"].append(tema)
+                else:
+                    sem_topico["temas"].append(tema)
+            result = [tp for tp in topicos if tp["temas"]]
+            if sem_topico["temas"]:
+                result.append(sem_topico)
+            return result
+        finally:
+            conn.close()
+
+    def create_topico(nome: str, ordem: int = 0) -> dict:
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO topicos (nome, ordem) VALUES (%s,%s) RETURNING *",
+                    (nome, ordem),
+                )
+                tp = cur.fetchone()
+            conn.commit()
+            return dict(tp)
+        finally:
+            conn.close()
+
+    def update_topico(topico_id: int, nome: str) -> bool:
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE topicos SET nome = %s WHERE id = %s", (nome, topico_id))
+                ok = cur.rowcount > 0
+            conn.commit()
+            return ok
+        finally:
+            conn.close()
+
+    def delete_topico(topico_id: int) -> bool:
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE topicos SET ativo = FALSE WHERE id = %s", (topico_id,))
+                ok = cur.rowcount > 0
+            conn.commit()
+            return ok
+        finally:
+            conn.close()
+
     # ── Temas e Subtemas ──────────────────────────────────────────────────────
 
     def get_all_temas() -> list:
@@ -249,14 +333,14 @@ if DATABASE_URL:
         finally:
             conn.close()
 
-    def create_tema(nome: str, ordem: int = 0) -> dict:
+    def create_tema(nome: str, ordem: int = 0, topico_id: int = None) -> dict:
         _init()
         conn = _connect()
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(
-                    "INSERT INTO temas (nome, ordem) VALUES (%s,%s) RETURNING *",
-                    (nome, ordem),
+                    "INSERT INTO temas (nome, ordem, topico_id) VALUES (%s,%s,%s) RETURNING *",
+                    (nome, ordem, topico_id),
                 )
                 tema = cur.fetchone()
             conn.commit()
@@ -334,18 +418,24 @@ if DATABASE_URL:
             conn.close()
 
     def get_temas_para_turma(turma: str) -> list:
-        """Retorna temas com apenas os subtemas configurados para a turma."""
-        temas = get_all_temas()
+        """Retorna hierarquia Tópico→Tema→Subtema filtrada para a turma."""
+        topicos = get_all_topicos()
         result = []
-        for tema in temas:
-            subs = [
-                st for st in tema.get("subtemas", [])
-                if not st.get("turmas") or turma in st["turmas"]
-            ]
-            if subs:
-                t = dict(tema)
-                t["subtemas"] = subs
-                result.append(t)
+        for topico in topicos:
+            temas_filtrados = []
+            for tema in topico.get("temas", []):
+                subs = [
+                    st for st in tema.get("subtemas", [])
+                    if not st.get("turmas") or turma in st["turmas"]
+                ]
+                if subs:
+                    t = dict(tema)
+                    t["subtemas"] = subs
+                    temas_filtrados.append(t)
+            if temas_filtrados:
+                tp = dict(topico)
+                tp["temas"] = temas_filtrados
+                result.append(tp)
         return result
 
     def get_status_relatorios(matriculas: list, ano_letivo: str = "2026") -> dict:
@@ -525,7 +615,17 @@ else:
     def _load() -> dict:
         if os.path.exists(DB_FILE):
             with open(DB_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                db = json.load(f)
+            changed = False
+            if "topicos" not in db:
+                db["topicos"] = []
+                changed = True
+            if "topicos" not in db.get("_seq", {}):
+                db.setdefault("_seq", {})["topicos"] = 1
+                changed = True
+            if changed:
+                _save(db)
+            return db
         return _new_db()
 
     _SEED_USUARIOS_JSON = [
@@ -542,12 +642,14 @@ else:
     def _new_db() -> dict:
         db = {
             "usuarios": [],
+            "topicos": [],
             "temas": [],
             "subtemas": [],
             "relatorios_semestrais": [],
             "respostas_subtemas": [],
             "_seq": {
                 "usuarios": len(_SEED_USUARIOS_JSON) + 1,
+                "topicos": 1,
                 "temas": 1,
                 "subtemas": 1,
                 "relatorios_semestrais": 1,
@@ -648,6 +750,72 @@ else:
                     return {k: v for k, v in u.items() if k != "password"}
             return None
 
+    # ── Tópicos ───────────────────────────────────────────────────────────────
+
+    def get_all_topicos() -> list:
+        """Retorna hierarquia completa: Tópico → Tema → Subtema."""
+        with _lock:
+            db = _load()
+            topicos = sorted(
+                [dict(tp) for tp in db.get("topicos", []) if tp.get("ativo", True)],
+                key=lambda tp: (tp.get("ordem", 0), tp["id"]),
+            )
+            temas = sorted(
+                [dict(t) for t in db["temas"] if t.get("ativo", True)],
+                key=lambda t: (t.get("ordem", 0), t["id"]),
+            )
+            for tema in temas:
+                subs = []
+                for s in db["subtemas"]:
+                    if s["tema_id"] == tema["id"] and s.get("ativo", True):
+                        sd = dict(s)
+                        sd.setdefault("turmas", [])
+                        subs.append(sd)
+                tema["subtemas"] = sorted(subs, key=lambda s: (s.get("ordem", 0), s["id"]))
+            topico_map = {tp["id"]: tp for tp in topicos}
+            for tp in topicos:
+                tp["temas"] = []
+            sem_topico = {"id": None, "nome": "Sem tópico", "temas": []}
+            for tema in temas:
+                tid = tema.get("topico_id")
+                if tid and tid in topico_map:
+                    topico_map[tid]["temas"].append(tema)
+                else:
+                    sem_topico["temas"].append(tema)
+            result = [tp for tp in topicos if tp["temas"]]
+            if sem_topico["temas"]:
+                result.append(sem_topico)
+            return result
+
+    def create_topico(nome: str, ordem: int = 0) -> dict:
+        with _lock:
+            db = _load()
+            new_id = _next_id(db, "topicos")
+            tp = {"id": new_id, "nome": nome, "ordem": ordem, "ativo": True}
+            db["topicos"].append(tp)
+            _save(db)
+            return tp
+
+    def update_topico(topico_id: int, nome: str) -> bool:
+        with _lock:
+            db = _load()
+            for tp in db.get("topicos", []):
+                if tp["id"] == topico_id:
+                    tp["nome"] = nome
+                    _save(db)
+                    return True
+            return False
+
+    def delete_topico(topico_id: int) -> bool:
+        with _lock:
+            db = _load()
+            for tp in db.get("topicos", []):
+                if tp["id"] == topico_id:
+                    tp["ativo"] = False
+                    _save(db)
+                    return True
+            return False
+
     # ── Temas e Subtemas ──────────────────────────────────────────────────────
 
     def get_all_temas() -> list:
@@ -662,16 +830,16 @@ else:
                 for s in db["subtemas"]:
                     if s["tema_id"] == tema["id"] and s.get("ativo", True):
                         sd = dict(s)
-                        sd.setdefault("turmas", [])  # compatibilidade com registros antigos
+                        sd.setdefault("turmas", [])
                         subs.append(sd)
                 tema["subtemas"] = sorted(subs, key=lambda s: (s.get("ordem", 0), s["id"]))
             return temas
 
-    def create_tema(nome: str, ordem: int = 0) -> dict:
+    def create_tema(nome: str, ordem: int = 0, topico_id: int = None) -> dict:
         with _lock:
             db = _load()
             new_id = _next_id(db, "temas")
-            tema = {"id": new_id, "nome": nome, "ordem": ordem, "ativo": True}
+            tema = {"id": new_id, "topico_id": topico_id, "nome": nome, "ordem": ordem, "ativo": True}
             db["temas"].append(tema)
             _save(db)
             return tema
@@ -727,17 +895,24 @@ else:
             return False
 
     def get_temas_para_turma(turma: str) -> list:
-        temas = get_all_temas()
+        """Retorna hierarquia Tópico→Tema→Subtema filtrada para a turma."""
+        topicos = get_all_topicos()
         result = []
-        for tema in temas:
-            subs = [
-                st for st in tema.get("subtemas", [])
-                if not st.get("turmas") or turma in st["turmas"]
-            ]
-            if subs:
-                t = dict(tema)
-                t["subtemas"] = subs
-                result.append(t)
+        for topico in topicos:
+            temas_filtrados = []
+            for tema in topico.get("temas", []):
+                subs = [
+                    st for st in tema.get("subtemas", [])
+                    if not st.get("turmas") or turma in st["turmas"]
+                ]
+                if subs:
+                    t = dict(tema)
+                    t["subtemas"] = subs
+                    temas_filtrados.append(t)
+            if temas_filtrados:
+                tp = dict(topico)
+                tp["temas"] = temas_filtrados
+                result.append(tp)
         return result
 
     def get_status_relatorios(matriculas: list, ano_letivo: str = "2026") -> dict:

@@ -201,10 +201,11 @@ _TURMAS_INF = [
 ]
 
 
-def admin_temas_page(temas: list, msg: str = "", erro: str = "") -> str:
+def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
     nav   = admin_nav("temas")
     aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
-    total_subtemas = sum(len(t.get("subtemas", [])) for t in temas)
+    total_temas    = sum(len(tp.get("temas", [])) for tp in topicos)
+    total_subtemas = sum(len(t.get("subtemas", [])) for tp in topicos for t in tp.get("temas", []))
 
     # ── Cabeçalho das colunas (turmas) ──
     th_turmas = "".join(
@@ -213,36 +214,34 @@ def admin_temas_page(temas: list, msg: str = "", erro: str = "") -> str:
         for _, label in _TURMAS_INF
     )
 
-    temas_html = ""
-    for tema in temas:
+    def _render_tema(tema: dict) -> str:
+        """Renderiza um card de Tema com sua matriz de subtemas × turmas."""
         subtemas = tema.get("subtemas", [])
+        tid = tema["id"]
 
-        # ── Edição do nome do tema ──
         form_nome = f"""
-<div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
-  <form method="POST" action="/admin/temas/{tema['id']}/editar"
+<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+  <form method="POST" action="/admin/temas/{tid}/editar"
         style="display:flex;gap:8px;flex:1;">
     <input name="nome" value="{tema['nome']}" required
-           style="{_INP}flex:1;font-size:15px;font-weight:800;color:#2b3990;"
+           style="{_INP}flex:1;font-size:13px;font-weight:800;color:#2b3990;"
            onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
-    <button type="submit" style="{_BTN_AZ}padding:9px 14px;font-size:12px;">Salvar nome</button>
+    <button type="submit" style="{_BTN_AZ}padding:7px 12px;font-size:11px;">Salvar</button>
   </form>
-  <form method="POST" action="/admin/temas/{tema['id']}/excluir"
+  <form method="POST" action="/admin/temas/{tid}/excluir"
         onsubmit="return confirm('Excluir o tema e todos os subtemas?');">
-    <button type="submit" style="{_BTN_VM}padding:9px 12px;">🗑</button>
+    <button type="submit" style="{_BTN_VM}padding:7px 10px;font-size:11px;">🗑 Excluir tema</button>
   </form>
 </div>"""
 
         if not subtemas:
-            corpo_matrix = '<p style="color:#ccc;font-size:12px;padding:8px 0 4px;">Nenhum subtema ainda.</p>'
+            corpo_matrix = '<p style="color:#ccc;font-size:12px;padding:6px 0 2px;">Nenhum subtema ainda.</p>'
             form_salvar  = ""
         else:
-            # ── Matrix: linhas=subtemas, colunas=turmas ──
             linhas = ""
             for i, st in enumerate(subtemas, 1):
                 turmas_conf = st.get("turmas", [])
-                todas = not turmas_conf  # lista vazia = todas as turmas
-
+                todas = not turmas_conf
                 cells = "".join(
                     f'<td style="text-align:center;padding:4px 2px;">'
                     f'<input type="checkbox" name="st_{st["id"]}" value="{turma}"'
@@ -250,25 +249,20 @@ def admin_temas_page(temas: list, msg: str = "", erro: str = "") -> str:
                     f'</td>'
                     for turma, _ in _TURMAS_INF
                 )
-
-                # pré-computa id para evitar backslash dentro de {}
                 sid = st["id"]
-
                 btn_todas = (
                     f'<button type="button" onclick="toggleAll(this,\'st_{sid}\')"'
                     f' style="font-size:10px;font-weight:800;background:#e8eaf8;color:#2b3990;'
                     f'border:none;border-radius:5px;padding:3px 7px;cursor:pointer;white-space:nowrap;"'
                     f' title="Marcar/desmarcar todas as turmas">±</button>'
                 )
-
                 del_form = (
                     f'<form id="del-st-{sid}" method="POST"'
                     f' action="/admin/subtemas/{sid}/excluir" style="display:none;"></form>'
                     f'<button type="button"'
                     f' onclick="if(confirm(\'Excluir subtema?\'))document.getElementById(\'del-st-{sid}\').submit()"'
-                    f' style="{_BTN_VM}padding:3px 8px;">✕</button>'
+                    f' style="{_BTN_VM}padding:3px 7px;font-size:10px;">✕</button>'
                 )
-
                 linhas += f"""
 <tr style="border-bottom:.5px solid #f5f5f5;">
   <td style="padding:7px 10px;font-size:12px;color:#4a4a4a;font-weight:600;">{i}. {st['descricao']}</td>
@@ -278,11 +272,11 @@ def admin_temas_page(temas: list, msg: str = "", erro: str = "") -> str:
 </tr>"""
 
             corpo_matrix = f"""
-<div style="overflow-x:auto;margin-bottom:10px;">
+<div style="overflow-x:auto;margin-bottom:8px;">
 <table style="width:100%;border-collapse:collapse;font-size:12px;">
   <thead>
     <tr style="background:#f7f7f5;">
-      <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:800;
+      <th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:800;
                  text-transform:uppercase;letter-spacing:.4px;color:#aaa;min-width:200px;">Subtema</th>
       {th_turmas}
       <th style="padding:6px 6px;font-size:10px;color:#aaa;text-align:center;white-space:nowrap;">±All</th>
@@ -292,69 +286,124 @@ def admin_temas_page(temas: list, msg: str = "", erro: str = "") -> str:
   <tbody>{linhas}</tbody>
 </table>
 </div>"""
-
             form_salvar = f"""
-<button type="submit"
-   style="{_BTN_AZ}padding:8px 20px;font-size:12px;margin-bottom:4px;">
-  💾 Salvar turmas desta configuração
+<button type="submit" style="{_BTN_AZ}padding:7px 18px;font-size:12px;margin-bottom:4px;">
+  💾 Salvar turmas
 </button>
 <p style="font-size:10px;color:#aaa;margin-top:4px;">
-  ✔ Marcado = subtema avaliado naquela turma &nbsp;|&nbsp;
-  Se nenhuma turma marcada, o subtema não aparecerá para nenhuma professora.
+  ✔ Marcado = subtema avaliado naquela turma
 </p>"""
 
-        # ── Form de novo subtema ──
         form_novo_st = f"""
-<div style="margin-top:14px;border-top:.5px solid #f0f0ee;padding-top:12px;">
-<form method="POST" action="/admin/temas/{tema['id']}/subtema"
+<div style="margin-top:12px;border-top:.5px solid #f0f0ee;padding-top:10px;">
+<form method="POST" action="/admin/temas/{tid}/subtema"
       style="display:flex;gap:8px;">
   <input name="descricao" required placeholder="Novo subtema..."
-         style="{_INP}flex:1;"
+         style="{_INP}flex:1;font-size:12px;"
          onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
-  <button type="submit" style="{_BTN_AZ}padding:9px 16px;">+ Adicionar</button>
+  <button type="submit" style="{_BTN_AZ}padding:8px 14px;font-size:12px;">+ Subtema</button>
 </form>
 </div>"""
 
-        badge = (f'<span style="background:#e8eaf8;color:#2b3990;font-size:11px;font-weight:800;'
-                 f'padding:2px 10px;border-radius:20px;">{len(subtemas)} subtema(s)</span>')
+        badge = (f'<span style="background:#e8eaf8;color:#2b3990;font-size:10px;font-weight:800;'
+                 f'padding:2px 9px;border-radius:20px;">{len(subtemas)} subtema(s)</span>')
 
-        # Formulário principal da matrix POST para /admin/temas/{id}/turmas
-        form_open  = f'<form method="POST" action="/admin/temas/{tema["id"]}/turmas">'
+        form_open  = f'<form method="POST" action="/admin/temas/{tid}/turmas">'
         form_close = "</form>"
 
-        temas_html += _card(f"""
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;
-            border-bottom:2px solid #f7d800;padding-bottom:8px;">
-  <span style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;flex:1;">🏷️ Tema</span>
-  {badge}
+        return f"""
+<div style="background:#f9f9f7;border:1px solid #e8e8e4;border-radius:10px;
+            padding:14px 18px;margin-bottom:10px;">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;
+              border-bottom:1.5px solid #f0f0ee;padding-bottom:8px;">
+    <span style="font-family:'Fredoka One',cursive;font-size:13px;color:#2b3990;flex:1;">
+      🏷️ Tema
+    </span>
+    {badge}
+  </div>
+  {form_nome}
+  {form_open}
+  {corpo_matrix}
+  {form_salvar}
+  {form_close}
+  {form_novo_st}
+</div>"""
+
+    # ── Renderiza cada Tópico ──
+    topicos_html = ""
+    for tp in topicos:
+        tp_id   = tp.get("id")
+        tp_nome = tp.get("nome", "Sem tópico")
+        temas   = tp.get("temas", [])
+
+        temas_html = "".join(_render_tema(t) for t in temas)
+
+        # Tópico real (tem id) → mostra edição; "Sem tópico" não tem botões
+        if tp_id is not None:
+            header_controls = f"""
+<div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
+  <form method="POST" action="/admin/topicos/{tp_id}/editar"
+        style="display:flex;gap:8px;flex:1;">
+    <input name="nome" value="{tp_nome}" required
+           style="{_INP}flex:1;font-size:16px;font-weight:900;color:#2b3990;"
+           onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
+    <button type="submit" style="{_BTN_AZ}padding:9px 14px;">Salvar</button>
+  </form>
+  <form method="POST" action="/admin/topicos/{tp_id}/excluir"
+        onsubmit="return confirm('Excluir o tópico? Os temas dentro dele NÃO serão excluídos.');">
+    <button type="submit" style="{_BTN_VM}padding:9px 12px;">🗑 Excluir tópico</button>
+  </form>
+</div>"""
+            novo_tema_neste = f"""
+<div style="border-top:1.5px dashed #e0e0da;padding-top:14px;margin-top:4px;">
+  <p style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;
+             letter-spacing:.5px;margin-bottom:8px;">➕ Novo Tema neste Tópico</p>
+  <form method="POST" action="/admin/temas/novo" style="display:flex;gap:8px;">
+    <input type="hidden" name="topico_id" value="{tp_id}">
+    <input name="nome" required placeholder="Nome do tema..."
+           style="{_INP}flex:1;"
+           onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
+    <button type="submit" style="{_BTN_AZ}padding:9px 16px;">Criar tema →</button>
+  </form>
+</div>"""
+        else:
+            header_controls = ""
+            novo_tema_neste = ""
+
+        badge_tp = (f'<span style="background:#2b3990;color:#f7d800;font-size:11px;font-weight:800;'
+                    f'padding:3px 12px;border-radius:20px;">{len(temas)} tema(s)</span>')
+
+        topicos_html += _card(f"""
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;
+            border-bottom:3px solid #f7d800;padding-bottom:10px;">
+  <span style="font-family:'Fredoka One',cursive;font-size:18px;color:#2b3990;flex:1;">
+    📂 {tp_nome}
+  </span>
+  {badge_tp}
 </div>
-{form_nome}
-{form_open}
-{corpo_matrix}
-{form_salvar}
-{form_close}
-{form_novo_st}""")
+{header_controls}
+{temas_html if temas_html else '<p style="color:#ccc;font-size:12px;padding:8px 0;">Nenhum tema cadastrado neste tópico.</p>'}
+{novo_tema_neste}""")
 
-    if not temas_html:
-        temas_html = _card('<p style="color:#aaa;text-align:center;padding:20px 0;">Nenhum tema cadastrado ainda.</p>')
+    if not topicos_html:
+        topicos_html = _card('<p style="color:#aaa;text-align:center;padding:20px 0;">Nenhum tópico cadastrado. Crie um tópico para começar.</p>')
 
-    # ── Form novo tema ──
-    novo_tema_card = _card(f"""
-{_secao("➕ Novo Tema Principal")}
-<form method="POST" action="/admin/temas/novo" style="display:flex;gap:10px;align-items:flex-end;">
+    # ── Formulário de novo Tópico ──
+    novo_topico_card = _card(f"""
+{_secao("📂 Novo Tópico")}
+<form method="POST" action="/admin/topicos/novo" style="display:flex;gap:10px;align-items:flex-end;">
   <div style="flex:1;">
     <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;
-                  color:#aaa;display:block;margin-bottom:4px;">Nome do tema</label>
-    <input name="nome" required placeholder="Ex: O eu, o outro e o nós" style="{_INP}"
+                  color:#aaa;display:block;margin-bottom:4px;">Nome do tópico</label>
+    <input name="nome" required placeholder="Ex: Desenvolvimento Cognitivo" style="{_INP}"
       onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
   </div>
-  <button type="submit" style="{_BTN_AZ}">Criar tema →</button>
+  <button type="submit" style="{_BTN_AZ}">Criar tópico →</button>
 </form>
 <p style="font-size:11px;color:#aaa;margin-top:10px;">
-  Após criar o tema, adicione os subtemas e configure quais turmas cada um avalia.
+  O tópico agrupa temas. Cada tema contém subtemas avaliados por turma.
 </p>""")
 
-    # JS para o botão ± (marcar/desmarcar todas da linha)
     js = """
 <script>
 function toggleAll(btn, name) {
@@ -370,7 +419,7 @@ function toggleAll(btn, name) {
     <img src="/static/logo.jpg" style="height:44px;object-fit:contain;">
     <div style="flex:1;">
       <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Temas Avaliativos</h1>
-      <p style="font-size:12px;color:#888;">{len(temas)} tema(s) · {total_subtemas} subtema(s)</p>
+      <p style="font-size:12px;color:#888;">{len(topicos)} tópico(s) · {total_temas} tema(s) · {total_subtemas} subtema(s)</p>
     </div>
     <a href="/admin/logout" style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;
        font-weight:700;font-size:12px;padding:9px 16px;border-radius:10px;border:1px solid #dcdcd8;">Sair</a>
@@ -378,8 +427,8 @@ function toggleAll(btn, name) {
 
   {nav}
   {aviso}
-  {novo_tema_card}
-  {temas_html}
+  {novo_topico_card}
+  {topicos_html}
   {js}
 </div>"""
     return page_shell("Temas Avaliativos — Escola Espaço Alegre", body)

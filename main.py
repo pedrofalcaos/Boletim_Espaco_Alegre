@@ -17,6 +17,7 @@ from db_relatorio import (
     get_respostas, save_respostas,
     update_subtema_turmas, get_temas_para_turma,
     get_status_relatorios,
+    get_all_topicos, create_topico, update_topico, delete_topico,
 )
 from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import (
@@ -438,19 +439,53 @@ async def admin_ver_relatorios_aluno(request: Request, matricula: str):
 async def listar_temas(request: Request, ok: str = "", erro: str = ""):
     if not check_session(request):
         return _redir_login()
-    temas = get_all_temas()
-    return admin_temas_page(temas, msg=ok, erro=erro)
+    topicos = get_all_topicos()
+    return admin_temas_page(topicos, msg=ok, erro=erro)
 
 
-@app.post("/admin/temas/novo")
-async def criar_tema(request: Request, nome: str = Form(...)):
+# ── Tópicos ──────────────────────────────────────────────────────────────────
+
+@app.post("/admin/topicos/novo")
+async def criar_topico(request: Request, nome: str = Form(...)):
     if not check_session(request):
         return _redir_login()
     nome = nome.strip()
     if not nome:
+        return RedirectResponse("/admin/temas?erro=Nome+do+t%C3%B3pico+n%C3%A3o+pode+ser+vazio", status_code=302)
+    create_topico(nome)
+    return RedirectResponse("/admin/temas?ok=T%C3%B3pico+criado+com+sucesso", status_code=302)
+
+
+@app.post("/admin/topicos/{topico_id}/editar")
+async def editar_topico(request: Request, topico_id: int, nome: str = Form(...)):
+    if not check_session(request):
+        return _redir_login()
+    update_topico(topico_id, nome.strip())
+    return RedirectResponse("/admin/temas?ok=T%C3%B3pico+atualizado", status_code=302)
+
+
+@app.post("/admin/topicos/{topico_id}/excluir")
+async def excluir_topico(request: Request, topico_id: int):
+    if not check_session(request):
+        return _redir_login()
+    delete_topico(topico_id)
+    return RedirectResponse("/admin/temas?ok=T%C3%B3pico+removido", status_code=302)
+
+
+# ── Temas ─────────────────────────────────────────────────────────────────────
+
+@app.post("/admin/temas/novo")
+async def criar_tema(request: Request):
+    if not check_session(request):
+        return _redir_login()
+    form = dict(await request.form())
+    nome = form.get("nome", "").strip()
+    topico_id_raw = form.get("topico_id", "").strip()
+    if not nome:
         return RedirectResponse("/admin/temas?erro=Nome+do+tema+n%C3%A3o+pode+ser+vazio", status_code=302)
-    create_tema(nome)
-    return RedirectResponse(f"/admin/temas?ok=Tema+criado+com+sucesso", status_code=302)
+    topico_id = int(topico_id_raw) if topico_id_raw.isdigit() else None
+    create_tema(nome, topico_id=topico_id)
+    return RedirectResponse("/admin/temas?ok=Tema+criado+com+sucesso", status_code=302)
 
 
 @app.post("/admin/temas/{tema_id}/editar")
