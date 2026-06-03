@@ -334,6 +334,17 @@ def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
         temas_html = "".join(_render_tema(t, tp_turmas_permitidas) for t in temas)
 
         if tp_id is not None:
+            # Contagens para o aviso de exclusão
+            n_temas    = len(temas)
+            n_subtemas = sum(len(t.get("subtemas", [])) for t in temas)
+            aviso_excluir = (
+                f"⚠️ ATENÇÃO — Excluir o tópico \"{tp_nome}\"?\\n\\n"
+                f"Esta ação irá remover permanentemente:\\n"
+                f"  • {n_temas} tema(s)\\n"
+                f"  • {n_subtemas} subtema(s)\\n\\n"
+                f"Essa operação NÃO pode ser desfeita."
+            )
+
             # Checkboxes de turmas do tópico (todas disponíveis)
             cbs_tp = _turma_checkboxes(
                 _TURMAS_INF,
@@ -350,8 +361,8 @@ def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
     <button type="submit" style="{_BTN_AZ}padding:8px 14px;">Salvar nome</button>
   </form>
   <form method="POST" action="/admin/topicos/{tp_id}/excluir"
-        onsubmit="return confirm('Excluir o tópico?');">
-    <button type="submit" style="{_BTN_VM}">🗑 Excluir</button>
+        onsubmit="return confirm('{aviso_excluir}');">
+    <button type="submit" style="{_BTN_VM}">🗑 Excluir tópico</button>
   </form>
 </div>
 <div style="background:#f0f4ff;border-radius:9px;padding:12px 14px;margin-bottom:14px;">

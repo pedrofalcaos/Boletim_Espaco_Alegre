@@ -305,10 +305,23 @@ if DATABASE_URL:
             conn.close()
 
     def delete_topico(topico_id: int) -> bool:
+        """Remove tópico e, em cascata, todos os seus temas e subtemas."""
         _init()
         conn = _connect()
         try:
             with conn.cursor() as cur:
+                # Busca temas do tópico
+                cur.execute("SELECT id FROM temas WHERE topico_id = %s AND ativo = TRUE", (topico_id,))
+                tema_ids = [r[0] for r in cur.fetchall()]
+                # Desativa subtemas de cada tema
+                if tema_ids:
+                    cur.execute(
+                        "UPDATE subtemas SET ativo = FALSE WHERE tema_id = ANY(%s)",
+                        (tema_ids,),
+                    )
+                # Desativa temas
+                cur.execute("UPDATE temas SET ativo = FALSE WHERE topico_id = %s", (topico_id,))
+                # Desativa tópico
                 cur.execute("UPDATE topicos SET ativo = FALSE WHERE id = %s", (topico_id,))
                 ok = cur.rowcount > 0
             conn.commit()
@@ -852,14 +865,32 @@ else:
             return False
 
     def delete_topico(topico_id: int) -> bool:
+        """Remove tópico e, em cascata, todos os seus temas e subtemas."""
         with _lock:
             db = _load()
+            found = False
             for tp in db.get("topicos", []):
                 if tp["id"] == topico_id:
                     tp["ativo"] = False
-                    _save(db)
-                    return True
-            return False
+                    found = True
+                    break
+            if not found:
+                return False
+            # Coleta ids dos temas deste tópico
+            tema_ids = {
+                t["id"] for t in db.get("temas", [])
+                if t.get("topico_id") == topico_id and t.get("ativo", True)
+            }
+            # Desativa temas
+            for t in db.get("temas", []):
+                if t.get("topico_id") == topico_id:
+                    t["ativo"] = False
+            # Desativa subtemas dos temas removidos
+            for s in db.get("subtemas", []):
+                if s.get("tema_id") in tema_ids:
+                    s["ativo"] = False
+            _save(db)
+            return True
 
     def update_topico_turmas(topico_id: int, turmas: list) -> bool:
         with _lock:
