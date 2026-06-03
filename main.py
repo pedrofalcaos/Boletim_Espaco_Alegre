@@ -18,6 +18,7 @@ from db_relatorio import (
     update_subtema_turmas, get_temas_para_turma,
     get_status_relatorios,
     get_all_topicos, create_topico, update_topico, delete_topico,
+    update_topico_turmas, update_tema_turmas,
 )
 from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import (
@@ -523,36 +524,24 @@ async def excluir_subtema(request: Request, subtema_id: int):
     return RedirectResponse("/admin/temas?ok=Subtema+removido", status_code=302)
 
 
-@app.post("/admin/temas/{tema_id}/turmas")
-async def salvar_turmas_tema(request: Request, tema_id: int):
-    """Salva a configuração turma×subtema de um tema inteiro."""
+@app.post("/admin/topicos/{topico_id}/turmas")
+async def salvar_turmas_topico(request: Request, topico_id: int):
     if not check_session(request):
         return _redir_login()
-
     form = await request.form()
-    # Coleta todas as entradas: st_{subtema_id} → [turma1, turma2, ...]
-    mapa: dict = {}
-    for key, valor in form.multi_items():
-        if key.startswith("st_"):
-            try:
-                sid = int(key[3:])
-                mapa.setdefault(sid, []).append(valor)
-            except ValueError:
-                pass
+    turmas = list(form.getlist("turma"))
+    update_topico_turmas(topico_id, turmas)
+    return RedirectResponse("/admin/temas?ok=Turmas+do+t%C3%B3pico+salvas", status_code=302)
 
-    # Atualiza cada subtema com as turmas selecionadas
-    for subtema_id, turmas in mapa.items():
-        update_subtema_turmas(subtema_id, turmas)
 
-    # Subtemas cujos checkboxes não vieram = nenhuma turma selecionada
-    temas = get_all_temas()
-    tema_atual = next((t for t in temas if t["id"] == tema_id), None)
-    if tema_atual:
-        for st in tema_atual.get("subtemas", []):
-            if st["id"] not in mapa:
-                update_subtema_turmas(st["id"], [])
-
-    return RedirectResponse("/admin/temas?ok=Configura%C3%A7%C3%A3o+de+turmas+salva", status_code=302)
+@app.post("/admin/temas/{tema_id}/turmas")
+async def salvar_turmas_tema(request: Request, tema_id: int):
+    if not check_session(request):
+        return _redir_login()
+    form = await request.form()
+    turmas = list(form.getlist("turma"))
+    update_tema_turmas(tema_id, turmas)
+    return RedirectResponse("/admin/temas?ok=Turmas+do+tema+salvas", status_code=302)
 
 
 # ════════════════════════════════════════════════════════════════════════════

@@ -80,7 +80,7 @@ def admin_nav(current: str = "alunos") -> str:
     items = [
         ("alunos",      "/admin",               "📚 Alunos"),
         ("professoras", "/admin/professoras",    "👩‍🏫 Professoras"),
-        ("temas",       "/admin/temas",          "🏷️ Temas Avaliativos"),
+        ("temas",       "/admin/temas",          "🗂️ Estrutura Avaliativa"),
         ("relatorios",  "/admin/relatorios",     "📋 Relatórios Semestrais"),
     ]
     links = ""
