@@ -266,7 +266,7 @@ if DATABASE_URL:
                     topico_map[tid]["temas"].append(tema)
                 else:
                     sem_topico["temas"].append(tema)
-            result = [tp for tp in topicos if tp["temas"]]
+            result = list(topicos)  # todos os tópicos, incluindo os sem temas
             if sem_topico["temas"]:
                 result.append(sem_topico)
             return result
@@ -782,7 +782,7 @@ else:
                     topico_map[tid]["temas"].append(tema)
                 else:
                     sem_topico["temas"].append(tema)
-            result = [tp for tp in topicos if tp["temas"]]
+            result = list(topicos)  # todos os tópicos, incluindo os sem temas
             if sem_topico["temas"]:
                 result.append(sem_topico)
             return result
