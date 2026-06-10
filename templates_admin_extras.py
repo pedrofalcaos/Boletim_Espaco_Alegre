@@ -47,13 +47,30 @@ _BTN_CINZA = ("font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;"
 #  PROFESSORAS
 # ════════════════════════════════════════════════════════════════════════
 
-def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = "", erro: str = "") -> str:
+def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = "", erro: str = "", senha_gerada: str = "") -> str:
     """
-    professoras: lista de dicts do db (id, username, nome, role, ativo)
+    professoras: lista de dicts do db (id, username, nome, role, ativo, senha_temporaria)
     alunos_por_prof: {professora_nome: [lista de turmas]}
     """
     nav = admin_nav("professoras")
     aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
+
+    senha_box = ""
+    if senha_gerada:
+        senha_box = f"""
+<div style="background:#fffbe6;border:2px solid #f7d800;border-radius:10px;padding:14px 18px;margin-bottom:20px;">
+  <div style="font-size:11px;font-weight:800;color:#a67c00;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+    🔑 Nova senha temporária gerada
+  </div>
+  <div style="font-family:monospace;font-size:20px;font-weight:900;color:#2b3990;background:#fff;
+              border:1px dashed #ccc;border-radius:7px;padding:8px 16px;display:inline-block;letter-spacing:2px;">
+    {senha_gerada}
+  </div>
+  <div style="font-size:11px;color:#888;margin-top:8px;">
+    Repasse esta senha à professora — ela não será exibida novamente. No próximo acesso,
+    será solicitado que ela cadastre uma nova senha pessoal.
+  </div>
+</div>"""
 
     def _turmas_chips(turmas_conf, turmas_alunos):
         """Mostra turmas configuradas (azul escuro) e as do aluno mas não configuradas (cinza)."""
@@ -88,18 +105,28 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
             chips = _turmas_chips(conf_turmas, aluno_turmas)
             checkboxes = _turma_checkboxes(conf_turmas, pid)
 
+            pendente_badge = ""
+            if p.get("senha_temporaria"):
+                pendente_badge = ('<span style="background:#fef0e4;color:#c25b0d;font-size:10px;font-weight:800;'
+                                   'padding:2px 9px;border-radius:20px;margin-left:8px;white-space:nowrap;">'
+                                   '⏳ Aguardando troca de senha</span>')
+
             cards += f"""
 <div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;
             box-shadow:0 2px 8px rgba(0,0,0,.06);">
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
     <div style="flex:1;">
-      <div style="font-weight:800;color:#2b3990;font-size:14px;">{p["nome"]}</div>
+      <div style="font-weight:800;color:#2b3990;font-size:14px;">{p["nome"]}{pendente_badge}</div>
       <div style="font-size:11px;color:#aaa;margin-top:2px;">{p["username"]}</div>
     </div>
     <button type="button" onclick="toggleTurmas({pid})"
       style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">
       ✏️ Editar turmas
     </button>
+    <form method="POST" action="/admin/professoras/{pid}/resetar-senha"
+          onsubmit="return confirm('Gerar uma nova senha temporária para {p["nome"]}?\\n\\nA senha atual deixará de funcionar e ela precisará trocá-la no próximo acesso.');">
+      <button type="submit" style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">🔑 Resetar senha</button>
+    </form>
     <form method="POST" action="/admin/professoras/{pid}/excluir"
           onsubmit="return confirm('Excluir {p["nome"]}? Os alunos não são apagados.');">
       <button type="submit" style="{_BTN_VM}">🗑</button>
@@ -180,6 +207,7 @@ function toggleTurmas(id) {
 
   {nav}
   {aviso}
+  {senha_box}
   {lista_card}
   {nova_card}
   {js_toggle}

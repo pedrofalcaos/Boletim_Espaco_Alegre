@@ -3,7 +3,7 @@ Banco de dados para o módulo de Relatório Semestral da Educação Infantil.
 Mesma estratégia de db.py: PostgreSQL (Railway) ou JSON local.
 """
 import json, os, threading
-from auth import hash_password, verify_password, ADMIN_USER, ADMIN_PASS
+from auth import hash_password, verify_password, generate_temp_password, ADMIN_USER, ADMIN_PASS
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 _lock = threading.Lock()
@@ -30,14 +30,15 @@ if DATABASE_URL:
 
     _SCHEMA = """
         CREATE TABLE IF NOT EXISTS usuarios (
-            id        SERIAL PRIMARY KEY,
-            username  VARCHAR(100) UNIQUE NOT NULL,
-            password  VARCHAR(400) NOT NULL,
-            nome      VARCHAR(255) NOT NULL DEFAULT '',
-            role      VARCHAR(20)  NOT NULL DEFAULT 'professora',
-            turmas    JSONB        NOT NULL DEFAULT '[]',
-            ativo     BOOLEAN DEFAULT TRUE,
-            criado_em TIMESTAMP DEFAULT NOW()
+            id               SERIAL PRIMARY KEY,
+            username         VARCHAR(100) UNIQUE NOT NULL,
+            password         VARCHAR(400) NOT NULL,
+            nome             VARCHAR(255) NOT NULL DEFAULT '',
+            role             VARCHAR(20)  NOT NULL DEFAULT 'professora',
+            turmas           JSONB        NOT NULL DEFAULT '[]',
+            ativo            BOOLEAN DEFAULT TRUE,
+            senha_temporaria BOOLEAN DEFAULT FALSE,
+            criado_em        TIMESTAMP DEFAULT NOW()
         );
 
         CREATE TABLE IF NOT EXISTS topicos (
@@ -133,6 +134,7 @@ if DATABASE_URL:
                     cur.execute("ALTER TABLE temas ADD COLUMN IF NOT EXISTS topico_id INTEGER REFERENCES topicos(id) ON DELETE SET NULL")
                     cur.execute("ALTER TABLE topicos ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'")
                     cur.execute("ALTER TABLE temas ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'")
+                    cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS senha_temporaria BOOLEAN DEFAULT FALSE")
                 conn.commit()
                 _seed_admin(conn)
             finally:
@@ -163,9 +165,25 @@ if DATABASE_URL:
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(
-                    "SELECT id, username, nome, role, ativo, criado_em FROM usuarios ORDER BY nome"
+                    "SELECT id, username, nome, role, turmas, ativo, senha_temporaria, criado_em "
+                    "FROM usuarios ORDER BY nome"
                 )
                 return [dict(r) for r in cur.fetchall()]
+        finally:
+            conn.close()
+
+    def get_usuario_by_id(user_id: int) -> dict | None:
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT id, username, nome, role, turmas, ativo, senha_temporaria "
+                    "FROM usuarios WHERE id = %s",
+                    (user_id,),
+                )
+                row = cur.fetchone()
+                return dict(row) if row else None
         finally:
             conn.close()
 
@@ -200,17 +218,36 @@ if DATABASE_URL:
             conn.close()
 
     def update_usuario_senha(user_id: int, nova_senha: str) -> bool:
+        """Define nova senha definida pelo próprio usuário e encerra o estado de senha temporária."""
         _init()
         conn = _connect()
         try:
             with conn.cursor() as cur:
                 cur.execute(
-                    "UPDATE usuarios SET password = %s WHERE id = %s",
+                    "UPDATE usuarios SET password = %s, senha_temporaria = FALSE WHERE id = %s",
                     (hash_password(nova_senha), user_id),
                 )
                 ok = cur.rowcount > 0
             conn.commit()
             return ok
+        finally:
+            conn.close()
+
+    def reset_usuario_senha(user_id: int) -> str | None:
+        """Gera uma senha aleatória, marca como temporária e retorna a senha em texto puro."""
+        _init()
+        nova_senha = generate_temp_password()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE usuarios SET password = %s, senha_temporaria = TRUE "
+                    "WHERE id = %s AND role != 'admin'",
+                    (hash_password(nova_senha), user_id),
+                )
+                ok = cur.rowcount > 0
+            conn.commit()
+            return nova_senha if ok else None
         finally:
             conn.close()
 
@@ -681,6 +718,10 @@ else:
                 if "turmas" not in t:
                     t["turmas"] = []
                     changed = True
+            for u in db.get("usuarios", []):
+                if "senha_temporaria" not in u:
+                    u["senha_temporaria"] = False
+                    changed = True
             if changed:
                 _save(db)
             return db
@@ -721,7 +762,9 @@ else:
                 "password": hash_password(senha),
                 "nome": nome,
                 "role": role,
+                "turmas": [],
                 "ativo": True,
+                "senha_temporaria": False,
             })
         _save(db)
         return db
@@ -750,6 +793,14 @@ else:
         with _lock:
             db = _load()
             return [{k: v for k, v in u.items() if k != "password"} for u in db["usuarios"]]
+
+    def get_usuario_by_id(user_id: int) -> dict | None:
+        with _lock:
+            db = _load()
+            for u in db["usuarios"]:
+                if u["id"] == user_id:
+                    return {k: v for k, v in u.items() if k != "password"}
+            return None
 
     def create_usuario(username: str, password: str, nome: str, role: str = "professora", turmas: list = None) -> dict:
         with _lock:
@@ -781,14 +832,29 @@ else:
             return False
 
     def update_usuario_senha(user_id: int, nova_senha: str) -> bool:
+        """Define nova senha definida pelo próprio usuário e encerra o estado de senha temporária."""
         with _lock:
             db = _load()
             for u in db["usuarios"]:
                 if u["id"] == user_id:
                     u["password"] = hash_password(nova_senha)
+                    u["senha_temporaria"] = False
                     _save(db)
                     return True
             return False
+
+    def reset_usuario_senha(user_id: int) -> str | None:
+        """Gera uma senha aleatória, marca como temporária e retorna a senha em texto puro."""
+        with _lock:
+            db = _load()
+            for u in db["usuarios"]:
+                if u["id"] == user_id and u["role"] != "admin":
+                    nova_senha = generate_temp_password()
+                    u["password"] = hash_password(nova_senha)
+                    u["senha_temporaria"] = True
+                    _save(db)
+                    return nova_senha
+            return None
 
     def delete_usuario(user_id: int) -> bool:
         with _lock:

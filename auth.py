@@ -6,6 +6,9 @@ import os, hashlib, secrets
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from fastapi import Request
 
+# Caracteres sem ambiguidade visual (sem 0/O, 1/l/I) para senhas temporárias
+_TEMP_PWD_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
+
 SECRET_KEY  = os.environ.get("SECRET_KEY", "espaco-alegre-2026-chave-secreta")
 COOKIE_NAME = "ea_session"
 COOKIE_MAX  = 60 * 60 * 8  # 8 horas
@@ -33,6 +36,11 @@ def verify_password(password: str, stored: str) -> bool:
         return secrets.compare_digest(new_h.hex(), h)
     except Exception:
         return False
+
+
+def generate_temp_password(length: int = 8) -> str:
+    """Gera uma senha temporária aleatória, sem caracteres ambíguos."""
+    return "".join(secrets.choice(_TEMP_PWD_ALPHABET) for _ in range(length))
 
 
 # ── Token de sessão ───────────────────────────────────────────────────────────

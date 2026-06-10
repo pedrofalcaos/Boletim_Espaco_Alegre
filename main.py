@@ -1,4 +1,5 @@
 import os, re
+from urllib.parse import quote
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -10,7 +11,7 @@ from auth import (check_session, get_session_user, make_session_token,
 from db_relatorio import (
     authenticate_user,
     get_all_usuarios, create_usuario, delete_usuario,
-    update_usuario_turmas,
+    update_usuario_turmas, update_usuario_senha, reset_usuario_senha, get_usuario_by_id,
     get_all_temas, create_tema, update_tema, delete_tema,
     create_subtema, delete_subtema,
     get_relatorio, get_relatorio_by_id, upsert_relatorio, update_relatorio,
@@ -26,7 +27,8 @@ from templates_admin_extras import (
     admin_aluno_relatorios_page, aluno_infantil_form,
 )
 from templates_professora import (
-    professora_login_page, professora_dashboard, professora_turma_page, is_infantil
+    professora_login_page, professora_dashboard, professora_turma_page,
+    professora_trocar_senha_page, is_infantil
 )
 from templates_relatorio import relatorio_form_page
 from relatorio_print import gerar_relatorio_print_html
@@ -373,12 +375,12 @@ def _alunos_por_professora() -> dict:
 
 
 @app.get("/admin/professoras", response_class=HTMLResponse)
-async def listar_professoras(request: Request, ok: str = "", erro: str = ""):
+async def listar_professoras(request: Request, ok: str = "", erro: str = "", senha_gerada: str = ""):
     if not check_session(request):
         return _redir_login()
     professoras = [u for u in get_all_usuarios() if u["role"] == "professora"]
     alunos_map = _alunos_por_professora()
-    return admin_professoras_page(professoras, alunos_map, msg=ok, erro=erro)
+    return admin_professoras_page(professoras, alunos_map, msg=ok, erro=erro, senha_gerada=senha_gerada)
 
 
 @app.post("/admin/professoras/nova")
@@ -416,6 +418,19 @@ async def excluir_professora(request: Request, user_id: int):
         return _redir_login()
     delete_usuario(user_id)
     return RedirectResponse("/admin/professoras?ok=Professora+removida", status_code=302)
+
+
+@app.post("/admin/professoras/{user_id}/resetar-senha")
+async def resetar_senha_professora(request: Request, user_id: int):
+    if not check_session(request):
+        return _redir_login()
+    nova_senha = reset_usuario_senha(user_id)
+    if nova_senha:
+        return RedirectResponse(
+            f"/admin/professoras?ok=Senha+resetada+com+sucesso&senha_gerada={quote(nova_senha)}",
+            status_code=302,
+        )
+    return RedirectResponse("/admin/professoras?erro=N%C3%A3o+foi+poss%C3%ADvel+resetar+a+senha", status_code=302)
 
 
 @app.get("/admin/aluno/{matricula}/relatorios", response_class=HTMLResponse)
@@ -560,6 +575,14 @@ def _check_prof(request: Request) -> dict | None:
     return user
 
 
+def _precisa_trocar_senha(user: dict) -> bool:
+    """True se a professora estiver com uma senha temporária pendente de troca."""
+    if user.get("role") != "professora":
+        return False
+    atual = get_usuario_by_id(user["user_id"])
+    return bool(atual and atual.get("senha_temporaria"))
+
+
 def _dados_turmas(nome_prof: str, ano_letivo: str = "2026") -> list:
     """
     Retorna lista de dicts por turma com status dos relatórios.
@@ -659,12 +682,14 @@ async def prof_logout():
 
 
 @app.get("/professora", response_class=HTMLResponse)
-async def prof_dashboard(request: Request):
+async def prof_dashboard(request: Request, ok: str = ""):
     user = _check_prof(request)
     if not user:
         return _redir_prof_login()
+    if _precisa_trocar_senha(user):
+        return RedirectResponse("/professora/trocar-senha", status_code=302)
     turmas = _dados_turmas(user["nome"])
-    return professora_dashboard(user, turmas)
+    return professora_dashboard(user, turmas, msg=ok)
 
 
 @app.get("/professora/turma/{turma}", response_class=HTMLResponse)
@@ -672,8 +697,36 @@ async def prof_turma(request: Request, turma: str, ok: str = ""):
     user = _check_prof(request)
     if not user:
         return _redir_prof_login()
+    if _precisa_trocar_senha(user):
+        return RedirectResponse("/professora/trocar-senha", status_code=302)
     alunos = _dados_alunos_turma(user["nome"], turma)
     return professora_turma_page(user, turma, alunos, msg=ok)
+
+
+@app.get("/professora/trocar-senha", response_class=HTMLResponse)
+async def prof_trocar_senha_form(request: Request, erro: str = ""):
+    user = _check_prof(request)
+    if not user:
+        return _redir_prof_login()
+    obrigatorio = _precisa_trocar_senha(user)
+    return professora_trocar_senha_page(user, obrigatorio=obrigatorio, erro=erro)
+
+
+@app.post("/professora/trocar-senha")
+async def prof_trocar_senha_salvar(
+    request: Request,
+    nova_senha: str = Form(...),
+    confirmar_senha: str = Form(...),
+):
+    user = _check_prof(request)
+    if not user:
+        return _redir_prof_login()
+    if len(nova_senha) < 6:
+        return RedirectResponse("/professora/trocar-senha?erro=A+senha+deve+ter+ao+menos+6+caracteres", status_code=302)
+    if nova_senha != confirmar_senha:
+        return RedirectResponse("/professora/trocar-senha?erro=As+senhas+n%C3%A3o+coincidem", status_code=302)
+    update_usuario_senha(user["user_id"], nova_senha)
+    return RedirectResponse("/professora?ok=Senha+atualizada+com+sucesso", status_code=302)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -715,6 +768,8 @@ async def prof_relatorio_get(request: Request, matricula: str, semestre: int, ms
     user = _check_prof(request)
     if not user:
         return _redir_prof_login()
+    if _precisa_trocar_senha(user):
+        return RedirectResponse("/professora/trocar-senha", status_code=302)
 
     if semestre not in (1, 2):
         return RedirectResponse("/professora", status_code=302)

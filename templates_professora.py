@@ -72,10 +72,70 @@ def professora_login_page(erro: bool = False) -> str:
 
 
 # ════════════════════════════════════════════════════════════════════════
+#  TROCAR SENHA
+# ════════════════════════════════════════════════════════════════════════
+
+def professora_trocar_senha_page(user: dict, obrigatorio: bool = False, erro: str = "") -> str:
+    nome = user.get("nome", "Professora")
+    erro_html = f'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#b52222;font-weight:700;text-align:center;">{erro}</div>' if erro else ''
+
+    aviso_html = ""
+    if obrigatorio:
+        aviso_html = """
+<div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#c25b0d;font-weight:700;text-align:center;">
+  🔑 Sua senha é temporária. Por segurança, defina uma nova senha para continuar.
+</div>"""
+
+    cancelar_html = "" if obrigatorio else """
+<a href="/professora" style="display:block;text-align:center;margin-top:14px;font-size:12px;color:#aaa;font-weight:700;text-decoration:none;">
+  ← Voltar
+</a>"""
+
+    _input = ("width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;"
+              "padding:11px 14px;border:2px solid #ddd;border-radius:10px;outline:none;color:#2b3990;")
+
+    body = f"""
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
+<div style="background:#fff;border-radius:20px;box-shadow:0 8px 48px rgba(0,0,0,.22);width:100%;max-width:400px;overflow:hidden;">
+  <div style="background:#2b3990;padding:28px 32px 24px;text-align:center;border-bottom:4px solid #f7d800;">
+    <img src="/static/logo.jpg" style="height:56px;object-fit:contain;margin-bottom:10px;" alt="Logo">
+    <h1 style="font-family:'Fredoka One',cursive;font-size:20px;color:#fff;">Definir Nova Senha</h1>
+    <p style="font-size:11px;color:#b0b8e8;margin-top:3px;">Olá, {nome}</p>
+  </div>
+  <div style="padding:28px 32px 32px;">
+    {aviso_html}
+    {erro_html}
+    <form method="POST" action="/professora/trocar-senha">
+      <div style="margin-bottom:14px;">
+        <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#aaa;display:block;margin-bottom:5px;">Nova senha</label>
+        <input name="nova_senha" type="password" required minlength="6" autocomplete="new-password"
+          style="{_input}"
+          onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#ddd'">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#aaa;display:block;margin-bottom:5px;">Confirmar nova senha</label>
+        <input name="confirmar_senha" type="password" required minlength="6" autocomplete="new-password"
+          style="{_input}"
+          onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#ddd'">
+      </div>
+      <button type="submit"
+        style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;
+               background:#2b3990;color:#fff;border:none;border-radius:10px;padding:13px;cursor:pointer;">
+        Salvar nova senha →
+      </button>
+    </form>
+    {cancelar_html}
+  </div>
+</div>
+</div>"""
+    return page_shell("Trocar Senha — Escola Espaço Alegre", body)
+
+
+# ════════════════════════════════════════════════════════════════════════
 #  DASHBOARD DA PROFESSORA
 # ════════════════════════════════════════════════════════════════════════
 
-def professora_dashboard(user: dict, turmas_data: list) -> str:
+def professora_dashboard(user: dict, turmas_data: list, msg: str = "") -> str:
     """
     turmas_data: lista de dicts com:
       turma, periodo, total_alunos, is_infantil,
@@ -137,6 +197,7 @@ def professora_dashboard(user: dict, turmas_data: list) -> str:
         cards_html += '</div>'
 
     total_alunos = sum(t["total_alunos"] for t in turmas_data)
+    msg_html = f'<div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:11px 16px;margin-bottom:16px;font-size:13px;color:#0a7c3e;font-weight:700;">✔ {msg}</div>' if msg else ""
     body = f"""
 <div style="max-width:960px;margin:0 auto;padding:24px 16px;">
   <!-- Header -->
@@ -149,6 +210,12 @@ def professora_dashboard(user: dict, turmas_data: list) -> str:
         {len(turmas_data)} turma(s) &nbsp;·&nbsp; {total_alunos} aluno(s) vinculado(s)
       </div>
     </div>
+    <a href="/professora/trocar-senha"
+       style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
+              background:rgba(255,255,255,.15);color:#fff;padding:8px 16px;
+              border-radius:9px;border:1px solid rgba(255,255,255,.3);">
+      🔑 Trocar senha
+    </a>
     <a href="/professora/logout"
        style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
               background:rgba(255,255,255,.15);color:#fff;padding:8px 16px;
@@ -156,6 +223,8 @@ def professora_dashboard(user: dict, turmas_data: list) -> str:
       Sair
     </a>
   </div>
+
+  {msg_html}
 
   <!-- Título -->
   <div style="font-family:'Fredoka One',cursive;font-size:16px;color:#2b3990;margin-bottom:14px;">
