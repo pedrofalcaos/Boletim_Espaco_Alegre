@@ -466,7 +466,16 @@ def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
 </form>
 <p style="font-size:11px;color:#aaa;margin-top:10px;">
   Após criar o tópico, selecione as turmas e adicione os temas.
-</p>""")
+</p>
+<div style="border-top:1.5px dashed #e0e0da;padding-top:14px;margin-top:14px;">
+  <form method="POST" action="/admin/seed-estrutura-avaliativa"
+        onsubmit="return confirm('Importar a estrutura avaliativa padrão da Ed. Infantil (5 tópicos, tema Habilidade e 10 subtemas cada, aplicados a todas as turmas de Infantil)? Tópicos/temas/subtemas já existentes não serão duplicados.');">
+    <button type="submit"
+      style="{_BTN_AZ}background:#2b3990;">
+      📥 Importar estrutura avaliativa padrão (Ed. Infantil)
+    </button>
+  </form>
+</div>""")
 
     body = f"""
 <div style="max-width:1080px;margin:0 auto;padding:24px 16px;">

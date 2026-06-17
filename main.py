@@ -355,6 +355,17 @@ async def seed_infantil_route(request: Request):
     return RedirectResponse(f"/admin?resetado=1&seed_msg={msg}", status_code=302)
 
 
+@app.post("/admin/seed-estrutura-avaliativa")
+async def seed_estrutura_avaliativa_route(request: Request):
+    """Importa a estrutura avaliativa (Tópico→Tema→Subtema) da Ed. Infantil — idempotente."""
+    if not check_session(request):
+        return _redir_login()
+    from seed_estrutura_avaliativa import run_seed
+    r = run_seed()
+    msg = f"{r['topicos']}+t%C3%B3picos%2C+{r['temas']}+temas+e+{r['subtemas']}+subtemas+importados"
+    return RedirectResponse(f"/admin/temas?ok={msg}", status_code=302)
+
+
 # ════════════════════════════════════════════════════════════════════════════
 #  FASE 2 — Professoras
 # ════════════════════════════════════════════════════════════════════════════
