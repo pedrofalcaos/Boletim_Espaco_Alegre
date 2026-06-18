@@ -366,6 +366,17 @@ async def seed_estrutura_avaliativa_route(request: Request):
     return RedirectResponse(f"/admin/temas?ok={msg}", status_code=302)
 
 
+@app.post("/admin/seed-estrutura-infantil3")
+async def seed_estrutura_infantil3_route(request: Request):
+    """Importa a estrutura avaliativa específica do Infantil 3 (A e B) — idempotente."""
+    if not check_session(request):
+        return _redir_login()
+    from seed_estrutura_infantil3 import run_seed
+    r = run_seed()
+    msg = f"{r['topicos']}+t%C3%B3picos%2C+{r['temas']}+temas+e+{r['subtemas']}+subtemas+importados"
+    return RedirectResponse(f"/admin/temas?ok={msg}", status_code=302)
+
+
 # ════════════════════════════════════════════════════════════════════════════
 #  FASE 2 — Professoras
 # ════════════════════════════════════════════════════════════════════════════
