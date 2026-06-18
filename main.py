@@ -13,7 +13,7 @@ from db_relatorio import (
     get_all_usuarios, create_usuario, delete_usuario,
     update_usuario_turmas, update_usuario_senha, reset_usuario_senha, get_usuario_by_id,
     get_all_temas, create_tema, update_tema, delete_tema,
-    create_subtema, delete_subtema,
+    create_subtema, update_subtema, delete_subtema,
     get_relatorio, get_relatorio_by_id, upsert_relatorio, update_relatorio,
     get_respostas, save_respostas,
     update_subtema_turmas, get_temas_para_turma,
@@ -377,6 +377,28 @@ async def seed_estrutura_infantil3_route(request: Request):
     return RedirectResponse(f"/admin/temas?ok={msg}", status_code=302)
 
 
+@app.post("/admin/seed-estrutura-infantil4")
+async def seed_estrutura_infantil4_route(request: Request):
+    """Importa a estrutura avaliativa específica do Infantil 4 (A e B) — idempotente."""
+    if not check_session(request):
+        return _redir_login()
+    from seed_estrutura_infantil4 import run_seed
+    r = run_seed()
+    msg = f"{r['topicos']}+t%C3%B3picos%2C+{r['temas']}+temas+e+{r['subtemas']}+subtemas+importados"
+    return RedirectResponse(f"/admin/temas?ok={msg}", status_code=302)
+
+
+@app.post("/admin/seed-estrutura-infantil5")
+async def seed_estrutura_infantil5_route(request: Request):
+    """Importa a estrutura avaliativa específica do Infantil 5 (A) — idempotente."""
+    if not check_session(request):
+        return _redir_login()
+    from seed_estrutura_infantil5 import run_seed
+    r = run_seed()
+    msg = f"{r['topicos']}+t%C3%B3picos%2C+{r['temas']}+temas+e+{r['subtemas']}+subtemas+importados"
+    return RedirectResponse(f"/admin/temas?ok={msg}", status_code=302)
+
+
 # ════════════════════════════════════════════════════════════════════════════
 #  FASE 2 — Professoras
 # ════════════════════════════════════════════════════════════════════════════
@@ -551,6 +573,17 @@ async def criar_subtema(request: Request, tema_id: int, descricao: str = Form(..
         return RedirectResponse("/admin/temas?erro=Descri%C3%A7%C3%A3o+do+subtema+n%C3%A3o+pode+ser+vazia", status_code=302)
     create_subtema(tema_id, descricao)
     return RedirectResponse("/admin/temas?ok=Subtema+adicionado", status_code=302)
+
+
+@app.post("/admin/subtemas/{subtema_id}/editar")
+async def editar_subtema(request: Request, subtema_id: int, descricao: str = Form(...)):
+    if not check_session(request):
+        return _redir_login()
+    descricao = descricao.strip()
+    if not descricao:
+        return RedirectResponse("/admin/temas?erro=Descri%C3%A7%C3%A3o+do+subtema+n%C3%A3o+pode+ser+vazia", status_code=302)
+    update_subtema(subtema_id, descricao)
+    return RedirectResponse("/admin/temas?ok=Subtema+atualizado", status_code=302)
 
 
 @app.post("/admin/subtemas/{subtema_id}/excluir")

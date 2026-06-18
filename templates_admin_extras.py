@@ -301,9 +301,16 @@ def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
             lista_st = ""
             for i, st in enumerate(subtemas, 1):
                 sid = st["id"]
+                desc_attr = st["descricao"].replace('"', "&quot;")
                 lista_st += f"""
 <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid #f0f0ee;">
-  <span style="flex:1;font-size:12px;color:#4a4a4a;">{i}. {st['descricao']}</span>
+  <span style="font-size:12px;color:#aaa;white-space:nowrap;">{i}.</span>
+  <form method="POST" action="/admin/subtemas/{sid}/editar" style="display:flex;gap:6px;flex:1;">
+    <input name="descricao" value="{desc_attr}" required
+           style="{_INP}flex:1;font-size:12px;padding:6px 10px;"
+           onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
+    <button type="submit" style="{_BTN_AZ}padding:6px 12px;font-size:11px;">💾 Salvar</button>
+  </form>
   <form id="del-st-{sid}" method="POST" action="/admin/subtemas/{sid}/excluir" style="display:none;"></form>
   <button type="button"
     onclick="if(confirm('Excluir subtema?'))document.getElementById('del-st-{sid}').submit()"
@@ -480,6 +487,20 @@ def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
     <button type="submit"
       style="{_BTN_AZ}background:#2b3990;">
       📥 Importar estrutura avaliativa — Infantil 3 (A e B)
+    </button>
+  </form>
+  <form method="POST" action="/admin/seed-estrutura-infantil4"
+        onsubmit="return confirm('Importar a estrutura avaliativa específica do Infantil 4 (A e B) — 5 tópicos com tema Conteúdos e Habilidades, aplicados apenas a essas turmas? Tópicos/temas/subtemas já existentes não serão duplicados.');">
+    <button type="submit"
+      style="{_BTN_AZ}background:#2b3990;">
+      📥 Importar estrutura avaliativa — Infantil 4 (A e B)
+    </button>
+  </form>
+  <form method="POST" action="/admin/seed-estrutura-infantil5"
+        onsubmit="return confirm('Importar a estrutura avaliativa específica do Infantil 5 (A) — 5 tópicos com tema Conteúdos e Habilidades, aplicados apenas a essa turma? Tópicos/temas/subtemas já existentes não serão duplicados.');">
+    <button type="submit"
+      style="{_BTN_AZ}background:#2b3990;">
+      📥 Importar estrutura avaliativa — Infantil 5 (A)
     </button>
   </form>
 </div>""")

@@ -471,6 +471,20 @@ if DATABASE_URL:
         finally:
             conn.close()
 
+    def update_subtema(subtema_id: int, descricao: str) -> bool:
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE subtemas SET descricao = %s WHERE id = %s", (descricao, subtema_id)
+                )
+                ok = cur.rowcount > 0
+            conn.commit()
+            return ok
+        finally:
+            conn.close()
+
     def delete_subtema(subtema_id: int) -> bool:
         _init()
         conn = _connect()
@@ -1035,6 +1049,16 @@ else:
             db["subtemas"].append(st)
             _save(db)
             return st
+
+    def update_subtema(subtema_id: int, descricao: str) -> bool:
+        with _lock:
+            db = _load()
+            for s in db["subtemas"]:
+                if s["id"] == subtema_id:
+                    s["descricao"] = descricao
+                    _save(db)
+                    return True
+            return False
 
     def delete_subtema(subtema_id: int) -> bool:
         with _lock:
