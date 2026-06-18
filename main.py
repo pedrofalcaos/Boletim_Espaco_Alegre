@@ -15,6 +15,7 @@ from db_relatorio import (
     get_all_temas, create_tema, update_tema, delete_tema,
     create_subtema, update_subtema, delete_subtema,
     get_relatorio, get_relatorio_by_id, upsert_relatorio, update_relatorio,
+    set_relatorio_trancado,
     get_respostas, save_respostas,
     update_subtema_turmas, get_temas_para_turma,
     get_status_relatorios,
@@ -722,7 +723,7 @@ async def prof_post_login(
 ):
     user = authenticate_user(usuario, senha)
     if user and user.get("role") in ("admin", "professora"):
-        resp = RedirectResponse("/professora", status_code=302)
+        resp = RedirectResponse("/professora?bemvindo=1", status_code=302)
         resp.set_cookie(COOKIE_NAME, make_session_token(user),
                         max_age=COOKIE_MAX, httponly=True, samesite="lax")
         return resp
@@ -737,14 +738,14 @@ async def prof_logout():
 
 
 @app.get("/professora", response_class=HTMLResponse)
-async def prof_dashboard(request: Request, ok: str = ""):
+async def prof_dashboard(request: Request, ok: str = "", bemvindo: str = ""):
     user = _check_prof(request)
     if not user:
         return _redir_prof_login()
     if _precisa_trocar_senha(user):
         return RedirectResponse("/professora/trocar-senha", status_code=302)
     turmas = _dados_turmas(user["nome"])
-    return professora_dashboard(user, turmas, msg=ok)
+    return professora_dashboard(user, turmas, msg=ok, bemvindo=(bemvindo == "1"))
 
 
 @app.get("/professora/turma/{turma}", response_class=HTMLResponse)
@@ -860,7 +861,12 @@ async def prof_relatorio_salvar(request: Request, matricula: str, semestre: int)
     ano = aluno.get("ano_letivo", "2026")
     relatorio = upsert_relatorio(matricula, semestre, user["user_id"], ano)
 
-    # Impede edição por professora após confirmar
+    # Impede edição por professora após confirmar ou se o admin trancou
+    if relatorio.get("trancado") and user.get("role") == "professora":
+        return RedirectResponse(
+            f"/professora/relatorio/{matricula}/{semestre}?erro=Relat%C3%B3rio+trancado+pelo+administrador",
+            status_code=302,
+        )
     if relatorio["status"] == "concluido" and user.get("role") == "professora":
         return RedirectResponse(
             f"/professora/relatorio/{matricula}/{semestre}?erro=Relat%C3%B3rio+j%C3%A1+confirmado",
@@ -893,7 +899,12 @@ async def prof_relatorio_confirmar(request: Request, matricula: str, semestre: i
     ano = aluno.get("ano_letivo", "2026")
     relatorio = upsert_relatorio(matricula, semestre, user["user_id"], ano)
 
-    # Professora não pode re-confirmar relatório já concluído
+    # Professora não pode confirmar relatório trancado pelo admin ou já concluído
+    if relatorio.get("trancado") and user.get("role") == "professora":
+        return RedirectResponse(
+            f"/professora/relatorio/{matricula}/{semestre}?erro=Relat%C3%B3rio+trancado+pelo+administrador",
+            status_code=302,
+        )
     if relatorio["status"] == "concluido" and user.get("role") == "professora":
         return RedirectResponse(
             f"/professora/relatorio/{matricula}/{semestre}?erro=Relat%C3%B3rio+j%C3%A1+confirmado",
@@ -989,8 +1000,10 @@ def _painel_relatorios_data(turma_f: str = "", semestre_f: str = "", status_f: s
             "professora":al.get("professora", ""),
             "s1_status": s1,
             "s1_id":     rel1["id"] if rel1 else None,
+            "s1_trancado": bool(rel1.get("trancado")) if rel1 else False,
             "s2_status": s2,
             "s2_id":     rel2["id"] if rel2 else None,
+            "s2_trancado": bool(rel2.get("trancado")) if rel2 else False,
         })
 
     contadores = {
@@ -1089,6 +1102,22 @@ async def admin_confirmar_relatorio(request: Request, rel_id: int):
     save_respostas(rel_id, respostas)
     update_relatorio(rel_id, "concluido", descricao)
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+confirmado+com+sucesso", status_code=302)
+
+
+@app.post("/admin/relatorio/{rel_id}/trancar")
+async def admin_trancar_relatorio(request: Request, rel_id: int):
+    if not check_session(request):
+        return _redir_login()
+    set_relatorio_trancado(rel_id, True)
+    return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+trancado", status_code=302)
+
+
+@app.post("/admin/relatorio/{rel_id}/destrancar")
+async def admin_destrancar_relatorio(request: Request, rel_id: int):
+    if not check_session(request):
+        return _redir_login()
+    set_relatorio_trancado(rel_id, False)
+    return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+destrancado", status_code=302)
 
 
 @app.get("/admin/relatorio/{rel_id}/imprimir", response_class=HTMLResponse)

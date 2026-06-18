@@ -135,7 +135,7 @@ def professora_trocar_senha_page(user: dict, obrigatorio: bool = False, erro: st
 #  DASHBOARD DA PROFESSORA
 # ════════════════════════════════════════════════════════════════════════
 
-def professora_dashboard(user: dict, turmas_data: list, msg: str = "") -> str:
+def professora_dashboard(user: dict, turmas_data: list, msg: str = "", bemvindo: bool = False) -> str:
     """
     turmas_data: lista de dicts com:
       turma, periodo, total_alunos, is_infantil,
@@ -198,6 +198,18 @@ def professora_dashboard(user: dict, turmas_data: list, msg: str = "") -> str:
 
     total_alunos = sum(t["total_alunos"] for t in turmas_data)
     msg_html = f'<div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:11px 16px;margin-bottom:16px;font-size:13px;color:#0a7c3e;font-weight:700;">✔ {msg}</div>' if msg else ""
+    bemvindo_html = f"""
+<div style="background:#fff8e1;border:1.5px solid #f7d800;border-radius:12px;padding:16px 20px;
+            margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+  <span style="font-size:26px;">🎉</span>
+  <div>
+    <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;">Bem-vinda, {nome}!</div>
+    <div style="font-size:12px;color:#6a6a4a;margin-top:2px;">
+      Aqui você acompanha suas turmas e preenche os relatórios semestrais dos alunos.
+      Em caso de dúvidas, fale com a coordenação.
+    </div>
+  </div>
+</div>""" if bemvindo else ""
     body = f"""
 <div style="max-width:960px;margin:0 auto;padding:24px 16px;">
   <!-- Header -->
@@ -224,6 +236,7 @@ def professora_dashboard(user: dict, turmas_data: list, msg: str = "") -> str:
     </a>
   </div>
 
+  {bemvindo_html}
   {msg_html}
 
   <!-- Título -->

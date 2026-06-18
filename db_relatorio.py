@@ -77,6 +77,7 @@ if DATABASE_URL:
             professora_id   INTEGER REFERENCES usuarios(id),
             status          VARCHAR(20) DEFAULT 'pendente',
             descricao_final TEXT DEFAULT '',
+            trancado        BOOLEAN DEFAULT FALSE,
             confirmado_em   TIMESTAMP,
             criado_em       TIMESTAMP DEFAULT NOW(),
             atualizado_em   TIMESTAMP DEFAULT NOW(),
@@ -135,6 +136,7 @@ if DATABASE_URL:
                     cur.execute("ALTER TABLE topicos ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'")
                     cur.execute("ALTER TABLE temas ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'")
                     cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS senha_temporaria BOOLEAN DEFAULT FALSE")
+                    cur.execute("ALTER TABLE relatorios_semestrais ADD COLUMN IF NOT EXISTS trancado BOOLEAN DEFAULT FALSE")
                 conn.commit()
                 _seed_admin(conn)
             finally:
@@ -656,6 +658,22 @@ if DATABASE_URL:
         finally:
             conn.close()
 
+    def set_relatorio_trancado(relatorio_id: int, trancado: bool) -> bool:
+        """Tranca/destranca um relatório — apenas o admin pode editar enquanto trancado."""
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE relatorios_semestrais SET trancado = %s WHERE id = %s",
+                    (trancado, relatorio_id),
+                )
+                ok = cur.rowcount > 0
+            conn.commit()
+            return ok
+        finally:
+            conn.close()
+
     def get_relatorios_por_professora(professora_id: int) -> list:
         _init()
         conn = _connect()
@@ -735,6 +753,10 @@ else:
             for u in db.get("usuarios", []):
                 if "senha_temporaria" not in u:
                     u["senha_temporaria"] = False
+                    changed = True
+            for r in db.get("relatorios_semestrais", []):
+                if "trancado" not in r:
+                    r["trancado"] = False
                     changed = True
             if changed:
                 _save(db)
@@ -1172,6 +1194,7 @@ else:
                 "professora_id": professora_id,
                 "status": "pendente",
                 "descricao_final": "",
+                "trancado": False,
                 "confirmado_em": None,
             }
             db["relatorios_semestrais"].append(r)
@@ -1187,6 +1210,17 @@ else:
                     r["descricao_final"] = descricao_final
                     if status == "concluido":
                         r["confirmado_em"] = datetime.now().isoformat()
+                    _save(db)
+                    return True
+            return False
+
+    def set_relatorio_trancado(relatorio_id: int, trancado: bool) -> bool:
+        """Tranca/destranca um relatório — apenas o admin pode editar enquanto trancado."""
+        with _lock:
+            db = _load()
+            for r in db["relatorios_semestrais"]:
+                if r["id"] == relatorio_id:
+                    r["trancado"] = trancado
                     _save(db)
                     return True
             return False

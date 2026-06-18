@@ -62,10 +62,11 @@ def relatorio_form_page(
     status       = relatorio.get("status", "pendente")
     descricao    = relatorio.get("descricao_final", "")
     rel_id       = relatorio.get("id")
+    trancado     = bool(relatorio.get("trancado"))
     sem_label    = "1º Semestre" if semestre == 1 else "2º Semestre"
 
     is_admin     = user.get("role") == "admin"
-    is_readonly  = (status == "concluido") and not is_admin
+    is_readonly  = (status == "concluido" or trancado) and not is_admin
     nome_prof    = user.get("nome", "")
     prefix       = form_prefix or f"/professora/relatorio/{matricula}/{semestre}"
 
@@ -179,7 +180,17 @@ def relatorio_form_page(
 
     # ── Banner read-only ──
     banner_concluido = ""
-    if is_readonly:
+    if trancado and not is_admin:
+        banner_concluido = """
+<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 18px;
+            margin-bottom:18px;display:flex;align-items:center;gap:10px;">
+  <span style="font-size:20px;">🔒</span>
+  <div>
+    <div style="font-weight:800;color:#b52222;font-size:13px;">Relatório trancado pelo administrador</div>
+    <div style="font-size:11px;color:#c25b5b;">Este relatório está temporariamente bloqueado para edição. Fale com a administração caso precise alterá-lo.</div>
+  </div>
+</div>"""
+    elif is_readonly:
         banner_concluido = """
 <div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:12px 18px;
             margin-bottom:18px;display:flex;align-items:center;gap:10px;">
@@ -199,6 +210,31 @@ def relatorio_form_page(
     <div style="font-size:11px;color:#666;">Como administrador, você pode editar mesmo após a confirmação.</div>
   </div>
 </div>"""
+
+    # ── Controle de trava (somente admin) ──
+    trava_html = ""
+    if is_admin and rel_id:
+        if trancado:
+            trava_html = f"""
+<form method="POST" action="/admin/relatorio/{rel_id}/destrancar" style="display:inline;">
+  <button type="submit"
+    style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
+           background:#fef2f2;color:#b52222;border:1.5px solid #fecaca;
+           border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap;">
+    🔓 Destrancar relatório
+  </button>
+</form>"""
+        else:
+            trava_html = f"""
+<form method="POST" action="/admin/relatorio/{rel_id}/trancar" style="display:inline;"
+      onsubmit="return confirm('Trancar este relatório? A professora não poderá mais editá-lo até você destrancar.');">
+  <button type="submit"
+    style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
+           background:#f7f7f5;color:#2b3990;border:1.5px solid #b0b8e8;
+           border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap;">
+    🔒 Trancar relatório
+  </button>
+</form>"""
 
     back_url = "/professora" if not is_admin else "/admin/relatorios"
     back_label = "← Minhas Turmas" if not is_admin else "← Relatórios"
@@ -224,6 +260,7 @@ def relatorio_form_page(
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       {_badge_status(status)}
+      {trava_html}
       <a href="/{'admin/logout' if is_admin else 'professora/logout'}"
          style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;
                 font-size:12px;padding:8px 14px;border-radius:9px;border:1px solid #dcdcd8;">
@@ -344,7 +381,8 @@ def _render_form(prefix, temas, respostas, status, is_admin):
                  f"border-radius:20px;cursor:pointer;border:2px solid;transition:all .15s;"
                  f"border-color:{cor};background:{bg};color:{cor};")
         span_id = f"pill_{subtema_id}_{valor.replace(' ','_')}"
-        return f"""<label style="cursor:pointer;">
+        titulo  = _LEGENDA.get(valor, valor)
+        return f"""<label style="cursor:pointer;" title="{titulo}">
   <input type="radio" name="{nome_campo}" value="{valor}" {checked}
          style="{_INP_RD}"
          onchange="updatePills({subtema_id}); updateProgress();">
