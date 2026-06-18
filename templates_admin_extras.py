@@ -535,14 +535,16 @@ _ST = {
     "concluido":    ("#0a7c3e", "#e3f5ec", "#a8ddc0", "🟢", "Concluído"),
 }
 
-def _pill_status(status: str, rel_id: int | None = None, trancado: bool = False) -> str:
+def _pill_status(status: str, rel_id: int | None = None, trancado: bool = False,
+                  abrir_href: str | None = None) -> str:
     cor, bg, bd, ico, label = _ST.get(status, _ST["pendente"])
     cadeado = ' <span title="Trancado pelo administrador">🔒</span>' if trancado else ""
     pill = (f'<span style="background:{bg};border:1px solid {bd};color:{cor};'
             f'font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;'
             f'white-space:nowrap;">{ico} {label}{cadeado}</span>')
-    if rel_id:
-        return f'<a href="/admin/relatorio/{rel_id}" style="text-decoration:none;">{pill}</a>'
+    href = f"/admin/relatorio/{rel_id}" if rel_id else abrir_href
+    if href:
+        return f'<a href="{href}" style="text-decoration:none;">{pill}</a>'
     return pill
 
 
@@ -635,11 +637,13 @@ def admin_relatorios_page(
             td_s1 = ""
             td_s2 = ""
             if mostrar_s1:
-                pill = _pill_status(r["s1_status"], r.get("s1_id"), r.get("s1_trancado", False))
+                pill = _pill_status(r["s1_status"], r.get("s1_id"), r.get("s1_trancado", False),
+                                     abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/1')
                 imp  = f'<a href="/admin/relatorio/{r["s1_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s1_id") else ""
                 td_s1 = f'<td style="padding:9px 12px;text-align:center;">{pill}{imp}</td>'
             if mostrar_s2:
-                pill = _pill_status(r["s2_status"], r.get("s2_id"), r.get("s2_trancado", False))
+                pill = _pill_status(r["s2_status"], r.get("s2_id"), r.get("s2_trancado", False),
+                                     abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/2')
                 imp  = f'<a href="/admin/relatorio/{r["s2_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s2_id") else ""
                 td_s2 = f'<td style="padding:9px 12px;text-align:center;">{pill}{imp}</td>'
 

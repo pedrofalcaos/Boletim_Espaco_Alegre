@@ -1028,6 +1028,29 @@ async def admin_relatorios(
     return admin_relatorios_page(rows, turmas_inf, filtros, cont, msg=ok, erro=erro)
 
 
+@app.get("/admin/relatorio/aluno/{matricula}/{semestre}")
+async def admin_abrir_relatorio(request: Request, matricula: str, semestre: int):
+    """Abre (criando se necessário) o relatório de um aluno/semestre — usado quando
+    a professora ainda não preencheu nada e o relatório não existe no banco."""
+    if not check_session(request):
+        return _redir_login()
+
+    aluno = get_aluno(matricula)
+    if not aluno:
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    nome_prof = aluno.get("professora", "").strip()
+    professora = next(
+        (u for u in get_all_usuarios() if u.get("nome", "").strip() == nome_prof),
+        None,
+    )
+    professora_id = professora["id"] if professora else None
+
+    ano = aluno.get("ano_letivo", "2026")
+    relatorio = upsert_relatorio(matricula, semestre, professora_id, ano)
+    return RedirectResponse(f"/admin/relatorio/{relatorio['id']}", status_code=302)
+
+
 @app.get("/admin/relatorio/{rel_id}", response_class=HTMLResponse)
 async def admin_ver_relatorio(request: Request, rel_id: int, msg: str = "", erro: str = ""):
     if not check_session(request):
