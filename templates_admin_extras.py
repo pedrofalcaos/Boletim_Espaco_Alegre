@@ -640,6 +640,46 @@ def admin_relatorios_page(
   <a href="/admin/relatorios" style="{_BTN_CINZA}">Limpar</a>
 </form>""")
 
+    # ── Trava em massa por semestre ──
+    turma_atual = filtros.get("turma", "")
+    escopo_label = f"da turma {turma_atual}" if turma_atual else "de todas as turmas"
+
+    def _form_massa(semestre: int, acao: str) -> str:
+        trancar = acao == "trancar"
+        cor = "#b52222" if trancar else "#0a7c3e"
+        bg  = "#fef2f2" if trancar else "#e3f5ec"
+        bd  = "#fecaca" if trancar else "#a8ddc0"
+        icone = "🔒" if trancar else "🔓"
+        label = f"{icone} {'Trancar' if trancar else 'Destrancar'} {semestre}º Semestre"
+        confirma = (f"return confirm('{'Trancar' if trancar else 'Destrancar'} TODOS os relatórios "
+                    f"do {semestre}º semestre {escopo_label}?');")
+        return f"""
+<form method="POST" action="/admin/relatorios/trancar-semestre" style="display:inline;"
+      onsubmit="{confirma}">
+  <input type="hidden" name="semestre" value="{semestre}">
+  <input type="hidden" name="acao" value="{acao}">
+  <input type="hidden" name="turma" value="{turma_atual}">
+  <input type="hidden" name="status" value="{filtros.get('status','')}">
+  <button type="submit"
+    style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
+           background:{bg};color:{cor};border:1.5px solid {bd};
+           border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap;">
+    {label}
+  </button>
+</form>"""
+
+    trava_massa_card = _card(f"""
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <span style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">
+    Trava em massa ({escopo_label}):
+  </span>
+  {_form_massa(1, "trancar")}
+  {_form_massa(1, "destrancar")}
+  <span style="width:1px;height:24px;background:#e8e8e4;"></span>
+  {_form_massa(2, "trancar")}
+  {_form_massa(2, "destrancar")}
+</div>""")
+
     # ── Tabela de alunos ──
     sem_filtro = str(filtros.get("semestre", ""))
     mostrar_s1 = sem_filtro in ("", "1")
@@ -708,6 +748,7 @@ def admin_relatorios_page(
   {aviso}
   {resumo}
   {filtros_card}
+  {trava_massa_card}
   {tabela_html}
 </div>"""
     return page_shell("Relatórios Semestrais — Escola Espaço Alegre", body)

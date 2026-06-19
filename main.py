@@ -1084,6 +1084,41 @@ async def admin_destrancar_por_aluno(
     return RedirectResponse(f"/admin/relatorios?{qs}", status_code=302)
 
 
+@app.post("/admin/relatorios/trancar-semestre")
+async def admin_trancar_semestre_inteiro(
+    request: Request,
+    semestre: int = Form(...),
+    acao: str = Form(...),       # "trancar" ou "destrancar"
+    turma: str = Form(""),
+    status: str = Form(""),
+):
+    """Tranca/destranca de uma vez todos os relatórios de um semestre
+    (de Ed. Infantil), criando os que ainda não existem. Respeita o
+    filtro de turma atual, se houver."""
+    if not check_session(request):
+        return _redir_login()
+    if semestre not in (1, 2):
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    trancar = (acao == "trancar")
+    afetados = 0
+    for mat, al in get_all_alunos().items():
+        t = al.get("turma", "")
+        if not is_infantil(t):
+            continue
+        if turma and t != turma:
+            continue
+        relatorio = _get_or_create_relatorio(mat, semestre)
+        if relatorio:
+            set_relatorio_trancado(relatorio["id"], trancar)
+            afetados += 1
+
+    verbo = "trancados" if trancar else "destrancados"
+    msg = quote(f"{afetados} relatórios do {semestre}º semestre foram {verbo}")
+    qs = f"turma={quote(turma)}&semestre={quote(str(semestre))}&status={quote(status)}&ok={msg}"
+    return RedirectResponse(f"/admin/relatorios?{qs}", status_code=302)
+
+
 @app.get("/admin/relatorio/{rel_id}", response_class=HTMLResponse)
 async def admin_ver_relatorio(request: Request, rel_id: int, msg: str = "", erro: str = ""):
     if not check_session(request):
