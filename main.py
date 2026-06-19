@@ -1028,27 +1028,60 @@ async def admin_relatorios(
     return admin_relatorios_page(rows, turmas_inf, filtros, cont, msg=ok, erro=erro)
 
 
-@app.get("/admin/relatorio/aluno/{matricula}/{semestre}")
-async def admin_abrir_relatorio(request: Request, matricula: str, semestre: int):
-    """Abre (criando se necessário) o relatório de um aluno/semestre — usado quando
-    a professora ainda não preencheu nada e o relatório não existe no banco."""
-    if not check_session(request):
-        return _redir_login()
-
+def _get_or_create_relatorio(matricula: str, semestre: int) -> dict | None:
+    """Retorna o relatório do aluno/semestre, criando-o (sem respostas) se ainda
+    não existir — necessário para o admin poder trancar antes da professora abrir."""
     aluno = get_aluno(matricula)
     if not aluno:
-        return RedirectResponse("/admin/relatorios", status_code=302)
-
+        return None
     nome_prof = aluno.get("professora", "").strip()
     professora = next(
         (u for u in get_all_usuarios() if u.get("nome", "").strip() == nome_prof),
         None,
     )
     professora_id = professora["id"] if professora else None
-
     ano = aluno.get("ano_letivo", "2026")
-    relatorio = upsert_relatorio(matricula, semestre, professora_id, ano)
+    return upsert_relatorio(matricula, semestre, professora_id, ano)
+
+
+@app.get("/admin/relatorio/aluno/{matricula}/{semestre}")
+async def admin_abrir_relatorio(request: Request, matricula: str, semestre: int):
+    """Abre (criando se necessário) o relatório de um aluno/semestre — usado quando
+    a professora ainda não preencheu nada e o relatório não existe no banco."""
+    if not check_session(request):
+        return _redir_login()
+    relatorio = _get_or_create_relatorio(matricula, semestre)
+    if not relatorio:
+        return RedirectResponse("/admin/relatorios", status_code=302)
     return RedirectResponse(f"/admin/relatorio/{relatorio['id']}", status_code=302)
+
+
+@app.post("/admin/relatorio/aluno/{matricula}/{semestre}/trancar")
+async def admin_trancar_por_aluno(
+    request: Request, matricula: str, semestre: int,
+    turma: str = Form(""), semestre_filtro: str = Form(""), status: str = Form(""),
+):
+    if not check_session(request):
+        return _redir_login()
+    relatorio = _get_or_create_relatorio(matricula, semestre)
+    if relatorio:
+        set_relatorio_trancado(relatorio["id"], True)
+    qs = f"turma={quote(turma)}&semestre={quote(semestre_filtro)}&status={quote(status)}"
+    return RedirectResponse(f"/admin/relatorios?{qs}", status_code=302)
+
+
+@app.post("/admin/relatorio/aluno/{matricula}/{semestre}/destrancar")
+async def admin_destrancar_por_aluno(
+    request: Request, matricula: str, semestre: int,
+    turma: str = Form(""), semestre_filtro: str = Form(""), status: str = Form(""),
+):
+    if not check_session(request):
+        return _redir_login()
+    relatorio = _get_or_create_relatorio(matricula, semestre)
+    if relatorio:
+        set_relatorio_trancado(relatorio["id"], False)
+    qs = f"turma={quote(turma)}&semestre={quote(semestre_filtro)}&status={quote(status)}"
+    return RedirectResponse(f"/admin/relatorios?{qs}", status_code=302)
 
 
 @app.get("/admin/relatorio/{rel_id}", response_class=HTMLResponse)

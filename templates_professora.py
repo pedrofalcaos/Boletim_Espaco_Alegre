@@ -1,6 +1,6 @@
 """Páginas da área da professora."""
 from urllib.parse import quote
-from templates import page_shell
+from templates import page_shell, _ANO_ATUAL
 
 # ── Helpers de status ─────────────────────────────────────────────────────────
 
@@ -66,6 +66,9 @@ def professora_login_page(erro: bool = False) -> str:
   <div style="border-top:1px solid #f0f0ee;padding:12px 32px;text-align:center;font-size:11px;color:#ccc;">
     Escola Espaço Alegre &nbsp;|&nbsp; Ed. Infantil e Fundamental &nbsp;|&nbsp; Bilíngue
   </div>
+  <p style="text-align:center;font-size:10px;color:#bbb;padding:0 32px 16px;">
+    Desenvolvido por <strong style="color:#888;">Pedro Falcão</strong> © {_ANO_ATUAL}
+  </p>
 </div>
 </div>"""
     return page_shell("Área da Professora — Escola Espaço Alegre", body)

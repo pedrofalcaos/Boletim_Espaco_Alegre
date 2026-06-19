@@ -1,5 +1,8 @@
 """HTML de todas as páginas."""
 from urllib.parse import quote
+from datetime import datetime
+
+_ANO_ATUAL = datetime.now().year
 
 # ── Paleta ──────────────────────────────────────────────────────────────────
 CSS_VARS = """
@@ -31,7 +34,13 @@ a{{text-decoration:none;color:inherit;}}
 {extra_head}
 </style>
 </head>
-<body>{body}</body>
+<body>
+{body}
+<footer style="text-align:center;padding:18px 12px 28px;font-family:'Nunito',sans-serif;
+               font-size:11px;color:#9a9da8;">
+  Sistema desenvolvido por <strong style="color:#6a6f87;">Pedro Falcão</strong> © {_ANO_ATUAL} — Todos os direitos reservados.
+</footer>
+</body>
 </html>"""
 
 # ── Página de login ──────────────────────────────────────────────────────────
@@ -69,6 +78,9 @@ def login_page(erro: bool = False) -> str:
         Entrar →
       </button>
     </form>
+    <p style="text-align:center;font-size:10px;color:#bbb;margin-top:18px;">
+      Desenvolvido por <strong style="color:#888;">Pedro Falcão</strong> © {_ANO_ATUAL}
+    </p>
   </div>
 </div>
 </div>"""
