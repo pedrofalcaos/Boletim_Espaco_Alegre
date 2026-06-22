@@ -125,9 +125,6 @@ def relatorio_form_page(
 </div>"""
 
     # ── Campo de observações — sempre visível ──
-    _obs_style = ("width:100%;font-family:'Nunito',sans-serif;font-size:13px;color:#4a4a4a;"
-                  "padding:12px 14px;border:1.5px solid #dcdcd8;border-radius:9px;outline:none;"
-                  "resize:vertical;line-height:1.6;")
     if is_readonly:
         obs_html = f"""
 <div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
@@ -135,9 +132,40 @@ def relatorio_form_page(
               margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
     📝 Observações Pedagógicas
   </div>
-  <p style="font-size:13px;color:#4a4a4a;line-height:1.7;white-space:pre-wrap;">{descricao or '—'}</p>
+  <div style="font-size:13px;color:#4a4a4a;line-height:1.7;">{descricao or '—'}</div>
 </div>"""
     else:
+        _TB_BTN = ("font-family:'Nunito',sans-serif;background:#fff;border:1px solid #dcdcd8;"
+                   "border-radius:6px;padding:5px 9px;cursor:pointer;font-size:13px;color:#444;"
+                   "min-width:30px;line-height:1;")
+        toolbar = f"""
+<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;background:#f7f7f5;
+            border:1.5px solid #dcdcd8;border-bottom:none;border-radius:9px 9px 0 0;padding:7px 9px;">
+  <button type="button" title="Negrito" style="{_TB_BTN}font-weight:900;"
+    onmousedown="event.preventDefault()" onclick="fmtDoc('bold')">B</button>
+  <button type="button" title="Itálico" style="{_TB_BTN}font-style:italic;"
+    onmousedown="event.preventDefault()" onclick="fmtDoc('italic')">I</button>
+  <button type="button" title="Sublinhado" style="{_TB_BTN}text-decoration:underline;"
+    onmousedown="event.preventDefault()" onclick="fmtDoc('underline')">U</button>
+  <input type="color" title="Cor do texto" value="#2b3990"
+    style="width:30px;height:30px;border:1px solid #dcdcd8;border-radius:6px;padding:2px;cursor:pointer;"
+    onmousedown="saveSel()" onchange="fmtDoc('foreColor', this.value)">
+  <span style="width:1px;height:22px;background:#dcdcd8;margin:0 2px;"></span>
+  <button type="button" title="Justificar" style="{_TB_BTN}"
+    onmousedown="event.preventDefault()" onclick="fmtDoc('justifyFull')">≡</button>
+  <button type="button" title="Lista numerada" style="{_TB_BTN}"
+    onmousedown="event.preventDefault()" onclick="fmtDoc('insertOrderedList')">1.</button>
+  <button type="button" title="Lista com marcadores" style="{_TB_BTN}"
+    onmousedown="event.preventDefault()" onclick="fmtDoc('insertUnorderedList')">•≡</button>
+  <span style="width:1px;height:22px;background:#dcdcd8;margin:0 2px;"></span>
+  <button type="button" title="Inserir link" style="{_TB_BTN}"
+    onmousedown="event.preventDefault()" onclick="fmtLink()">🔗</button>
+  <button type="button" title="Inserir imagem" style="{_TB_BTN}"
+    onmousedown="event.preventDefault()" onclick="fmtImagem()">🖼️</button>
+</div>"""
+        _editor_style = ("width:100%;min-height:140px;font-family:'Nunito',sans-serif;font-size:13px;"
+                          "color:#4a4a4a;padding:12px 14px;border:1.5px solid #dcdcd8;"
+                          "border-radius:0 0 9px 9px;outline:none;line-height:1.6;overflow-y:auto;")
         obs_html = f"""
 <div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
   <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
@@ -145,10 +173,13 @@ def relatorio_form_page(
     📝 Observações Pedagógicas
     <span style="font-size:10px;font-weight:700;color:#aaa;margin-left:8px;">obrigatória para confirmar</span>
   </div>
-  <textarea id="descricao_final" name="descricao_final" rows="6"
-    placeholder="Descreva o desenvolvimento do aluno: pontos fortes, áreas a desenvolver, comportamento, socialização, conquistas do semestre..."
-    style="{_obs_style}"
-    onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#dcdcd8'">{descricao}</textarea>
+  {toolbar}
+  <div id="descricao_editor" contenteditable="true"
+    data-placeholder="Descreva o desenvolvimento do aluno: pontos fortes, áreas a desenvolver, comportamento, socialização, conquistas do semestre..."
+    style="{_editor_style}"
+    oninput="syncDescricao()"
+    onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#dcdcd8'">{descricao}</div>
+  <textarea id="descricao_final" name="descricao_final" style="display:none;">{descricao}</textarea>
 </div>"""
 
     _btn_salvar = """
@@ -338,7 +369,39 @@ document.addEventListener('DOMContentLoaded', function() {{
     r.addEventListener('change', updateProgress);
   }});
   updateProgress();
+  var frmEl = document.getElementById('frm-relatorio');
+  if (frmEl) {{ frmEl.addEventListener('submit', function() {{ syncDescricao(); }}); }}
 }});
+var _savedSel = null;
+function saveSel() {{
+  var sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {{ _savedSel = sel.getRangeAt(0); }}
+}}
+function fmtDoc(cmd, value) {{
+  var ed = document.getElementById('descricao_editor');
+  if (!ed) return;
+  ed.focus();
+  if (_savedSel) {{
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_savedSel);
+  }}
+  document.execCommand(cmd, false, value || null);
+  syncDescricao();
+}}
+function fmtLink() {{
+  var url = prompt('Endereço do link (https://...)');
+  if (url) {{ fmtDoc('createLink', url); }}
+}}
+function fmtImagem() {{
+  var url = prompt('Endereço da imagem (https://...)');
+  if (url) {{ fmtDoc('insertImage', url); }}
+}}
+function syncDescricao() {{
+  var ed = document.getElementById('descricao_editor');
+  var hid = document.getElementById('descricao_final');
+  if (ed && hid) {{ hid.value = ed.innerHTML; }}
+}}
 function confirmar() {{
   // Valida no client antes de submeter
   var names = {{}};
@@ -351,11 +414,16 @@ function confirmar() {{
     alert('Por favor, responda todos os ' + grupos.length + ' subtemas antes de confirmar. Faltam ' + naoRespondidos.length + '.');
     return;
   }}
+  syncDescricao();
   var desc = document.getElementById('descricao_final');
-  if (desc && desc.value.trim().length < 10) {{
-    alert('A descrição final deve ter pelo menos 10 caracteres.');
-    desc.focus();
-    return;
+  if (desc) {{
+    var textoPuro = desc.value.replace(/<[^>]*>/g, '').trim();
+    if (textoPuro.length < 10) {{
+      alert('A descrição final deve ter pelo menos 10 caracteres.');
+      var ed = document.getElementById('descricao_editor');
+      if (ed) ed.focus();
+      return;
+    }}
   }}
   if (!confirm('Confirmar o relatório de {nome_aluno}?\\n\\nApós confirmar, você não poderá mais editar.')) return;
   var frm = document.getElementById('frm-relatorio');
