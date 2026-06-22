@@ -124,15 +124,28 @@ def relatorio_form_page(
   </div>
 </div>"""
 
+    # ── CSS compartilhado: parágrafos justificados e bem espaçados,
+    # tanto no editor quanto na leitura/impressão (legibilidade é o foco aqui). ──
+    _RICH_TEXT_CSS = """
+<style>
+#descricao_editor, .desc-rendered { text-align: justify; text-justify: inter-word; }
+#descricao_editor p, .desc-rendered p { margin: 0 0 10px 0; }
+#descricao_editor ul, #descricao_editor ol,
+.desc-rendered ul, .desc-rendered ol { margin: 0 0 10px 22px; padding: 0; }
+#descricao_editor li, .desc-rendered li { margin-bottom: 4px; }
+#descricao_editor img, .desc-rendered img { max-width: 100%; }
+</style>"""
+
     # ── Campo de observações — sempre visível ──
     if is_readonly:
         obs_html = f"""
+{_RICH_TEXT_CSS}
 <div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
   <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
               margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
     📝 Observações Pedagógicas
   </div>
-  <div style="font-size:13px;color:#4a4a4a;line-height:1.7;">{descricao or '—'}</div>
+  <div class="desc-rendered" style="font-size:13px;color:#4a4a4a;line-height:1.7;">{descricao or '—'}</div>
 </div>"""
     else:
         _TB_BTN = ("font-family:'Nunito',sans-serif;background:#fff;border:1px solid #dcdcd8;"
@@ -149,10 +162,17 @@ def relatorio_form_page(
     onmousedown="event.preventDefault()" onclick="fmtDoc('underline')">U</button>
   <input type="color" title="Cor do texto" value="#2b3990"
     style="width:30px;height:30px;border:1px solid #dcdcd8;border-radius:6px;padding:2px;cursor:pointer;"
-    onmousedown="saveSel()" onchange="fmtDoc('foreColor', this.value)">
+    onmousedown="saveColorSel()" onchange="fmtColor(this.value)">
   <span style="width:1px;height:22px;background:#dcdcd8;margin:0 2px;"></span>
-  <button type="button" title="Justificar" style="{_TB_BTN}"
-    onmousedown="event.preventDefault()" onclick="fmtDoc('justifyFull')">≡</button>
+  <button type="button" title="Alinhar à esquerda" style="{_TB_BTN}"
+    onmousedown="event.preventDefault()" onclick="setAlign('left')">⟸</button>
+  <button type="button" title="Centralizar" style="{_TB_BTN}"
+    onmousedown="event.preventDefault()" onclick="setAlign('center')">⟺</button>
+  <button type="button" title="Alinhar à direita" style="{_TB_BTN}"
+    onmousedown="event.preventDefault()" onclick="setAlign('right')">⟹</button>
+  <button type="button" title="Justificar" style="{_TB_BTN}font-weight:900;"
+    onmousedown="event.preventDefault()" onclick="setAlign('justify')">≡</button>
+  <span style="width:1px;height:22px;background:#dcdcd8;margin:0 2px;"></span>
   <button type="button" title="Lista numerada" style="{_TB_BTN}"
     onmousedown="event.preventDefault()" onclick="fmtDoc('insertOrderedList')">1.</button>
   <button type="button" title="Lista com marcadores" style="{_TB_BTN}"
@@ -167,6 +187,7 @@ def relatorio_form_page(
                           "color:#4a4a4a;padding:12px 14px;border:1.5px solid #dcdcd8;"
                           "border-radius:0 0 9px 9px;outline:none;line-height:1.6;overflow-y:auto;")
         obs_html = f"""
+{_RICH_TEXT_CSS}
 <div style="background:#fff;border-radius:12px;padding:18px 22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
   <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;
               margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f7d800;">
@@ -177,8 +198,8 @@ def relatorio_form_page(
   <div id="descricao_editor" contenteditable="true"
     data-placeholder="Descreva o desenvolvimento do aluno: pontos fortes, áreas a desenvolver, comportamento, socialização, conquistas do semestre..."
     style="{_editor_style}"
-    oninput="syncDescricao()"
-    onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#dcdcd8'">{descricao}</div>
+    oninput="syncDescricao()" onfocus="this.style.borderColor='#2b3990'"
+    onblur="this.style.borderColor='#dcdcd8'; syncDescricao();">{descricao}</div>
   <textarea id="descricao_final" name="descricao_final" style="display:none;">{descricao}</textarea>
 </div>"""
 
@@ -372,23 +393,75 @@ document.addEventListener('DOMContentLoaded', function() {{
   var frmEl = document.getElementById('frm-relatorio');
   if (frmEl) {{ frmEl.addEventListener('submit', function() {{ syncDescricao(); }}); }}
 }});
-var _savedSel = null;
-function saveSel() {{
-  var sel = window.getSelection();
-  if (sel && sel.rangeCount > 0) {{ _savedSel = sel.getRangeAt(0); }}
-}}
 function fmtDoc(cmd, value) {{
   var ed = document.getElementById('descricao_editor');
   if (!ed) return;
   ed.focus();
-  if (_savedSel) {{
-    var sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(_savedSel);
-  }}
   document.execCommand(cmd, false, value || null);
   syncDescricao();
 }}
+
+// A cor é a única ação que abre um diálogo nativo (perde a seleção do texto),
+// então guardamos a seleção só para ela, à parte das demais (evita restaurar
+// um range antigo/errado em cliques seguintes de outros botões).
+var _colorSel = null;
+function saveColorSel() {{
+  var sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {{ _colorSel = sel.getRangeAt(0); }}
+}}
+function fmtColor(value) {{
+  var ed = document.getElementById('descricao_editor');
+  if (!ed) return;
+  ed.focus();
+  if (_colorSel) {{
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_colorSel);
+  }}
+  document.execCommand('foreColor', false, value);
+  syncDescricao();
+}}
+
+// Alinhamento/justificar: além do execCommand (que em alguns navegadores só
+// formata a linha atual), aplicamos text-align diretamente nos blocos
+// (parágrafos/divs) tocados pela seleção, garantindo que o efeito apareça
+// de fato na tela e fique idêntico na impressão.
+function _blocoMaisProximo(node, raiz) {{
+  while (node && node !== raiz) {{
+    if (node.nodeType === 1 && /^(P|DIV|LI|H1|H2|H3|H4|H5|H6|BLOCKQUOTE)$/.test(node.tagName)) {{
+      return node;
+    }}
+    node = node.parentNode;
+  }}
+  return raiz;
+}}
+function setAlign(align) {{
+  var ed = document.getElementById('descricao_editor');
+  if (!ed) return;
+  ed.focus();
+  var _cmds = {{left:'justifyLeft', center:'justifyCenter', right:'justifyRight', justify:'justifyFull'}};
+  document.execCommand(_cmds[align] || 'justifyLeft', false, null);
+  var blocos = [];
+  var sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {{
+    var range = sel.getRangeAt(0);
+    if (range.collapsed) {{
+      blocos.push(_blocoMaisProximo(range.startContainer, ed));
+    }} else {{
+      var candidatos = ed.querySelectorAll('p, div, li, h1, h2, h3, h4, h5, h6, blockquote');
+      candidatos.forEach(function(el) {{
+        if (range.intersectsNode(el)) {{ blocos.push(el); }}
+      }});
+      if (blocos.length === 0) {{
+        blocos.push(_blocoMaisProximo(range.startContainer, ed));
+      }}
+    }}
+  }}
+  if (blocos.length === 0) {{ blocos.push(ed); }}
+  blocos.forEach(function(b) {{ b.style.textAlign = align; }});
+  syncDescricao();
+}}
+
 function fmtLink() {{
   var url = prompt('Endereço do link (https://...)');
   if (url) {{ fmtDoc('createLink', url); }}

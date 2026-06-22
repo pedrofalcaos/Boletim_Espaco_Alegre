@@ -101,7 +101,7 @@ def _pagina_relatorio_html(
               font-size:13px;padding:6px 14px;border-radius:6px 6px 0 0;break-after:avoid;page-break-after:avoid;">
     Descrição Final do Semestre
   </div>
-  <div style="border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px;
+  <div class="desc-rendered" style="border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px;
               padding:14px;font-size:12px;color:#333;line-height:1.6;min-height:60px;">
     {descricao or '<span style="color:#aaa;">Não preenchida.</span>'}
   </div>
@@ -219,6 +219,11 @@ body{{font-family:'Nunito',sans-serif;background:#fff;color:#333;}}
   @page{{size:A4 portrait;margin:10mm 10mm;}}
 }}
 .pagina + .pagina{{page-break-before:always;}}
+.desc-rendered{{text-align:justify;text-justify:inter-word;}}
+.desc-rendered p{{margin:0 0 8px 0;}}
+.desc-rendered ul,.desc-rendered ol{{margin:0 0 8px 22px;padding:0;}}
+.desc-rendered li{{margin-bottom:3px;}}
+.desc-rendered img{{max-width:100%;}}
 </style>
 </head>
 <body>
