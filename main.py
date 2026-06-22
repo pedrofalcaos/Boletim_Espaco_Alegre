@@ -84,31 +84,42 @@ body{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing:
 .card{position:relative;z-index:1;background:rgba(255,255,255,.62);backdrop-filter:blur(26px) saturate(180%);
   -webkit-backdrop-filter:blur(26px) saturate(180%);border:1px solid rgba(255,255,255,.55);
   border-radius:26px;box-shadow:0 20px 60px rgba(10,15,50,.35),inset 0 1px 0 rgba(255,255,255,.6);
-  width:100%;max-width:440px;overflow:hidden;}
-.top{background:linear-gradient(135deg,#3b49b8,#1a2570);padding:30px 32px 24px;text-align:center;
-  border-bottom:4px solid #f7d800;position:relative;}
-.top img{height:64px;object-fit:contain;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;
-  filter:drop-shadow(0 4px 10px rgba(0,0,0,.25));}
-.top h1{font-family:'Fredoka One',cursive;font-size:21px;color:#fff;letter-spacing:.2px;}
-.top p{font-size:11.5px;color:#c7cdf5;margin-top:4px;font-weight:600;}
+  width:100%;max-width:440px;overflow:hidden;
+  opacity:0;transform:translateY(18px);animation:lg-enter .6s cubic-bezier(.2,.7,.2,1) .05s forwards;}
+@keyframes lg-enter{to{opacity:1;transform:translateY(0);}}
+@media(prefers-reduced-motion:reduce){.card{animation:none;opacity:1;transform:none;}}
+.top{background:linear-gradient(135deg,#3b49b8,#1a2570);padding:34px 32px 26px;text-align:center;
+  border-bottom:4px solid #f7d800;position:relative;overflow:hidden;}
+.top::after{content:'';position:absolute;top:-60%;left:-20%;width:140%;height:160%;
+  background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.16),transparent 60%);pointer-events:none;}
+.top img{height:60px;object-fit:contain;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.25));position:relative;z-index:1;}
+.top h1{font-family:'Fredoka One',cursive;font-size:22px;color:#fff;letter-spacing:.2px;
+  position:relative;z-index:1;line-height:1.25;}
+.top p{font-size:12.5px;color:#c7cdf5;margin-top:6px;font-weight:600;position:relative;z-index:1;}
 .body{padding:30px 32px 26px;}
-label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7d83a3;margin-bottom:7px;}
-.inp-wrap{position:relative;margin-bottom:18px;}
-input[type=text]{width:100%;font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:20px;font-weight:800;
-  color:#2b3990;letter-spacing:3px;text-align:center;padding:15px 44px 15px 16px;
+label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#6b7094;margin-bottom:7px;}
+.inp-wrap{position:relative;margin-bottom:16px;}
+.inp-wrap svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  width:18px;height:18px;stroke:#8b90b3;pointer-events:none;}
+input[type=text]{width:100%;font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:19px;font-weight:800;
+  color:#2b3990;letter-spacing:2.5px;text-align:left;padding:15px 44px 15px 44px;
   border:1.5px solid rgba(43,57,144,.18);border-radius:16px;outline:none;
   background:rgba(255,255,255,.55);backdrop-filter:blur(8px);transition:border-color .2s,box-shadow .2s;}
 input[type=text]:focus{border-color:#2b3990;box-shadow:0 0 0 4px rgba(43,57,144,.14);}
-input::placeholder{font-size:13px;color:#a9aec8;letter-spacing:1px;font-weight:600;}
+input[type=text]:focus-visible{outline:2px solid #2b3990;outline-offset:2px;}
+input::placeholder{font-size:13px;color:#a9aec8;letter-spacing:.5px;font-weight:600;}
 .clr{position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  background:none;border:none;font-size:18px;color:#ccc;cursor:pointer;display:none;}
+  background:none;border:none;font-size:18px;color:#ccc;cursor:pointer;display:none;padding:6px;}
 input:not(:placeholder-shown)~.clr{display:block;}
 .btn{width:100%;font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:15px;font-weight:800;
   background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;border:none;border-radius:999px;
-  padding:15px;cursor:pointer;box-shadow:0 8px 22px rgba(26,37,112,.4),inset 0 1px 0 rgba(255,255,255,.25);
-  transition:transform .15s ease,filter .15s ease;}
-.btn:hover{transform:translateY(-1px);filter:brightness(1.08);}
+  padding:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 8px 22px rgba(26,37,112,.4),inset 0 1px 0 rgba(255,255,255,.25);
+  transition:transform .15s ease,filter .15s ease,box-shadow .2s ease;}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 10px 30px rgba(26,37,112,.5),0 0 0 5px rgba(43,57,144,.12),inset 0 1px 0 rgba(255,255,255,.25);}
 .btn:active{transform:translateY(0) scale(.98);}
+.btn:focus-visible{outline:2px solid #fff;outline-offset:3px;}
 .erro{display:none;background:rgba(254,242,242,.85);border:1px solid #fecaca;border-radius:14px;
   padding:12px 16px;margin-top:14px;font-size:13px;color:#991b1b;font-weight:600;text-align:center;}
 .erro.show{display:block;}
@@ -118,7 +129,7 @@ input:not(:placeholder-shown)~.clr{display:block;}
   transition:background .15s;}
 .prof-link:hover{background:rgba(247,248,255,.6);}
 .prof-link span{background:rgba(232,234,248,.8);border-radius:999px;padding:4px 12px;font-size:11px;font-weight:900;}
-.footer{border-top:1px solid rgba(0,0,0,.06);padding:12px 32px;text-align:center;font-size:11px;color:#aab;}
+.footer{border-top:1px solid rgba(0,0,0,.06);padding:12px 32px;text-align:center;font-size:11px;color:#7d83a3;}
 .loading{display:none;text-align:center;padding:16px 0 2px;}
 .loading.show{display:block;}
 .spinner{width:26px;height:26px;border:3px solid #e8eaf8;border-top-color:#2b3990;
@@ -127,7 +138,8 @@ input:not(:placeholder-shown)~.clr{display:block;}
 @media(max-width:480px){
   .lg-blob{filter:blur(44px);}
   .lg-blob-1,.lg-blob-2,.lg-blob-3{width:220px;height:220px;}
-  .top{padding:24px 22px 20px;}
+  .top{padding:26px 22px 22px;}
+  .top h1{font-size:19px;}
   .body{padding:22px 22px 20px;}
 }
 </style>
@@ -141,22 +153,26 @@ input:not(:placeholder-shown)~.clr{display:block;}
 <div class="card">
   <div class="top">
     <img src="/static/logo.jpg" alt="Escola Espaço Alegre">
-    <h1>Área do Responsável</h1>
-    <p>Informe a matrícula para acompanhar o desempenho do seu filho</p>
+    <h1>Acompanhe a jornada do seu filho</h1>
+    <p>Boletins e relatórios escolares, sempre à mão</p>
   </div>
   <div class="body">
     <form id="frm" onsubmit="buscar(event)">
       <label for="mat">Número de Matrícula</label>
       <div class="inp-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.6" y2="16.6"></line>
+        </svg>
         <input type="text" id="mat" placeholder="Digite o número da matrícula"
                maxlength="12" autocomplete="off" inputmode="numeric"
+               aria-label="Número de Matrícula"
                oninput="limpaErro()">
-        <button type="button" class="clr" onclick="limpar()">✕</button>
+        <button type="button" class="clr" onclick="limpar()" aria-label="Limpar campo">✕</button>
       </div>
-      <button type="submit" class="btn">🔍 &nbsp;Consultar</button>
+      <button type="submit" class="btn">Consultar boletim →</button>
     </form>
-    <div class="loading" id="loading"><div class="spinner"></div><p style="font-size:12px;color:#aaa;">Buscando...</p></div>
-    <div class="erro" id="erro">❌ Matrícula não encontrada. Verifique o número e tente novamente.</div>
+    <div class="loading" id="loading"><div class="spinner"></div><p style="font-size:12px;color:#7d83a3;">Buscando...</p></div>
+    <div class="erro" id="erro" role="alert">❌ Matrícula não encontrada. Verifique o número e tente novamente.</div>
   </div>
   <div class="divider"></div>
   <a href="/professora/login" class="prof-link">
