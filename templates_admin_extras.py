@@ -883,7 +883,7 @@ def admin_aluno_relatorios_page(aluno: dict, matricula: str, rel1: dict | None, 
                 f'<span style="background:#fef2f2;border:1px solid #fecaca;color:#b52222;'
                 f'font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;">🔴 Não preenchido</span>'
             )
-            btn = (f'<a href="/admin/relatorio/novo/{matricula}/{sem}" '
+            btn = (f'<a href="/admin/relatorio/aluno/{matricula}/{sem}" '
                    f'style="background:#2b3990;color:#fff;font-family:\'Nunito\',sans-serif;'
                    f'font-weight:800;font-size:13px;padding:9px 20px;border-radius:9px;'
                    f'text-decoration:none;">✏️ Iniciar relatório</a>')
