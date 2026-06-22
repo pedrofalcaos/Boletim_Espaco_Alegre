@@ -619,7 +619,7 @@ def _btn_abrir(status: str, rel_id: int | None, abrir_href: str | None) -> str:
     label = "✏️ Editar" if status == "concluido" else "📋 Abrir"
     return (f'<a href="{href}" style="font-family:\'Nunito\',sans-serif;font-size:10px;font-weight:800;'
             f'background:#e8eaf8;color:#2b3990;border:1px solid #b0b8e8;border-radius:7px;'
-            f'padding:3px 9px;margin-left:6px;text-decoration:none;white-space:nowrap;">{label}</a>')
+            f'padding:3px 9px;text-decoration:none;white-space:nowrap;">{label}</a>')
 
 
 def _btn_trancar(matricula: str, semestre: int, trancado: bool, filtros: dict) -> str:
@@ -635,7 +635,7 @@ def _btn_trancar(matricula: str, semestre: int, trancado: bool, filtros: dict) -
   <input type="hidden" name="semestre_filtro" value="{filtros.get('semestre','')}">
   <input type="hidden" name="status" value="{filtros.get('status','')}">
   <button type="submit" title="{titulo}"
-    style="background:none;border:none;cursor:pointer;font-size:12px;margin-left:6px;">{icone}</button>
+    style="background:none;border:none;cursor:pointer;font-size:12px;">{icone}</button>
 </form>"""
 
 
@@ -802,15 +802,19 @@ def admin_relatorios_page(
             if mostrar_s1:
                 pill = _pill_status(r["s1_status"], r.get("s1_id"), r.get("s1_trancado", False))
                 abrir = _btn_abrir(r["s1_status"], r.get("s1_id"), abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/1')
-                imp  = f'<a href="/admin/relatorio/{r["s1_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s1_id") else ""
+                imp  = f'<a href="/admin/relatorio/{r["s1_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;">🖨️</a>' if r.get("s1_id") else ""
                 trv  = _btn_trancar(r["matricula"], 1, r.get("s1_trancado", False), filtros)
-                td_s1 = f'<td style="padding:9px 12px;text-align:center;">{pill}{abrir}{imp}{trv}</td>'
+                td_s1 = (f'<td style="padding:9px 12px;text-align:center;">'
+                         f'<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;">'
+                         f'{pill}{abrir}{imp}{trv}</div></td>')
             if mostrar_s2:
                 pill = _pill_status(r["s2_status"], r.get("s2_id"), r.get("s2_trancado", False))
                 abrir = _btn_abrir(r["s2_status"], r.get("s2_id"), abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/2')
-                imp  = f'<a href="/admin/relatorio/{r["s2_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s2_id") else ""
+                imp  = f'<a href="/admin/relatorio/{r["s2_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;">🖨️</a>' if r.get("s2_id") else ""
                 trv  = _btn_trancar(r["matricula"], 2, r.get("s2_trancado", False), filtros)
-                td_s2 = f'<td style="padding:9px 12px;text-align:center;">{pill}{abrir}{imp}{trv}</td>'
+                td_s2 = (f'<td style="padding:9px 12px;text-align:center;">'
+                         f'<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;">'
+                         f'{pill}{abrir}{imp}{trv}</div></td>')
 
             linhas += f"""
 <tr style="border-bottom:.5px solid #f0f0ee;">
