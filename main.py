@@ -15,7 +15,7 @@ from db_relatorio import (
     create_tema, update_tema, delete_tema,
     create_subtema, update_subtema, delete_subtema,
     get_relatorio, get_relatorio_by_id, upsert_relatorio, update_relatorio,
-    set_relatorio_trancado,
+    set_relatorio_trancado, reabrir_relatorio,
     get_respostas, save_respostas,
     update_subtema_turmas, get_temas_para_turma,
     get_status_relatorios,
@@ -402,33 +402,6 @@ async def seed_estrutura_infantil5_route(request: Request):
     return RedirectResponse(f"/admin/temas?ok={msg}", status_code=302)
 
 
-@app.post("/admin/seed-coordenacao", response_class=HTMLResponse)
-async def seed_coordenacao_route(request: Request):
-    """Cria os usuários de coordenação (Cristiane Dantas, Adriana Falcão) — idempotente."""
-    if not check_admin(request):
-        return _redir_login()
-    from seed_coordenacao import run_seed
-    r = run_seed()
-    if not r["criados"]:
-        linhas = "<p>Nenhum usuário novo — coordenação já cadastrada.</p>"
-    else:
-        linhas = "".join(
-            f"<li><b>{u['nome']}</b> — usuário: <code>{u['username']}</code> "
-            f"— senha temporária: <code>{u['senha']}</code></li>"
-            for u in r["criados"]
-        )
-        linhas = f"<ul>{linhas}</ul>"
-    return HTMLResponse(f"""
-<div style="max-width:600px;margin:40px auto;font-family:sans-serif;padding:24px;
-            background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);">
-  <h2>Usuários de coordenação</h2>
-  {linhas}
-  <p style="font-size:13px;color:#888;">Anote as senhas agora — elas não serão exibidas novamente.
-  Os usuários podem fazer login em <code>/admin/login</code>.</p>
-  <a href="/admin/relatorios">← Voltar</a>
-</div>""")
-
-
 # ════════════════════════════════════════════════════════════════════════════
 #  FASE 2 — Professoras
 # ════════════════════════════════════════════════════════════════════════════
@@ -452,9 +425,30 @@ def _alunos_por_professora() -> dict:
 async def listar_professoras(request: Request, ok: str = "", erro: str = "", senha_gerada: str = ""):
     if not check_admin(request):
         return _redir_login()
-    professoras = [u for u in get_all_usuarios() if u["role"] == "professora"]
+    todos = get_all_usuarios()
+    professoras = [u for u in todos if u["role"] == "professora"]
+    coordenadoras = [u for u in todos if u["role"] == "coordenacao"]
     alunos_map = _alunos_por_professora()
-    return admin_professoras_page(professoras, alunos_map, msg=ok, erro=erro, senha_gerada=senha_gerada)
+    return admin_professoras_page(professoras, alunos_map, msg=ok, erro=erro,
+                                   senha_gerada=senha_gerada, coordenadoras=coordenadoras)
+
+
+@app.post("/admin/coordenacao/nova")
+async def criar_coordenadora(request: Request):
+    if not check_admin(request):
+        return _redir_login()
+    form = await request.form()
+    nome = form.get("nome", "").strip()
+    username = form.get("username", "").strip()
+    senha = form.get("senha", "").strip()
+
+    if len(senha) < 6:
+        return RedirectResponse("/admin/professoras?erro=Senha+deve+ter+ao+menos+6+caracteres", status_code=302)
+    try:
+        create_usuario(username, senha, nome, role="coordenacao")
+        return RedirectResponse(f"/admin/professoras?ok=Coordenadora+{nome}+cadastrada", status_code=302)
+    except ValueError:
+        return RedirectResponse("/admin/professoras?erro=Usu%C3%A1rio+j%C3%A1+existe", status_code=302)
 
 
 @app.post("/admin/professoras/nova")
@@ -1241,6 +1235,15 @@ async def admin_destrancar_relatorio(request: Request, rel_id: int):
         return _redir_login()
     set_relatorio_trancado(rel_id, False)
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+destrancado", status_code=302)
+
+
+@app.post("/admin/relatorio/{rel_id}/reabrir")
+async def admin_reabrir_relatorio(request: Request, rel_id: int):
+    """Reabre um relatório já concluído, devolvendo o acesso de edição à professora."""
+    if not check_admin(request):
+        return _redir_login()
+    reabrir_relatorio(rel_id)
+    return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+reaberto+para+a+professora+preencher+novamente", status_code=302)
 
 
 @app.get("/admin/relatorio/{rel_id}/imprimir", response_class=HTMLResponse)

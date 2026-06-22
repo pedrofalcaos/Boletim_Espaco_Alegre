@@ -91,7 +91,7 @@ def login_page(erro: bool = False) -> str:
 def admin_nav(current: str = "alunos", staff_only: bool = False) -> str:
     items = [
         ("alunos",      "/admin",               "📚 Alunos"),
-        ("professoras", "/admin/professoras",    "👩‍🏫 Professoras"),
+        ("professoras", "/admin/professoras",    "👩‍🏫 Colaboradoras"),
         ("temas",       "/admin/temas",          "🗂️ Estrutura Avaliativa"),
         ("relatorios",  "/admin/relatorios",     "📋 Relatórios Semestrais"),
     ]

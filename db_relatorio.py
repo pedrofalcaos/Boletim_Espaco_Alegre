@@ -693,6 +693,24 @@ if DATABASE_URL:
         finally:
             conn.close()
 
+    def reabrir_relatorio(relatorio_id: int) -> bool:
+        """Reabre um relatório concluído, devolvendo o acesso de edição à professora
+        (volta o status para 'em_andamento' e garante que não esteja trancado)."""
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE relatorios_semestrais
+                    SET status='em_andamento', trancado=FALSE, confirmado_em=NULL, atualizado_em=NOW()
+                    WHERE id=%s
+                """, (relatorio_id,))
+                ok = cur.rowcount > 0
+            conn.commit()
+            return ok
+        finally:
+            conn.close()
+
     def get_relatorios_por_professora(professora_id: int) -> list:
         _init()
         conn = _connect()
@@ -1256,6 +1274,20 @@ else:
             for r in db["relatorios_semestrais"]:
                 if r["id"] == relatorio_id:
                     r["trancado"] = trancado
+                    _save(db)
+                    return True
+            return False
+
+    def reabrir_relatorio(relatorio_id: int) -> bool:
+        """Reabre um relatório concluído, devolvendo o acesso de edição à professora
+        (volta o status para 'em_andamento' e garante que não esteja trancado)."""
+        with _lock:
+            db = _load()
+            for r in db["relatorios_semestrais"]:
+                if r["id"] == relatorio_id:
+                    r["status"] = "em_andamento"
+                    r["trancado"] = False
+                    r["confirmado_em"] = None
                     _save(db)
                     return True
             return False

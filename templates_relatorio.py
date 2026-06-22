@@ -232,6 +232,20 @@ def relatorio_form_page(
   </div>
 </div>"""
 
+    # ── Reabrir relatório concluído (somente admin) ──
+    reabrir_html = ""
+    if is_admin and rel_id and status == "concluido":
+        reabrir_html = f"""
+<form method="POST" action="/admin/relatorio/{rel_id}/reabrir" style="display:inline;"
+      onsubmit="return confirm('Reabrir este relatório para a professora preencher novamente?\\n\\nO status voltará para \\'Em andamento\\' e ela poderá editar as respostas.');">
+  <button type="submit"
+    style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
+           background:#fffbe6;color:#a67c00;border:1.5px solid #f7d800;
+           border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap;">
+    🔄 Liberar para a professora preencher novamente
+  </button>
+</form>"""
+
     # ── Controle de trava (somente admin) ──
     trava_html = ""
     if is_admin and rel_id:
@@ -281,6 +295,7 @@ def relatorio_form_page(
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       {_badge_status(status)}
+      {reabrir_html}
       {trava_html}
       <a href="/{'admin/logout' if is_staff else 'professora/logout'}"
          style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;

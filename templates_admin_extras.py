@@ -47,11 +47,14 @@ _BTN_CINZA = ("font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;"
 #  PROFESSORAS
 # ════════════════════════════════════════════════════════════════════════
 
-def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = "", erro: str = "", senha_gerada: str = "") -> str:
+def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = "", erro: str = "",
+                            senha_gerada: str = "", coordenadoras: list | None = None) -> str:
     """
     professoras: lista de dicts do db (id, username, nome, role, ativo, senha_temporaria)
     alunos_por_prof: {professora_nome: [lista de turmas]}
+    coordenadoras: lista de dicts do db com role == "coordenacao"
     """
+    coordenadoras = coordenadoras or []
     nav = admin_nav("professoras")
     aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
 
@@ -186,6 +189,66 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
   <button type="submit" style="{_BTN_AZ}">Cadastrar professora →</button>
 </form>""")
 
+    # ── Coordenadoras ──
+    if coordenadoras:
+        coord_cards = ""
+        for c in coordenadoras:
+            cid = c["id"]
+            pendente_badge = ""
+            if c.get("senha_temporaria"):
+                pendente_badge = ('<span style="background:#fef0e4;color:#c25b0d;font-size:10px;font-weight:800;'
+                                   'padding:2px 9px;border-radius:20px;margin-left:8px;white-space:nowrap;">'
+                                   '⏳ Aguardando troca de senha</span>')
+            coord_cards += f"""
+<div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div style="flex:1;">
+      <div style="font-weight:800;color:#2b3990;font-size:14px;">{c["nome"]}{pendente_badge}</div>
+      <div style="font-size:11px;color:#aaa;margin-top:2px;">{c["username"]} · coordenação</div>
+    </div>
+    <form method="POST" action="/admin/professoras/{cid}/resetar-senha"
+          onsubmit="return confirm('Gerar uma nova senha temporária para {c["nome"]}?\\n\\nA senha atual deixará de funcionar e ela precisará trocá-la no próximo acesso.');">
+      <button type="submit" style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">🔑 Resetar senha</button>
+    </form>
+    <form method="POST" action="/admin/professoras/{cid}/excluir"
+          onsubmit="return confirm('Excluir {c["nome"]}?');">
+      <button type="submit" style="{_BTN_VM}">🗑</button>
+    </form>
+  </div>
+</div>"""
+        coord_lista = coord_cards
+    else:
+        coord_lista = '<p style="color:#aaa;font-size:13px;text-align:center;padding:20px 0;">Nenhuma coordenadora cadastrada ainda.</p>'
+
+    coord_lista_card = _card(_secao("🧑‍💼 Coordenação cadastrada") + coord_lista)
+
+    coord_nova_card = _card(f"""
+{_secao("➕ Nova Coordenadora")}
+<form method="POST" action="/admin/coordenacao/nova">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;">
+    <div>
+      <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Nome completo</label>
+      <input name="nome" required placeholder="Ex: Cristiane Dantas" style="{_INP}"
+        onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
+    </div>
+    <div>
+      <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Usuário de login</label>
+      <input name="username" required placeholder="Ex: cristiane.dantas" style="{_INP}"
+        onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
+    </div>
+    <div>
+      <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Senha inicial</label>
+      <input name="senha" type="password" required placeholder="Mínimo 6 caracteres" style="{_INP}"
+        onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
+    </div>
+  </div>
+  <div style="font-size:11px;color:#aaa;margin-bottom:14px;">
+    💡 Coordenadoras podem visualizar, editar e imprimir relatórios de qualquer turma, mas não gerenciam alunos, professoras ou a estrutura avaliativa.
+  </div>
+  <button type="submit" style="{_BTN_AZ}">Cadastrar coordenadora →</button>
+</form>""")
+
     js_toggle = """
 <script>
 function toggleTurmas(id) {
@@ -199,8 +262,8 @@ function toggleTurmas(id) {
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
     <img src="/static/logo.jpg" style="height:44px;object-fit:contain;">
     <div style="flex:1;">
-      <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Professoras</h1>
-      <p style="font-size:12px;color:#888;">{len(professoras)} professora(s) cadastrada(s)</p>
+      <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Colaboradoras</h1>
+      <p style="font-size:12px;color:#888;">{len(professoras)} professora(s) · {len(coordenadoras)} coordenadora(s) cadastrada(s)</p>
     </div>
     <a href="/admin/logout" style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;padding:9px 16px;border-radius:10px;border:1px solid #dcdcd8;">Sair</a>
   </div>
@@ -210,9 +273,11 @@ function toggleTurmas(id) {
   {senha_box}
   {lista_card}
   {nova_card}
+  {coord_lista_card}
+  {coord_nova_card}
   {js_toggle}
 </div>"""
-    return page_shell("Professoras — Escola Espaço Alegre", body)
+    return page_shell("Colaboradoras — Escola Espaço Alegre", body)
 
 
 # ════════════════════════════════════════════════════════════════════════
@@ -681,15 +746,6 @@ def admin_relatorios_page(
   {_form_massa(2, "destrancar")}
 </div>""")
 
-    seed_coordenacao_card = "" if staff_only else _card(f"""
-<form method="POST" action="/admin/seed-coordenacao" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"
-      onsubmit="return confirm('Criar os usuários de coordenação (Cristiane Dantas e Adriana Falcão)? Se já existirem, nada será alterado.');">
-  <span style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">
-    Coordenação:
-  </span>
-  <button type="submit" style="{_BTN_CINZA}font-size:12px;padding:9px 16px;">👤 Criar usuários de coordenação</button>
-</form>""")
-
     # ── Tabela de alunos ──
     sem_filtro = str(filtros.get("semestre", ""))
     mostrar_s1 = sem_filtro in ("", "1")
@@ -759,7 +815,6 @@ def admin_relatorios_page(
   {resumo}
   {filtros_card}
   {trava_massa_card}
-  {seed_coordenacao_card}
   {tabela_html}
 </div>"""
     return page_shell("Relatórios Semestrais — Escola Espaço Alegre", body)
@@ -867,8 +922,11 @@ def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "")
 
     msg_html = _msg_ok(msg) if msg else ""
 
-    # ── Subtemas por tema ──
-    if not temas:
+    # ── Subtemas por tópico → tema (temas é lista de tópicos: get_temas_para_turma) ──
+    total_subtemas_turma = sum(
+        len(t.get("subtemas", [])) for tp in temas for t in tp.get("temas", [])
+    )
+    if not temas or total_subtemas_turma == 0:
         subtemas_html = """
 <div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:12px;padding:20px;
             color:#c25b0d;font-size:13px;font-weight:700;text-align:center;">
@@ -877,19 +935,20 @@ def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "")
 </div>"""
     else:
         secoes = ""
-        for tema in temas:
-            linhas = ""
-            for st in tema.get("subtemas", []):
-                linhas += f"""
+        for topico in temas:
+            for tema in topico.get("temas", []):
+                linhas = ""
+                for st in tema.get("subtemas", []):
+                    linhas += f"""
 <div style="padding:8px 0;border-bottom:.5px solid #f0f0ee;font-size:13px;color:#4a4a4a;">
   • {st['descricao']}
 </div>"""
-            secoes += f"""
+                secoes += f"""
 <div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;
             box-shadow:0 2px 8px rgba(0,0,0,.06);">
   <div style="font-family:'Fredoka One',cursive;font-size:14px;color:#2b3990;
               margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f7d800;">
-    🏷️ {tema['nome']}
+    📂 {topico['nome']} <span style="font-weight:400;">— 🏷️ {tema['nome']}</span>
     <span style="font-size:11px;font-family:'Nunito',sans-serif;font-weight:700;color:#aaa;margin-left:6px;">
       ({len(tema.get('subtemas',[]))} subtemas)
     </span>
