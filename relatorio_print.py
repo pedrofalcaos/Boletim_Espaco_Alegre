@@ -263,6 +263,26 @@ def gerar_relatorio_print_html(
     )
 
 
+def gerar_relatorios_aluno_print_html(aluno: dict, matricula: str, itens: list) -> str:
+    """Impressão combinada dos relatórios de um único aluno (ex.: 1º e 2º semestre
+    confirmados), usada na área pública do responsável — todas as páginas saem
+    no mesmo documento/PDF, uma por semestre, mantendo a continuidade entre elas.
+
+    itens: lista de tuplas (semestre, relatorio, temas, respostas).
+    """
+    nome = aluno.get("nome", "")
+    paginas = "".join(
+        f'<div class="pagina">{_pagina_relatorio_html(aluno, matricula, semestre, relatorio, temas, respostas)}</div>'
+        for semestre, relatorio, temas, respostas in itens
+    )
+    if not paginas:
+        paginas = '<div class="pagina"><p style="text-align:center;color:#888;padding:40px;">Nenhum relatório confirmado pela coordenação ainda. Assim que o relatório semestral for concluído, ele ficará disponível aqui.</p></div>'
+    return _HTML_HEAD.format(
+        titulo=f"Relatório Semestral — {nome}",
+        paginas=paginas,
+    )
+
+
 def gerar_relatorios_print_html_multiplos(itens: list, semestre: int) -> str:
     """Impressão em lote de vários relatórios em sequência (uma página por aluno).
 

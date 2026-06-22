@@ -32,7 +32,10 @@ from templates_professora import (
     professora_trocar_senha_page, is_infantil
 )
 from templates_relatorio import relatorio_form_page
-from relatorio_print import gerar_relatorio_print_html, gerar_relatorios_print_html_multiplos
+from relatorio_print import (
+    gerar_relatorio_print_html, gerar_relatorios_print_html_multiplos,
+    gerar_relatorios_aluno_print_html,
+)
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -161,10 +164,44 @@ async def ver_boletim(matricula: str, ref: str = ""):
     if not aluno:
         return RedirectResponse("/?erro=1")
 
+    # Alunos da Ed. Infantil não têm boletim — têm relatório semestral.
+    if is_infantil(aluno.get("turma", "")):
+        return RedirectResponse(f"/relatorio/{mat_clean}")
+
     aluno_completo = dict(aluno)
     aluno_completo['matricula'] = mat_clean
     back_url = "/admin" if ref == "admin" else "/"
     return HTMLResponse(gerar_boletim_html(aluno_completo, back_url=back_url))
+
+
+@app.get("/relatorio/{matricula}", response_class=HTMLResponse)
+async def ver_relatorio_responsavel(matricula: str):
+    """Área pública do responsável para alunos da Ed. Infantil: mostra os
+    relatórios semestrais já confirmados pela professora/coordenação/admin,
+    prontos para impressão/PDF (1 ou 2 páginas no mesmo arquivo, conforme os
+    semestres já concluídos)."""
+    mat_clean = re.sub(r'\D', '', matricula)
+    if not mat_clean:
+        return RedirectResponse("/?erro=1")
+
+    aluno = get_aluno(mat_clean)
+    if not aluno:
+        return RedirectResponse("/?erro=1")
+
+    turma = aluno.get("turma", "")
+    if not is_infantil(turma):
+        return RedirectResponse(f"/boletim/{mat_clean}")
+
+    ano = aluno.get("ano_letivo", "2026")
+    temas = get_temas_para_turma(turma)
+    itens = []
+    for semestre in (1, 2):
+        relatorio = get_relatorio(mat_clean, semestre, ano)
+        if relatorio and relatorio.get("status") == "concluido":
+            respostas = get_respostas(relatorio["id"])
+            itens.append((semestre, relatorio, temas, respostas))
+
+    return HTMLResponse(gerar_relatorios_aluno_print_html(aluno, mat_clean, itens))
 
 @app.get("/admin/imprimir", response_class=HTMLResponse)
 async def imprimir_boletins(request: Request, turma: str = "todos"):
