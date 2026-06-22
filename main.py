@@ -6,13 +6,13 @@ from fastapi.staticfiles import StaticFiles
 
 from db import get_aluno, get_all_alunos, upsert_aluno, delete_aluno, reset_db, DISCIPLINAS
 from boletim_html import gerar_boletim_html, gerar_boletins_multiplos_html
-from auth import (check_session, get_session_user, make_session_token,
+from auth import (check_session, check_admin, check_staff, get_session_user, make_session_token,
                   COOKIE_NAME, COOKIE_MAX)
 from db_relatorio import (
     authenticate_user,
     get_all_usuarios, create_usuario, delete_usuario,
     update_usuario_turmas, update_usuario_senha, reset_usuario_senha, get_usuario_by_id,
-    get_all_temas, create_tema, update_tema, delete_tema,
+    create_tema, update_tema, delete_tema,
     create_subtema, update_subtema, delete_subtema,
     get_relatorio, get_relatorio_by_id, upsert_relatorio, update_relatorio,
     set_relatorio_trancado,
@@ -205,7 +205,7 @@ async def post_login(
     senha:   str = Form(...),
 ):
     user = authenticate_user(usuario, senha)
-    if user and user.get("role") == "admin":
+    if user and user.get("role") in ("admin", "coordenacao"):
         resp = RedirectResponse("/admin", status_code=302)
         resp.set_cookie(COOKIE_NAME, make_session_token(user),
                         max_age=COOKIE_MAX, httponly=True, samesite="lax")
@@ -222,6 +222,8 @@ async def logout():
 async def painel(request: Request, resetado: str = ""):
     if not check_session(request):
         return _redir_login()
+    if not check_admin(request):
+        return RedirectResponse("/admin/relatorios", status_code=302)
     alunos = get_all_alunos()
     # Busca status dos relatórios dos alunos do Infantil em uma única query
     matriculas_inf = [m for m, a in alunos.items() if is_infantil(a.get("turma", ""))]
@@ -230,7 +232,7 @@ async def painel(request: Request, resetado: str = ""):
 
 @app.get("/admin/aluno/novo", response_class=HTMLResponse)
 async def novo_aluno_form(request: Request):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     vazio = {
         "nome":"","turma":"1º Ano – A","periodo":"Manhã",
@@ -243,7 +245,7 @@ async def novo_aluno_form(request: Request):
 
 @app.get("/admin/aluno/{matricula}", response_class=HTMLResponse)
 async def editar_aluno_form(request: Request, matricula: str, ok: str = ""):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     al = get_aluno(matricula)
     if not al:
@@ -290,7 +292,7 @@ def _parse_form(form: dict) -> dict:
 
 @app.post("/admin/aluno/{matricula}/salvar")
 async def salvar_aluno(request: Request, matricula: str):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     form = dict(await request.form())
     dados = _parse_form(form)
@@ -308,14 +310,14 @@ async def salvar_aluno(request: Request, matricula: str):
 
 @app.get("/admin/aluno/{matricula}/excluir")
 async def excluir_aluno(request: Request, matricula: str):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     delete_aluno(matricula)
     return RedirectResponse("/admin", status_code=302)
 
 @app.get("/admin/aluno/{matricula}/editar-infantil", response_class=HTMLResponse)
 async def editar_aluno_infantil(request: Request, matricula: str, ok: str = ""):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     al = get_aluno(matricula)
     if not al:
@@ -327,7 +329,7 @@ async def editar_aluno_infantil(request: Request, matricula: str, ok: str = ""):
 
 @app.post("/admin/aluno/{matricula}/editar-infantil/salvar")
 async def salvar_aluno_infantil(request: Request, matricula: str):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     al = get_aluno(matricula)
     if not al:
@@ -339,7 +341,7 @@ async def salvar_aluno_infantil(request: Request, matricula: str):
 
 @app.post("/admin/resetar")
 async def resetar_banco(request: Request):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     reset_db()
     return RedirectResponse("/admin?resetado=1", status_code=302)
@@ -348,7 +350,7 @@ async def resetar_banco(request: Request):
 @app.post("/admin/seed-infantil")
 async def seed_infantil_route(request: Request):
     """Importa alunos e professoras da Ed. Infantil — idempotente, seguro para rodar várias vezes."""
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     from seed_infantil import run_seed
     r = run_seed()
@@ -359,7 +361,7 @@ async def seed_infantil_route(request: Request):
 @app.post("/admin/seed-estrutura-avaliativa")
 async def seed_estrutura_avaliativa_route(request: Request):
     """Importa a estrutura avaliativa (Tópico→Tema→Subtema) da Ed. Infantil — idempotente."""
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     from seed_estrutura_avaliativa import run_seed
     r = run_seed()
@@ -370,7 +372,7 @@ async def seed_estrutura_avaliativa_route(request: Request):
 @app.post("/admin/seed-estrutura-infantil3")
 async def seed_estrutura_infantil3_route(request: Request):
     """Importa a estrutura avaliativa específica do Infantil 3 (A e B) — idempotente."""
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     from seed_estrutura_infantil3 import run_seed
     r = run_seed()
@@ -381,7 +383,7 @@ async def seed_estrutura_infantil3_route(request: Request):
 @app.post("/admin/seed-estrutura-infantil4")
 async def seed_estrutura_infantil4_route(request: Request):
     """Importa a estrutura avaliativa específica do Infantil 4 (A e B) — idempotente."""
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     from seed_estrutura_infantil4 import run_seed
     r = run_seed()
@@ -392,12 +394,39 @@ async def seed_estrutura_infantil4_route(request: Request):
 @app.post("/admin/seed-estrutura-infantil5")
 async def seed_estrutura_infantil5_route(request: Request):
     """Importa a estrutura avaliativa específica do Infantil 5 (A) — idempotente."""
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     from seed_estrutura_infantil5 import run_seed
     r = run_seed()
     msg = f"{r['topicos']}+t%C3%B3picos%2C+{r['temas']}+temas+e+{r['subtemas']}+subtemas+importados"
     return RedirectResponse(f"/admin/temas?ok={msg}", status_code=302)
+
+
+@app.post("/admin/seed-coordenacao", response_class=HTMLResponse)
+async def seed_coordenacao_route(request: Request):
+    """Cria os usuários de coordenação (Cristiane Dantas, Adriana Falcão) — idempotente."""
+    if not check_admin(request):
+        return _redir_login()
+    from seed_coordenacao import run_seed
+    r = run_seed()
+    if not r["criados"]:
+        linhas = "<p>Nenhum usuário novo — coordenação já cadastrada.</p>"
+    else:
+        linhas = "".join(
+            f"<li><b>{u['nome']}</b> — usuário: <code>{u['username']}</code> "
+            f"— senha temporária: <code>{u['senha']}</code></li>"
+            for u in r["criados"]
+        )
+        linhas = f"<ul>{linhas}</ul>"
+    return HTMLResponse(f"""
+<div style="max-width:600px;margin:40px auto;font-family:sans-serif;padding:24px;
+            background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+  <h2>Usuários de coordenação</h2>
+  {linhas}
+  <p style="font-size:13px;color:#888;">Anote as senhas agora — elas não serão exibidas novamente.
+  Os usuários podem fazer login em <code>/admin/login</code>.</p>
+  <a href="/admin/relatorios">← Voltar</a>
+</div>""")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -421,7 +450,7 @@ def _alunos_por_professora() -> dict:
 
 @app.get("/admin/professoras", response_class=HTMLResponse)
 async def listar_professoras(request: Request, ok: str = "", erro: str = "", senha_gerada: str = ""):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     professoras = [u for u in get_all_usuarios() if u["role"] == "professora"]
     alunos_map = _alunos_por_professora()
@@ -430,7 +459,7 @@ async def listar_professoras(request: Request, ok: str = "", erro: str = "", sen
 
 @app.post("/admin/professoras/nova")
 async def criar_professora(request: Request):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     form  = await request.form()
     nome  = form.get("nome", "").strip()
@@ -449,7 +478,7 @@ async def criar_professora(request: Request):
 
 @app.post("/admin/professoras/{user_id}/turmas")
 async def salvar_turmas_professora(request: Request, user_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     form   = await request.form()
     turmas = list(form.getlist("turma"))
@@ -459,7 +488,7 @@ async def salvar_turmas_professora(request: Request, user_id: int):
 
 @app.post("/admin/professoras/{user_id}/excluir")
 async def excluir_professora(request: Request, user_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     delete_usuario(user_id)
     return RedirectResponse("/admin/professoras?ok=Professora+removida", status_code=302)
@@ -467,7 +496,7 @@ async def excluir_professora(request: Request, user_id: int):
 
 @app.post("/admin/professoras/{user_id}/resetar-senha")
 async def resetar_senha_professora(request: Request, user_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     nova_senha = reset_usuario_senha(user_id)
     if nova_senha:
@@ -481,7 +510,7 @@ async def resetar_senha_professora(request: Request, user_id: int):
 @app.get("/admin/aluno/{matricula}/relatorios", response_class=HTMLResponse)
 async def admin_ver_relatorios_aluno(request: Request, matricula: str):
     """Página que mostra os relatórios semestrais de um aluno Infantil."""
-    if not check_session(request):
+    if not check_staff(request):
         return _redir_login()
     aluno = get_aluno(matricula)
     if not aluno or not is_infantil(aluno.get("turma", "")):
@@ -498,7 +527,7 @@ async def admin_ver_relatorios_aluno(request: Request, matricula: str):
 
 @app.get("/admin/temas", response_class=HTMLResponse)
 async def listar_temas(request: Request, ok: str = "", erro: str = ""):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     topicos = get_all_topicos()
     return admin_temas_page(topicos, msg=ok, erro=erro)
@@ -508,7 +537,7 @@ async def listar_temas(request: Request, ok: str = "", erro: str = ""):
 
 @app.post("/admin/topicos/novo")
 async def criar_topico(request: Request, nome: str = Form(...)):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     nome = nome.strip()
     if not nome:
@@ -519,7 +548,7 @@ async def criar_topico(request: Request, nome: str = Form(...)):
 
 @app.post("/admin/topicos/{topico_id}/editar")
 async def editar_topico(request: Request, topico_id: int, nome: str = Form(...)):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     update_topico(topico_id, nome.strip())
     return RedirectResponse("/admin/temas?ok=T%C3%B3pico+atualizado", status_code=302)
@@ -527,7 +556,7 @@ async def editar_topico(request: Request, topico_id: int, nome: str = Form(...))
 
 @app.post("/admin/topicos/{topico_id}/excluir")
 async def excluir_topico(request: Request, topico_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     delete_topico(topico_id)
     return RedirectResponse("/admin/temas?ok=T%C3%B3pico+removido", status_code=302)
@@ -537,7 +566,7 @@ async def excluir_topico(request: Request, topico_id: int):
 
 @app.post("/admin/temas/novo")
 async def criar_tema(request: Request):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     form = dict(await request.form())
     nome = form.get("nome", "").strip()
@@ -551,7 +580,7 @@ async def criar_tema(request: Request):
 
 @app.post("/admin/temas/{tema_id}/editar")
 async def editar_tema(request: Request, tema_id: int, nome: str = Form(...)):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     update_tema(tema_id, nome.strip())
     return RedirectResponse("/admin/temas?ok=Tema+atualizado", status_code=302)
@@ -559,7 +588,7 @@ async def editar_tema(request: Request, tema_id: int, nome: str = Form(...)):
 
 @app.post("/admin/temas/{tema_id}/excluir")
 async def excluir_tema(request: Request, tema_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     delete_tema(tema_id)
     return RedirectResponse("/admin/temas?ok=Tema+removido", status_code=302)
@@ -567,7 +596,7 @@ async def excluir_tema(request: Request, tema_id: int):
 
 @app.post("/admin/temas/{tema_id}/subtema")
 async def criar_subtema(request: Request, tema_id: int, descricao: str = Form(...)):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     descricao = descricao.strip()
     if not descricao:
@@ -578,7 +607,7 @@ async def criar_subtema(request: Request, tema_id: int, descricao: str = Form(..
 
 @app.post("/admin/subtemas/{subtema_id}/editar")
 async def editar_subtema(request: Request, subtema_id: int, descricao: str = Form(...)):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     descricao = descricao.strip()
     if not descricao:
@@ -589,7 +618,7 @@ async def editar_subtema(request: Request, subtema_id: int, descricao: str = For
 
 @app.post("/admin/subtemas/{subtema_id}/excluir")
 async def excluir_subtema(request: Request, subtema_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     delete_subtema(subtema_id)
     return RedirectResponse("/admin/temas?ok=Subtema+removido", status_code=302)
@@ -597,7 +626,7 @@ async def excluir_subtema(request: Request, subtema_id: int):
 
 @app.post("/admin/topicos/{topico_id}/turmas")
 async def salvar_turmas_topico(request: Request, topico_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     form = await request.form()
     turmas = list(form.getlist("turma"))
@@ -607,7 +636,7 @@ async def salvar_turmas_topico(request: Request, topico_id: int):
 
 @app.post("/admin/temas/{tema_id}/turmas")
 async def salvar_turmas_tema(request: Request, tema_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     form = await request.form()
     turmas = list(form.getlist("turma"))
@@ -878,7 +907,7 @@ async def prof_relatorio_salvar(request: Request, matricula: str, semestre: int)
     descricao  = form.get("descricao_final", "").strip()
 
     save_respostas(relatorio["id"], respostas)
-    update_relatorio(relatorio["id"], "em_andamento", descricao)
+    update_relatorio(relatorio["id"], "em_andamento", descricao, editado_por=user["nome"])
 
     return RedirectResponse(
         f"/professora/relatorio/{matricula}/{semestre}?msg=Rascunho+salvo+com+sucesso",
@@ -922,7 +951,7 @@ async def prof_relatorio_confirmar(request: Request, matricula: str, semestre: i
     faltando  = [sid for sid in todos_ids if sid not in respostas or not respostas[sid]]
     if faltando:
         save_respostas(relatorio["id"], respostas)
-        update_relatorio(relatorio["id"], "em_andamento", descricao)
+        update_relatorio(relatorio["id"], "em_andamento", descricao, editado_por=user["nome"])
         return RedirectResponse(
             f"/professora/relatorio/{matricula}/{semestre}?erro=Preencha+todos+os+{len(todos_ids)}+subtemas+antes+de+confirmar",
             status_code=302,
@@ -930,14 +959,14 @@ async def prof_relatorio_confirmar(request: Request, matricula: str, semestre: i
 
     if len(descricao) < 10:
         save_respostas(relatorio["id"], respostas)
-        update_relatorio(relatorio["id"], "em_andamento", descricao)
+        update_relatorio(relatorio["id"], "em_andamento", descricao, editado_por=user["nome"])
         return RedirectResponse(
             f"/professora/relatorio/{matricula}/{semestre}?erro=A+descri%C3%A7%C3%A3o+final+%C3%A9+obrigat%C3%B3ria",
             status_code=302,
         )
 
     save_respostas(relatorio["id"], respostas)
-    update_relatorio(relatorio["id"], "concluido", descricao)
+    update_relatorio(relatorio["id"], "concluido", descricao, editado_por=user["nome"])
 
     turma_enc = aluno.get("turma", "").replace(" ", "%20")
     return RedirectResponse(
@@ -1021,11 +1050,12 @@ async def admin_relatorios(
     turma: str = "", semestre: str = "", status: str = "",
     ok: str = "", erro: str = "",
 ):
-    if not check_session(request):
+    if not check_staff(request):
         return _redir_login()
     rows, turmas_inf, cont = _painel_relatorios_data(turma, semestre, status)
     filtros = {"turma": turma, "semestre": semestre, "status": status}
-    return admin_relatorios_page(rows, turmas_inf, filtros, cont, msg=ok, erro=erro)
+    is_admin_user = check_admin(request)
+    return admin_relatorios_page(rows, turmas_inf, filtros, cont, msg=ok, erro=erro, staff_only=not is_admin_user)
 
 
 def _get_or_create_relatorio(matricula: str, semestre: int) -> dict | None:
@@ -1048,7 +1078,7 @@ def _get_or_create_relatorio(matricula: str, semestre: int) -> dict | None:
 async def admin_abrir_relatorio(request: Request, matricula: str, semestre: int):
     """Abre (criando se necessário) o relatório de um aluno/semestre — usado quando
     a professora ainda não preencheu nada e o relatório não existe no banco."""
-    if not check_session(request):
+    if not check_staff(request):
         return _redir_login()
     relatorio = _get_or_create_relatorio(matricula, semestre)
     if not relatorio:
@@ -1061,7 +1091,7 @@ async def admin_trancar_por_aluno(
     request: Request, matricula: str, semestre: int,
     turma: str = Form(""), semestre_filtro: str = Form(""), status: str = Form(""),
 ):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     relatorio = _get_or_create_relatorio(matricula, semestre)
     if relatorio:
@@ -1075,7 +1105,7 @@ async def admin_destrancar_por_aluno(
     request: Request, matricula: str, semestre: int,
     turma: str = Form(""), semestre_filtro: str = Form(""), status: str = Form(""),
 ):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     relatorio = _get_or_create_relatorio(matricula, semestre)
     if relatorio:
@@ -1095,7 +1125,7 @@ async def admin_trancar_semestre_inteiro(
     """Tranca/destranca de uma vez todos os relatórios de um semestre
     (de Ed. Infantil), criando os que ainda não existem. Respeita o
     filtro de turma atual, se houver."""
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     if semestre not in (1, 2):
         return RedirectResponse("/admin/relatorios", status_code=302)
@@ -1121,7 +1151,7 @@ async def admin_trancar_semestre_inteiro(
 
 @app.get("/admin/relatorio/{rel_id}", response_class=HTMLResponse)
 async def admin_ver_relatorio(request: Request, rel_id: int, msg: str = "", erro: str = ""):
-    if not check_session(request):
+    if not check_staff(request):
         return _redir_login()
 
     relatorio = get_relatorio_by_id(rel_id)
@@ -1132,7 +1162,7 @@ async def admin_ver_relatorio(request: Request, rel_id: int, msg: str = "", erro
     if not aluno:
         return RedirectResponse("/admin/relatorios", status_code=302)
 
-    temas    = get_all_temas()
+    temas    = get_temas_para_turma(aluno.get("turma", ""))
     respostas = get_respostas(rel_id)
     user_admin = get_session_user(request)
     prefix   = f"/admin/relatorio/{rel_id}"
@@ -1145,8 +1175,9 @@ async def admin_ver_relatorio(request: Request, rel_id: int, msg: str = "", erro
 
 @app.post("/admin/relatorio/{rel_id}/salvar")
 async def admin_salvar_relatorio(request: Request, rel_id: int):
-    if not check_session(request):
+    if not check_staff(request):
         return _redir_login()
+    user_staff = get_session_user(request)
 
     relatorio = get_relatorio_by_id(rel_id)
     if not relatorio:
@@ -1158,15 +1189,16 @@ async def admin_salvar_relatorio(request: Request, rel_id: int):
     novo_status = "em_andamento" if relatorio["status"] == "pendente" else relatorio["status"]
 
     save_respostas(rel_id, respostas)
-    update_relatorio(rel_id, novo_status, descricao)
+    update_relatorio(rel_id, novo_status, descricao, editado_por=user_staff["nome"])
 
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Alterações+salvas+com+sucesso", status_code=302)
 
 
 @app.post("/admin/relatorio/{rel_id}/confirmar")
 async def admin_confirmar_relatorio(request: Request, rel_id: int):
-    if not check_session(request):
+    if not check_staff(request):
         return _redir_login()
+    user_staff = get_session_user(request)
 
     relatorio = get_relatorio_by_id(rel_id)
     if not relatorio:
@@ -1184,20 +1216,20 @@ async def admin_confirmar_relatorio(request: Request, rel_id: int):
 
     if faltando:
         save_respostas(rel_id, respostas)
-        update_relatorio(rel_id, "em_andamento", descricao)
+        update_relatorio(rel_id, "em_andamento", descricao, editado_por=user_staff["nome"])
         return RedirectResponse(
             f"/admin/relatorio/{rel_id}?erro=Preencha+todos+os+subtemas+antes+de+confirmar",
             status_code=302,
         )
 
     save_respostas(rel_id, respostas)
-    update_relatorio(rel_id, "concluido", descricao)
+    update_relatorio(rel_id, "concluido", descricao, editado_por=user_staff["nome"])
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+confirmado+com+sucesso", status_code=302)
 
 
 @app.post("/admin/relatorio/{rel_id}/trancar")
 async def admin_trancar_relatorio(request: Request, rel_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     set_relatorio_trancado(rel_id, True)
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+trancado", status_code=302)
@@ -1205,7 +1237,7 @@ async def admin_trancar_relatorio(request: Request, rel_id: int):
 
 @app.post("/admin/relatorio/{rel_id}/destrancar")
 async def admin_destrancar_relatorio(request: Request, rel_id: int):
-    if not check_session(request):
+    if not check_admin(request):
         return _redir_login()
     set_relatorio_trancado(rel_id, False)
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+destrancado", status_code=302)
@@ -1213,7 +1245,7 @@ async def admin_destrancar_relatorio(request: Request, rel_id: int):
 
 @app.get("/admin/relatorio/{rel_id}/imprimir", response_class=HTMLResponse)
 async def admin_imprimir_relatorio(request: Request, rel_id: int):
-    if not check_session(request):
+    if not check_staff(request):
         return _redir_login()
 
     relatorio = get_relatorio_by_id(rel_id)
@@ -1221,7 +1253,7 @@ async def admin_imprimir_relatorio(request: Request, rel_id: int):
         return RedirectResponse("/admin/relatorios", status_code=302)
 
     aluno    = get_aluno(relatorio["matricula"])
-    temas    = get_all_temas()
+    temas    = get_temas_para_turma(aluno.get("turma", "") if aluno else "")
     respostas = get_respostas(rel_id)
 
     return HTMLResponse(gerar_relatorio_print_html(

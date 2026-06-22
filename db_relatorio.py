@@ -81,6 +81,7 @@ if DATABASE_URL:
             confirmado_em   TIMESTAMP,
             criado_em       TIMESTAMP DEFAULT NOW(),
             atualizado_em   TIMESTAMP DEFAULT NOW(),
+            editado_por_nome VARCHAR(120) DEFAULT '',
             UNIQUE (matricula, semestre, ano_letivo)
         );
 
@@ -137,6 +138,7 @@ if DATABASE_URL:
                     cur.execute("ALTER TABLE temas ADD COLUMN IF NOT EXISTS turmas JSONB DEFAULT '[]'")
                     cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS senha_temporaria BOOLEAN DEFAULT FALSE")
                     cur.execute("ALTER TABLE relatorios_semestrais ADD COLUMN IF NOT EXISTS trancado BOOLEAN DEFAULT FALSE")
+                    cur.execute("ALTER TABLE relatorios_semestrais ADD COLUMN IF NOT EXISTS editado_por_nome VARCHAR(120) DEFAULT ''")
                 conn.commit()
                 _seed_admin(conn)
             finally:
@@ -635,7 +637,7 @@ if DATABASE_URL:
         finally:
             conn.close()
 
-    def update_relatorio(relatorio_id: int, status: str, descricao_final: str = "") -> bool:
+    def update_relatorio(relatorio_id: int, status: str, descricao_final: str = "", editado_por: str = "") -> bool:
         _init()
         conn = _connect()
         try:
@@ -643,15 +645,32 @@ if DATABASE_URL:
                 if status == "concluido":
                     cur.execute("""
                         UPDATE relatorios_semestrais
-                        SET status=%s, descricao_final=%s, confirmado_em=NOW(), atualizado_em=NOW()
+                        SET status=%s, descricao_final=%s, confirmado_em=NOW(), atualizado_em=NOW(),
+                            editado_por_nome=%s
                         WHERE id=%s
-                    """, (status, descricao_final, relatorio_id))
+                    """, (status, descricao_final, editado_por, relatorio_id))
                 else:
                     cur.execute("""
                         UPDATE relatorios_semestrais
-                        SET status=%s, descricao_final=%s, atualizado_em=NOW()
+                        SET status=%s, descricao_final=%s, atualizado_em=NOW(), editado_por_nome=%s
                         WHERE id=%s
-                    """, (status, descricao_final, relatorio_id))
+                    """, (status, descricao_final, editado_por, relatorio_id))
+                ok = cur.rowcount > 0
+            conn.commit()
+            return ok
+        finally:
+            conn.close()
+
+    def set_relatorio_editor(relatorio_id: int, editado_por: str) -> bool:
+        """Registra quem fez a última edição (usado ao salvar respostas)."""
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE relatorios_semestrais SET editado_por_nome=%s, atualizado_em=NOW() WHERE id=%s",
+                    (editado_por, relatorio_id),
+                )
                 ok = cur.rowcount > 0
             conn.commit()
             return ok
@@ -757,6 +776,9 @@ else:
             for r in db.get("relatorios_semestrais", []):
                 if "trancado" not in r:
                     r["trancado"] = False
+                    changed = True
+                if "editado_por_nome" not in r:
+                    r["editado_por_nome"] = ""
                     changed = True
             if changed:
                 _save(db)
@@ -1196,20 +1218,33 @@ else:
                 "descricao_final": "",
                 "trancado": False,
                 "confirmado_em": None,
+                "editado_por_nome": "",
             }
             db["relatorios_semestrais"].append(r)
             _save(db)
             return dict(r)
 
-    def update_relatorio(relatorio_id: int, status: str, descricao_final: str = "") -> bool:
+    def update_relatorio(relatorio_id: int, status: str, descricao_final: str = "", editado_por: str = "") -> bool:
         with _lock:
             db = _load()
             for r in db["relatorios_semestrais"]:
                 if r["id"] == relatorio_id:
                     r["status"] = status
                     r["descricao_final"] = descricao_final
+                    r["editado_por_nome"] = editado_por
                     if status == "concluido":
                         r["confirmado_em"] = datetime.now().isoformat()
+                    _save(db)
+                    return True
+            return False
+
+    def set_relatorio_editor(relatorio_id: int, editado_por: str) -> bool:
+        """Registra quem fez a última edição (usado ao salvar respostas)."""
+        with _lock:
+            db = _load()
+            for r in db["relatorios_semestrais"]:
+                if r["id"] == relatorio_id:
+                    r["editado_por_nome"] = editado_por
                     _save(db)
                     return True
             return False

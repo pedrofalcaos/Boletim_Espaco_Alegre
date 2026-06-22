@@ -88,13 +88,15 @@ def login_page(erro: bool = False) -> str:
     return page_shell("Login — Escola Espaço Alegre", body, css)
 
 # ── Nav bar do admin ─────────────────────────────────────────────────────────
-def admin_nav(current: str = "alunos") -> str:
+def admin_nav(current: str = "alunos", staff_only: bool = False) -> str:
     items = [
         ("alunos",      "/admin",               "📚 Alunos"),
         ("professoras", "/admin/professoras",    "👩‍🏫 Professoras"),
         ("temas",       "/admin/temas",          "🗂️ Estrutura Avaliativa"),
         ("relatorios",  "/admin/relatorios",     "📋 Relatórios Semestrais"),
     ]
+    if staff_only:
+        items = [item for item in items if item[0] == "relatorios"]
     links = ""
     for key, href, label in items:
         if key == current:

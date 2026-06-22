@@ -572,8 +572,9 @@ def admin_relatorios_page(
     contadores: dict,     # {total, pendentes, andamento, concluidos}
     msg: str = "",
     erro: str = "",
+    staff_only: bool = False,
 ) -> str:
-    nav   = admin_nav("relatorios")
+    nav   = admin_nav("relatorios", staff_only=staff_only)
     aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
 
     # ── Cards de resumo ──
@@ -668,7 +669,7 @@ def admin_relatorios_page(
   </button>
 </form>"""
 
-    trava_massa_card = _card(f"""
+    trava_massa_card = "" if staff_only else _card(f"""
 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
   <span style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">
     Trava em massa ({escopo_label}):
@@ -679,6 +680,15 @@ def admin_relatorios_page(
   {_form_massa(2, "trancar")}
   {_form_massa(2, "destrancar")}
 </div>""")
+
+    seed_coordenacao_card = "" if staff_only else _card(f"""
+<form method="POST" action="/admin/seed-coordenacao" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"
+      onsubmit="return confirm('Criar os usuários de coordenação (Cristiane Dantas e Adriana Falcão)? Se já existirem, nada será alterado.');">
+  <span style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">
+    Coordenação:
+  </span>
+  <button type="submit" style="{_BTN_CINZA}font-size:12px;padding:9px 16px;">👤 Criar usuários de coordenação</button>
+</form>""")
 
     # ── Tabela de alunos ──
     sem_filtro = str(filtros.get("semestre", ""))
@@ -697,13 +707,13 @@ def admin_relatorios_page(
                 pill = _pill_status(r["s1_status"], r.get("s1_id"), r.get("s1_trancado", False),
                                      abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/1')
                 imp  = f'<a href="/admin/relatorio/{r["s1_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s1_id") else ""
-                trv  = _btn_trancar(r["matricula"], 1, r.get("s1_trancado", False), filtros)
+                trv  = "" if staff_only else _btn_trancar(r["matricula"], 1, r.get("s1_trancado", False), filtros)
                 td_s1 = f'<td style="padding:9px 12px;text-align:center;">{pill}{imp}{trv}</td>'
             if mostrar_s2:
                 pill = _pill_status(r["s2_status"], r.get("s2_id"), r.get("s2_trancado", False),
                                      abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/2')
                 imp  = f'<a href="/admin/relatorio/{r["s2_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s2_id") else ""
-                trv  = _btn_trancar(r["matricula"], 2, r.get("s2_trancado", False), filtros)
+                trv  = "" if staff_only else _btn_trancar(r["matricula"], 2, r.get("s2_trancado", False), filtros)
                 td_s2 = f'<td style="padding:9px 12px;text-align:center;">{pill}{imp}{trv}</td>'
 
             linhas += f"""
@@ -749,6 +759,7 @@ def admin_relatorios_page(
   {resumo}
   {filtros_card}
   {trava_massa_card}
+  {seed_coordenacao_card}
   {tabela_html}
 </div>"""
     return page_shell("Relatórios Semestrais — Escola Espaço Alegre", body)

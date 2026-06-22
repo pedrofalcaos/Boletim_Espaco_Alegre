@@ -71,6 +71,18 @@ def check_session(request: Request) -> bool:
     return get_session_user(request) is not None
 
 
+def check_admin(request: Request) -> bool:
+    """True somente para sessão com role 'admin' (gestão completa)."""
+    user = get_session_user(request)
+    return bool(user) and user.get("role") == "admin"
+
+
+def check_staff(request: Request) -> bool:
+    """True para sessão com role 'admin' ou 'coordenacao' (acesso a relatórios)."""
+    user = get_session_user(request)
+    return bool(user) and user.get("role") in ("admin", "coordenacao")
+
+
 # ── Guards de rota ────────────────────────────────────────────────────────────
 
 def require_admin(request: Request):

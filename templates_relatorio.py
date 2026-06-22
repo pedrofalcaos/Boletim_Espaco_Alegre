@@ -66,8 +66,11 @@ def relatorio_form_page(
     sem_label    = "1º Semestre" if semestre == 1 else "2º Semestre"
 
     is_admin     = user.get("role") == "admin"
-    is_readonly  = (status == "concluido" or trancado) and not is_admin
+    is_staff     = user.get("role") in ("admin", "coordenacao")
+    is_readonly  = (status == "concluido" or trancado) and not is_staff
     nome_prof    = user.get("nome", "")
+    editado_por  = relatorio.get("editado_por_nome", "")
+    atualizado_em = relatorio.get("atualizado_em", "")
     prefix       = form_prefix or f"/professora/relatorio/{matricula}/{semestre}"
 
     # temas é agora lista de tópicos: [{id, nome, temas:[{id, nome, subtemas:[...]}]}]
@@ -157,6 +160,24 @@ def relatorio_form_page(
   💾 Salvar Rascunho
 </button>"""
 
+    # ── Rodapé interno: quem editou por último (visível só para admin/coordenação) ──
+    footer_editor_html = ""
+    if is_staff and editado_por:
+        quando = ""
+        if atualizado_em:
+            try:
+                from datetime import datetime as _dt
+                dt = atualizado_em if hasattr(atualizado_em, "strftime") else _dt.fromisoformat(str(atualizado_em))
+                quando = f" em {dt.strftime('%d/%m/%Y às %H:%M')}"
+            except (ValueError, TypeError):
+                quando = ""
+        footer_editor_html = f"""
+<div style="margin-top:18px;padding-top:12px;border-top:1px solid #f0f0ee;text-align:right;">
+  <span style="font-size:11px;color:#aaa;font-style:italic;">
+    🖊️ Última edição por <b>{editado_por}</b>{quando}
+  </span>
+</div>"""
+
     # ── Sem temas configurados ──
     if not temas:
         aviso_temas = """
@@ -176,11 +197,11 @@ def relatorio_form_page(
         corpo  = _render_readonly(temas, respostas)
         botoes = ""
     else:
-        corpo, botoes = _render_form(prefix, temas, respostas, status, is_admin)
+        corpo, botoes = _render_form(prefix, temas, respostas, status, is_staff)
 
     # ── Banner read-only ──
     banner_concluido = ""
-    if trancado and not is_admin:
+    if trancado and not is_staff:
         banner_concluido = """
 <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 18px;
             margin-bottom:18px;display:flex;align-items:center;gap:10px;">
@@ -200,14 +221,14 @@ def relatorio_form_page(
     <div style="font-size:11px;color:#5a9a74;">Este relatório foi confirmado e não pode mais ser editado pela professora.</div>
   </div>
 </div>"""
-    elif is_admin and status == "concluido":
+    elif is_staff and status == "concluido":
         banner_concluido = """
 <div style="background:#e8eaf8;border:1px solid #b0b8e8;border-radius:10px;padding:12px 18px;
             margin-bottom:18px;display:flex;align-items:center;gap:10px;">
   <span style="font-size:20px;">🔧</span>
   <div>
-    <div style="font-weight:800;color:#2b3990;font-size:13px;">Modo admin — edição após confirmação</div>
-    <div style="font-size:11px;color:#666;">Como administrador, você pode editar mesmo após a confirmação.</div>
+    <div style="font-weight:800;color:#2b3990;font-size:13px;">Modo administração — edição após confirmação</div>
+    <div style="font-size:11px;color:#666;">Como admin/coordenação, você pode editar mesmo após a confirmação.</div>
   </div>
 </div>"""
 
@@ -236,8 +257,8 @@ def relatorio_form_page(
   </button>
 </form>"""
 
-    back_url = "/professora" if not is_admin else "/admin/relatorios"
-    back_label = "← Minhas Turmas" if not is_admin else "← Relatórios"
+    back_url = "/professora" if not is_staff else "/admin/relatorios"
+    back_label = "← Minhas Turmas" if not is_staff else "← Relatórios"
 
     body = f"""
 <div style="max-width:820px;margin:0 auto;padding:24px 16px;">
@@ -255,13 +276,13 @@ def relatorio_form_page(
       </h1>
       <div style="font-size:12px;color:#aaa;margin-top:3px;">
         {turma} &nbsp;·&nbsp; {periodo} &nbsp;·&nbsp; {sem_label} &nbsp;·&nbsp; {ano}
-        {"&nbsp;·&nbsp; Profª " + nome_prof if not is_admin else ""}
+        {"&nbsp;·&nbsp; Profª " + nome_prof if not is_staff else ""}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       {_badge_status(status)}
       {trava_html}
-      <a href="/{'admin/logout' if is_admin else 'professora/logout'}"
+      <a href="/{'admin/logout' if is_staff else 'professora/logout'}"
          style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;
                 font-size:12px;padding:8px 14px;border-radius:9px;border:1px solid #dcdcd8;">
         Sair
@@ -276,6 +297,7 @@ def relatorio_form_page(
   {corpo}
   {obs_html}
   {botoes}
+  {footer_editor_html}
 
 </div>
 
@@ -366,7 +388,7 @@ def _render_readonly(temas: list, respostas: dict) -> str:
 
 # ── Modo edição ───────────────────────────────────────────────────────────────
 
-def _render_form(prefix, temas, respostas, status, is_admin):
+def _render_form(prefix, temas, respostas, status, is_staff):
     """temas é lista de tópicos: [{id, nome, temas:[{id, nome, subtemas:[...]}]}]"""
     _INP_RD = ("position:absolute;opacity:0;width:0;height:0;")
 
@@ -431,7 +453,7 @@ def _render_form(prefix, temas, respostas, status, is_admin):
            border-radius:10px;padding:12px 28px;cursor:pointer;">
     💾 Salvar Rascunho
   </button>
-  {"" if not is_admin and status == "concluido" else f'''
+  {"" if not is_staff and status == "concluido" else f'''
   <button type="button" onclick="confirmar()"
     style="font-family:\'Nunito\',sans-serif;font-size:14px;font-weight:900;
            background:#2b3990;color:#fff;border:none;
