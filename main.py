@@ -36,6 +36,7 @@ from relatorio_print import (
     gerar_relatorio_print_html, gerar_relatorios_print_html_multiplos,
     gerar_relatorios_aluno_print_html,
 )
+from music_player import inject_player
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -46,6 +47,13 @@ async def logo():
     if not os.path.exists(path):
         path = "static/logo.jpg"
     return FileResponse(path)
+
+@app.get("/static/musica_escola.mp3")
+async def musica_escola():
+    path = "/mnt/user-data/uploads/musica_escola.mp3"
+    if not os.path.exists(path):
+        path = "static/musica_escola.mp3"
+    return FileResponse(path, media_type="audio/mpeg")
 
 # ════════════════════════════════════════════════════════════════════════════
 #  ÁREA PÚBLICA — consulta de boletim por matrícula
@@ -152,7 +160,7 @@ if(new URLSearchParams(location.search).get('erro')==='1')
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    return INDEX_HTML
+    return inject_player(INDEX_HTML)
 
 @app.get("/boletim/{matricula}", response_class=HTMLResponse)
 async def ver_boletim(matricula: str, ref: str = ""):
@@ -171,7 +179,7 @@ async def ver_boletim(matricula: str, ref: str = ""):
     aluno_completo = dict(aluno)
     aluno_completo['matricula'] = mat_clean
     back_url = "/admin" if ref == "admin" else "/"
-    return HTMLResponse(gerar_boletim_html(aluno_completo, back_url=back_url))
+    return HTMLResponse(inject_player(gerar_boletim_html(aluno_completo, back_url=back_url)))
 
 
 @app.get("/relatorio/{matricula}", response_class=HTMLResponse)
@@ -201,7 +209,7 @@ async def ver_relatorio_responsavel(matricula: str):
             respostas = get_respostas(relatorio["id"])
             itens.append((semestre, relatorio, temas, respostas))
 
-    return HTMLResponse(gerar_relatorios_aluno_print_html(aluno, mat_clean, itens))
+    return HTMLResponse(inject_player(gerar_relatorios_aluno_print_html(aluno, mat_clean, itens)))
 
 @app.get("/admin/imprimir", response_class=HTMLResponse)
 async def imprimir_boletins(request: Request, turma: str = "todos"):

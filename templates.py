@@ -1,6 +1,7 @@
 """HTML de todas as páginas."""
 from urllib.parse import quote
 from datetime import datetime
+from music_player import PLAYER_MUSICA_HTML
 
 _ANO_ATUAL = datetime.now().year
 
@@ -40,6 +41,7 @@ a{{text-decoration:none;color:inherit;}}
                font-size:11px;color:#9a9da8;">
   Sistema desenvolvido por <strong style="color:#6a6f87;">Pedro Falcão</strong> © {_ANO_ATUAL} — Todos os direitos reservados.
 </footer>
+{PLAYER_MUSICA_HTML}
 </body>
 </html>"""
 
