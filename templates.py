@@ -2,6 +2,7 @@
 from urllib.parse import quote
 from datetime import datetime
 from music_player import PLAYER_MUSICA_HTML
+from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS
 
 _ANO_ATUAL = datetime.now().year
 
@@ -26,16 +27,18 @@ def page_shell(title: str, body: str, extra_head: str = "") -> str:
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>{title}</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+{FONTS_LINK}
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 {CSS_VARS}
-body{{font-family:'Nunito',sans-serif;background:#d0d3e4;min-height:100vh;}}
+body{{font-family:'Nunito',sans-serif;background:linear-gradient(160deg,#e9ecfb 0%,#d8dcf2 45%,#cfe7f0 100%);min-height:100vh;}}
 a{{text-decoration:none;color:inherit;}}
+{LIQUID_GLASS_CSS}
 {extra_head}
 </style>
 </head>
 <body>
+{GLASS_BG_BLOBS}
 {body}
 <footer style="text-align:center;padding:18px 12px 28px;font-family:'Nunito',sans-serif;
                font-size:11px;color:#9a9da8;">

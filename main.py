@@ -65,49 +65,79 @@ INDEX_HTML = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Escola Espaço Alegre – Portal do Responsável</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Nunito',sans-serif;
+body{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing:antialiased;
   background:linear-gradient(160deg,#1a2570 0%,#2b3990 40%,#1a5fa8 100%);
-  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
-.card{background:#fff;border-radius:20px;box-shadow:0 8px 48px rgba(0,0,0,.28);width:100%;max-width:440px;overflow:hidden;}
-.top{background:#2b3990;padding:28px 32px 22px;text-align:center;border-bottom:4px solid #f7d800;}
-.top img{height:64px;object-fit:contain;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;}
-.top h1{font-family:'Fredoka One',cursive;font-size:21px;color:#fff;}
-.top p{font-size:11.5px;color:#b0b8e8;margin-top:4px;}
-.body{padding:28px 32px 24px;}
-label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#aaa;margin-bottom:6px;}
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;
+  position:relative;overflow-x:hidden;}
+.lg-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.lg-blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.45;animation:lg-float 18s ease-in-out infinite;}
+.lg-blob-1{width:460px;height:460px;top:-140px;left:-120px;background:#7d8bff;}
+.lg-blob-2{width:400px;height:400px;bottom:-160px;right:-100px;background:#f7d800;opacity:.3;animation-delay:-6s;}
+.lg-blob-3{width:340px;height:340px;top:45%;left:65%;background:#19c7b4;opacity:.26;animation-delay:-11s;}
+@keyframes lg-float{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(26px,-32px) scale(1.07);}}
+@media(prefers-reduced-motion:reduce){.lg-blob{animation:none;}}
+.card{position:relative;z-index:1;background:rgba(255,255,255,.62);backdrop-filter:blur(26px) saturate(180%);
+  -webkit-backdrop-filter:blur(26px) saturate(180%);border:1px solid rgba(255,255,255,.55);
+  border-radius:26px;box-shadow:0 20px 60px rgba(10,15,50,.35),inset 0 1px 0 rgba(255,255,255,.6);
+  width:100%;max-width:440px;overflow:hidden;}
+.top{background:linear-gradient(135deg,#3b49b8,#1a2570);padding:30px 32px 24px;text-align:center;
+  border-bottom:4px solid #f7d800;position:relative;}
+.top img{height:64px;object-fit:contain;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.25));}
+.top h1{font-family:'Fredoka One',cursive;font-size:21px;color:#fff;letter-spacing:.2px;}
+.top p{font-size:11.5px;color:#c7cdf5;margin-top:4px;font-weight:600;}
+.body{padding:30px 32px 26px;}
+label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7d83a3;margin-bottom:7px;}
 .inp-wrap{position:relative;margin-bottom:18px;}
-input[type=text]{width:100%;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;
-  color:#2b3990;letter-spacing:3px;text-align:center;padding:14px 44px 14px 16px;
-  border:2px solid #ddd;border-radius:12px;outline:none;background:#f7f7f5;transition:border-color .2s;}
-input[type=text]:focus{border-color:#2b3990;box-shadow:0 0 0 3px rgba(43,57,144,.1);}
-input::placeholder{font-size:13px;color:#ccc;letter-spacing:1px;font-weight:600;}
+input[type=text]{width:100%;font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:20px;font-weight:800;
+  color:#2b3990;letter-spacing:3px;text-align:center;padding:15px 44px 15px 16px;
+  border:1.5px solid rgba(43,57,144,.18);border-radius:16px;outline:none;
+  background:rgba(255,255,255,.55);backdrop-filter:blur(8px);transition:border-color .2s,box-shadow .2s;}
+input[type=text]:focus{border-color:#2b3990;box-shadow:0 0 0 4px rgba(43,57,144,.14);}
+input::placeholder{font-size:13px;color:#a9aec8;letter-spacing:1px;font-weight:600;}
 .clr{position:absolute;right:14px;top:50%;transform:translateY(-50%);
   background:none;border:none;font-size:18px;color:#ccc;cursor:pointer;display:none;}
 input:not(:placeholder-shown)~.clr{display:block;}
-.btn{width:100%;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;
-  background:#2b3990;color:#fff;border:none;border-radius:12px;padding:14px;cursor:pointer;transition:background .15s;}
-.btn:hover{background:#1a2570;}
-.erro{display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;
+.btn{width:100%;font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:15px;font-weight:800;
+  background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;border:none;border-radius:999px;
+  padding:15px;cursor:pointer;box-shadow:0 8px 22px rgba(26,37,112,.4),inset 0 1px 0 rgba(255,255,255,.25);
+  transition:transform .15s ease,filter .15s ease;}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.08);}
+.btn:active{transform:translateY(0) scale(.98);}
+.erro{display:none;background:rgba(254,242,242,.85);border:1px solid #fecaca;border-radius:14px;
   padding:12px 16px;margin-top:14px;font-size:13px;color:#991b1b;font-weight:600;text-align:center;}
 .erro.show{display:block;}
-.divider{border-top:1px solid #f0f0ee;margin:20px 0 0;}
+.divider{border-top:1px solid rgba(0,0,0,.06);margin:22px 0 0;}
 .prof-link{display:flex;align-items:center;justify-content:center;gap:8px;
-  padding:16px 32px;text-decoration:none;color:#2b3990;font-size:13px;font-weight:800;
+  padding:17px 32px;text-decoration:none;color:#2b3990;font-size:13px;font-weight:800;
   transition:background .15s;}
-.prof-link:hover{background:#f7f8ff;}
-.prof-link span{background:#e8eaf8;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:900;}
-.footer{border-top:1px solid #f0f0ee;padding:11px 32px;text-align:center;font-size:11px;color:#ccc;}
+.prof-link:hover{background:rgba(247,248,255,.6);}
+.prof-link span{background:rgba(232,234,248,.8);border-radius:999px;padding:4px 12px;font-size:11px;font-weight:900;}
+.footer{border-top:1px solid rgba(0,0,0,.06);padding:12px 32px;text-align:center;font-size:11px;color:#aab;}
 .loading{display:none;text-align:center;padding:16px 0 2px;}
 .loading.show{display:block;}
 .spinner{width:26px;height:26px;border:3px solid #e8eaf8;border-top-color:#2b3990;
   border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 7px;}
 @keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:480px){
+  .lg-blob{filter:blur(44px);}
+  .lg-blob-1,.lg-blob-2,.lg-blob-3{width:220px;height:220px;}
+  .top{padding:24px 22px 20px;}
+  .body{padding:22px 22px 20px;}
+}
 </style>
 </head>
 <body>
+<div class="lg-bg" aria-hidden="true">
+  <span class="lg-blob lg-blob-1"></span>
+  <span class="lg-blob lg-blob-2"></span>
+  <span class="lg-blob lg-blob-3"></span>
+</div>
 <div class="card">
   <div class="top">
     <img src="/static/logo.jpg" alt="Escola Espaço Alegre">

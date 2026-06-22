@@ -1,4 +1,5 @@
 import re, os
+from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS
 
 DISCIPLINAS = [
     'Língua Portuguesa','Matemática','História','Geografia',
@@ -89,41 +90,51 @@ _CSS = """
 }
 
 /* ── Base ── */
-body{font-family:'Nunito',sans-serif;background:#d0d3e4;min-height:100vh;
-  display:flex;flex-direction:column;align-items:center;padding:24px 12px;gap:16px;}
+body{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing:antialiased;
+  background:linear-gradient(160deg,#e9ecfb 0%,#d8dcf2 45%,#cfe7f0 100%);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;padding:24px 12px;gap:16px;
+  position:relative;overflow-x:hidden;}
 
 /* ── Topbar ── */
 .topbar{
   width:100%;max-width:960px;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
-  background:#fff;border-radius:12px;padding:10px 20px;
-  box-shadow:0 2px 12px rgba(43,57,144,.13);
+  background:rgba(255,255,255,.62);backdrop-filter:blur(22px) saturate(180%);
+  -webkit-backdrop-filter:blur(22px) saturate(180%);
+  border:1px solid rgba(255,255,255,.55);border-radius:18px;padding:10px 20px;
+  box-shadow:0 8px 28px rgba(43,57,144,.16),inset 0 1px 0 rgba(255,255,255,.6);
+  position:relative;z-index:1;
 }
 .topbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .back-btn{
-  font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
+  font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:13px;font-weight:800;
   background:var(--azul-lt);color:var(--azul);
-  border:none;border-radius:8px;padding:7px 14px;cursor:pointer;
+  border:none;border-radius:999px;padding:7px 16px;cursor:pointer;
   text-decoration:none;display:inline-block;white-space:nowrap;
+  transition:transform .15s ease,filter .15s ease;
 }
-.back-btn:hover{background:var(--azul-md);}
+.back-btn:hover{background:var(--azul-md);transform:translateY(-1px);}
 .print-btn{
-  font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
-  background:var(--azul);color:#fff;
-  border:none;border-radius:8px;padding:7px 18px;cursor:pointer;
-  white-space:nowrap;
+  font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:13px;font-weight:800;
+  background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;
+  border:none;border-radius:999px;padding:7px 20px;cursor:pointer;
+  white-space:nowrap;box-shadow:0 4px 14px rgba(26,37,112,.35);
+  transition:transform .15s ease,filter .15s ease;
 }
-.print-btn:hover{opacity:.88;}
+.print-btn:hover{filter:brightness(1.08);transform:translateY(-1px);}
 .topbar span{font-size:12px;color:#888;}
 
 /* ── Página ── */
 .page{
   width:min(277mm, 100%);
-  background:#fff;
-  border-radius:6px;
-  box-shadow:0 4px 28px rgba(43,57,144,.18);
+  background:rgba(255,255,255,.66);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid rgba(255,255,255,.55);
+  border-radius:18px;
+  box-shadow:0 12px 40px rgba(43,57,144,.22),inset 0 1px 0 rgba(255,255,255,.6);
   padding:6mm 8.5mm 5.5mm;
-  position:relative;overflow:hidden;
+  position:relative;overflow:hidden;z-index:1;
 }
 .page::before{
   content:'';position:absolute;top:0;left:0;right:0;height:5px;
@@ -308,6 +319,7 @@ td.sit-txt{font-weight:800;font-size:9px;}
   }
 
   .topbar{display:none!important;}
+  .page{background:#fff!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:none!important;}
 
   /* scroll hint e overflow */
   .table-scroll::before{display:none!important;}
@@ -346,8 +358,9 @@ td.sit-txt{font-weight:800;font-size:9px;}
   .freq-bloco{grid-template-columns:repeat(4,1fr) auto!important;}
   .sign-row{grid-template-columns:1.6fr 1.6fr 1fr!important;}
   .sign-space{height:22px!important;}
+  .lg-bg{display:none!important;}
 }
-"""
+""" + LIQUID_GLASS_CSS
 
 # ── Gera apenas o div .page de um aluno ─────────────────────────────────────
 def _gerar_pagina(aluno: dict) -> str:
@@ -501,10 +514,11 @@ def _html_shell(title: str, topbar: str, pages: str) -> str:
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>{title}</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+{FONTS_LINK}
 <style>{_CSS}</style>
 </head>
 <body>
+{GLASS_BG_BLOBS}
 {topbar}
 {pages}
 {_MODAL_HTML}

@@ -1,4 +1,11 @@
 """HTML otimizado para impressão/PDF do Relatório Semestral da Ed. Infantil."""
+from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS
+
+# _HTML_HEAD usa .format(), então chaves literais do CSS importado precisam
+# ser escapadas (dobradas) antes de entrar no template.
+_FONTS_LINK_ESC = FONTS_LINK.replace("{", "{{").replace("}", "}}")
+_GLASS_BG_BLOBS_ESC = GLASS_BG_BLOBS.replace("{", "{{").replace("}", "}}")
+_LIQUID_GLASS_CSS_ESC = LIQUID_GLASS_CSS.replace("{", "{{").replace("}", "}}")
 
 _COR_RESP = {
     "CA": ("#0a7c3e", "#e3f5ec"),
@@ -207,14 +214,22 @@ _HTML_HEAD = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <title>{titulo}</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+""" + _FONTS_LINK_ESC + """
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{font-family:'Nunito',sans-serif;background:#fff;color:#333;}}
-.pagina{{max-width:750px;margin:0 auto;padding:22px 26px;}}
+body{{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing:antialiased;
+  background:linear-gradient(160deg,#e9ecfb 0%,#d8dcf2 45%,#cfe7f0 100%);color:#333;
+  min-height:100vh;padding:18px 0 36px;position:relative;overflow-x:hidden;}}
+.pagina{{max-width:750px;margin:0 auto 22px;padding:26px 30px;position:relative;z-index:1;
+  background:rgba(255,255,255,.66);backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid rgba(255,255,255,.55);border-radius:22px;
+  box-shadow:0 12px 40px rgba(43,57,144,.18),inset 0 1px 0 rgba(255,255,255,.6);}}
 @media print{{
-  body{{margin:0;}}
-  .pagina{{max-width:100%;padding:0;}}
+  body{{margin:0;padding:0;background:#fff;}}
+  .lg-bg{{display:none!important;}}
+  .pagina{{max-width:100%;padding:0;margin:0;background:#fff!important;backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;border:none!important;box-shadow:none!important;border-radius:0!important;}}
   .no-print{{display:none!important;}}
   @page{{size:A4 portrait;margin:10mm 10mm;}}
 }}
@@ -224,20 +239,25 @@ body{{font-family:'Nunito',sans-serif;background:#fff;color:#333;}}
 .desc-rendered ul,.desc-rendered ol{{margin:0 0 8px 22px;padding:0;}}
 .desc-rendered li{{margin-bottom:3px;}}
 .desc-rendered img{{max-width:100%;}}
+@media (max-width:640px){{
+  .pagina{{margin:0 12px 18px;padding:18px 16px;border-radius:18px;}}
+}}
+""" + _LIQUID_GLASS_CSS_ESC + """
 </style>
 </head>
 <body>
-<div class="no-print" style="text-align:right;margin-bottom:16px;padding:0 16px;">
+""" + _GLASS_BG_BLOBS_ESC + """
+<div class="no-print" style="text-align:right;margin-bottom:16px;padding:0 16px;position:relative;z-index:1;">
   <button onclick="window.print()"
-    style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
-           background:#2b3990;color:#fff;border:none;border-radius:8px;
-           padding:9px 22px;cursor:pointer;">
+    style="font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:13px;font-weight:800;
+           background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;border:none;border-radius:999px;
+           padding:10px 24px;cursor:pointer;box-shadow:0 6px 18px rgba(26,37,112,.35);">
     🖨️ Imprimir / Salvar PDF
   </button>
   <button onclick="window.history.back()"
-    style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;
-           background:#f7f7f5;color:#555;border:1px solid #ddd;border-radius:8px;
-           padding:9px 18px;cursor:pointer;margin-left:8px;">
+    style="font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:13px;font-weight:700;
+           background:rgba(255,255,255,.55);color:#555;border:1px solid #ddd;border-radius:999px;
+           padding:10px 20px;cursor:pointer;margin-left:8px;">
     ← Voltar
   </button>
 </div>
