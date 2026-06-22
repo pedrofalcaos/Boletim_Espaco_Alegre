@@ -65,7 +65,6 @@ def relatorio_form_page(
     trancado     = bool(relatorio.get("trancado"))
     sem_label    = "1º Semestre" if semestre == 1 else "2º Semestre"
 
-    is_admin     = user.get("role") == "admin"
     is_staff     = user.get("role") in ("admin", "coordenacao")
     is_readonly  = (status == "concluido" or trancado) and not is_staff
     nome_prof    = user.get("nome", "")
@@ -232,9 +231,9 @@ def relatorio_form_page(
   </div>
 </div>"""
 
-    # ── Reabrir relatório concluído (somente admin) ──
+    # ── Reabrir relatório concluído (admin e coordenação) ──
     reabrir_html = ""
-    if is_admin and rel_id and status == "concluido":
+    if is_staff and rel_id and status == "concluido":
         reabrir_html = f"""
 <form method="POST" action="/admin/relatorio/{rel_id}/reabrir" style="display:inline;"
       onsubmit="return confirm('Reabrir este relatório para a professora preencher novamente?\\n\\nO status voltará para \\'Em andamento\\' e ela poderá editar as respostas.');">
@@ -246,9 +245,9 @@ def relatorio_form_page(
   </button>
 </form>"""
 
-    # ── Controle de trava (somente admin) ──
+    # ── Controle de trava (admin e coordenação) ──
     trava_html = ""
-    if is_admin and rel_id:
+    if is_staff and rel_id:
         if trancado:
             trava_html = f"""
 <form method="POST" action="/admin/relatorio/{rel_id}/destrancar" style="display:inline;">

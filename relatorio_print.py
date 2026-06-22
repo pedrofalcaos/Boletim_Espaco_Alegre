@@ -13,7 +13,7 @@ _LEGENDA_RESP = {
 }
 
 
-def gerar_relatorio_print_html(
+def _pagina_relatorio_html(
     aluno: dict,
     matricula: str,
     semestre: int,
@@ -21,6 +21,9 @@ def gerar_relatorio_print_html(
     temas: list,
     respostas: dict,   # {subtema_id: resposta}
 ) -> str:
+    """Conteúdo de uma página de relatório (cabeçalho, dados, temas, descrição,
+    assinaturas) — sem o shell HTML, para poder ser reutilizado tanto na
+    impressão individual quanto na impressão de vários alunos em sequência."""
     nome       = aluno.get("nome", "")
     turma      = aluno.get("turma", "")
     periodo    = aluno.get("periodo", "")
@@ -126,43 +129,7 @@ def gerar_relatorio_print_html(
 
     confirmado_info = f'<span style="font-size:10px;color:#0a7c3e;font-weight:700;">✔ Confirmado em {confirmado}</span>' if confirmado else ""
 
-    return f"""<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Relatório Semestral — {nome}</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{font-family:'Nunito',sans-serif;background:#fff;color:#333;}}
-.pagina{{max-width:750px;margin:0 auto;padding:28px 32px;}}
-@media print{{
-  body{{margin:0;}}
-  .pagina{{max-width:100%;padding:16px 20px;}}
-  .no-print{{display:none!important;}}
-  @page{{size:A4 portrait;margin:15mm 12mm;}}
-}}
-</style>
-</head>
-<body>
-<div class="pagina">
-
-  <!-- Botão imprimir -->
-  <div class="no-print" style="text-align:right;margin-bottom:16px;">
-    <button onclick="window.print()"
-      style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
-             background:#2b3990;color:#fff;border:none;border-radius:8px;
-             padding:9px 22px;cursor:pointer;">
-      🖨️ Imprimir / Salvar PDF
-    </button>
-    <button onclick="window.history.back()"
-      style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;
-             background:#f7f7f5;color:#555;border:1px solid #ddd;border-radius:8px;
-             padding:9px 18px;cursor:pointer;margin-left:8px;">
-      ← Voltar
-    </button>
-  </div>
-
+    return f"""
   <!-- Cabeçalho -->
   <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;
               border-bottom:3px solid #2b3990;padding-bottom:14px;">
@@ -231,7 +198,78 @@ body{{font-family:'Nunito',sans-serif;background:#fff;color:#333;}}
 
   <!-- Assinaturas -->
   {assinaturas}
+"""
 
+
+_HTML_HEAD = """<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>{titulo}</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{font-family:'Nunito',sans-serif;background:#fff;color:#333;}}
+.pagina{{max-width:750px;margin:0 auto;padding:28px 32px;}}
+@media print{{
+  body{{margin:0;}}
+  .pagina{{max-width:100%;padding:16px 20px;}}
+  .no-print{{display:none!important;}}
+  @page{{size:A4 portrait;margin:15mm 12mm;}}
+}}
+.pagina + .pagina{{page-break-before:always;}}
+</style>
+</head>
+<body>
+<div class="no-print" style="text-align:right;margin-bottom:16px;padding:0 16px;">
+  <button onclick="window.print()"
+    style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
+           background:#2b3990;color:#fff;border:none;border-radius:8px;
+           padding:9px 22px;cursor:pointer;">
+    🖨️ Imprimir / Salvar PDF
+  </button>
+  <button onclick="window.history.back()"
+    style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;
+           background:#f7f7f5;color:#555;border:1px solid #ddd;border-radius:8px;
+           padding:9px 18px;cursor:pointer;margin-left:8px;">
+    ← Voltar
+  </button>
 </div>
+{paginas}
 </body>
 </html>"""
+
+
+def gerar_relatorio_print_html(
+    aluno: dict,
+    matricula: str,
+    semestre: int,
+    relatorio: dict,
+    temas: list,
+    respostas: dict,   # {subtema_id: resposta}
+) -> str:
+    """Impressão de um único relatório (aluno + semestre)."""
+    corpo = _pagina_relatorio_html(aluno, matricula, semestre, relatorio, temas, respostas)
+    nome = aluno.get("nome", "")
+    return _HTML_HEAD.format(
+        titulo=f"Relatório Semestral — {nome}",
+        paginas=f'<div class="pagina">{corpo}</div>',
+    )
+
+
+def gerar_relatorios_print_html_multiplos(itens: list, semestre: int) -> str:
+    """Impressão em lote de vários relatórios em sequência (uma página por aluno).
+
+    itens: lista de tuplas (aluno, matricula, relatorio, temas, respostas).
+    """
+    sem_label = "1º Semestre" if semestre == 1 else "2º Semestre"
+    paginas = "".join(
+        f'<div class="pagina">{_pagina_relatorio_html(aluno, matricula, semestre, relatorio, temas, respostas)}</div>'
+        for aluno, matricula, relatorio, temas, respostas in itens
+    )
+    if not paginas:
+        paginas = '<div class="pagina"><p style="text-align:center;color:#888;padding:40px;">Nenhum relatório encontrado para os filtros selecionados.</p></div>'
+    return _HTML_HEAD.format(
+        titulo=f"Relatórios Semestrais — {sem_label}",
+        paginas=paginas,
+    )

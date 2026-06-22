@@ -32,7 +32,7 @@ from templates_professora import (
     professora_trocar_senha_page, is_infantil
 )
 from templates_relatorio import relatorio_form_page
-from relatorio_print import gerar_relatorio_print_html
+from relatorio_print import gerar_relatorio_print_html, gerar_relatorios_print_html_multiplos
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -984,7 +984,16 @@ def _painel_relatorios_data(turma_f: str = "", semestre_f: str = "", status_f: s
     })
 
     rows = []
-    pend_total = and_total = conc_total = 0
+    cont_s1 = {"pendentes": 0, "andamento": 0, "concluidos": 0}
+    cont_s2 = {"pendentes": 0, "andamento": 0, "concluidos": 0}
+
+    def _conta(cont: dict, s: str) -> None:
+        if s == "concluido":
+            cont["concluidos"] += 1
+        elif s == "em_andamento":
+            cont["andamento"] += 1
+        else:
+            cont["pendentes"] += 1
 
     for mat, al in sorted(all_alunos.items(), key=lambda x: (x[1].get("turma",""), x[1].get("nome",""))):
         turma = al.get("turma", "")
@@ -1007,14 +1016,9 @@ def _painel_relatorios_data(turma_f: str = "", semestre_f: str = "", status_f: s
             if s1 != status_f and s2 != status_f:
                 continue
 
-        # Contadores globais (sem filtro de status)
-        for s in (s1, s2):
-            if s == "concluido":
-                conc_total += 1
-            elif s == "em_andamento":
-                and_total += 1
-            else:
-                pend_total += 1
+        # Contadores por semestre (sem filtro de status)
+        _conta(cont_s1, s1)
+        _conta(cont_s2, s2)
 
         rows.append({
             "matricula": mat,
@@ -1031,9 +1035,11 @@ def _painel_relatorios_data(turma_f: str = "", semestre_f: str = "", status_f: s
 
     contadores = {
         "total":     len(rows),
-        "pendentes": pend_total,
-        "andamento": and_total,
-        "concluidos":conc_total,
+        "pendentes": cont_s1["pendentes"] + cont_s2["pendentes"],
+        "andamento": cont_s1["andamento"] + cont_s2["andamento"],
+        "concluidos":cont_s1["concluidos"] + cont_s2["concluidos"],
+        "s1":        cont_s1,
+        "s2":        cont_s2,
     }
     return rows, turmas_inf, contadores
 
@@ -1085,7 +1091,7 @@ async def admin_trancar_por_aluno(
     request: Request, matricula: str, semestre: int,
     turma: str = Form(""), semestre_filtro: str = Form(""), status: str = Form(""),
 ):
-    if not check_admin(request):
+    if not check_staff(request):
         return _redir_login()
     relatorio = _get_or_create_relatorio(matricula, semestre)
     if relatorio:
@@ -1099,7 +1105,7 @@ async def admin_destrancar_por_aluno(
     request: Request, matricula: str, semestre: int,
     turma: str = Form(""), semestre_filtro: str = Form(""), status: str = Form(""),
 ):
-    if not check_admin(request):
+    if not check_staff(request):
         return _redir_login()
     relatorio = _get_or_create_relatorio(matricula, semestre)
     if relatorio:
@@ -1119,7 +1125,7 @@ async def admin_trancar_semestre_inteiro(
     """Tranca/destranca de uma vez todos os relatórios de um semestre
     (de Ed. Infantil), criando os que ainda não existem. Respeita o
     filtro de turma atual, se houver."""
-    if not check_admin(request):
+    if not check_staff(request):
         return _redir_login()
     if semestre not in (1, 2):
         return RedirectResponse("/admin/relatorios", status_code=302)
@@ -1223,7 +1229,7 @@ async def admin_confirmar_relatorio(request: Request, rel_id: int):
 
 @app.post("/admin/relatorio/{rel_id}/trancar")
 async def admin_trancar_relatorio(request: Request, rel_id: int):
-    if not check_admin(request):
+    if not check_staff(request):
         return _redir_login()
     set_relatorio_trancado(rel_id, True)
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+trancado", status_code=302)
@@ -1231,7 +1237,7 @@ async def admin_trancar_relatorio(request: Request, rel_id: int):
 
 @app.post("/admin/relatorio/{rel_id}/destrancar")
 async def admin_destrancar_relatorio(request: Request, rel_id: int):
-    if not check_admin(request):
+    if not check_staff(request):
         return _redir_login()
     set_relatorio_trancado(rel_id, False)
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+destrancado", status_code=302)
@@ -1240,7 +1246,7 @@ async def admin_destrancar_relatorio(request: Request, rel_id: int):
 @app.post("/admin/relatorio/{rel_id}/reabrir")
 async def admin_reabrir_relatorio(request: Request, rel_id: int):
     """Reabre um relatório já concluído, devolvendo o acesso de edição à professora."""
-    if not check_admin(request):
+    if not check_staff(request):
         return _redir_login()
     reabrir_relatorio(rel_id)
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+reaberto+para+a+professora+preencher+novamente", status_code=302)
@@ -1263,4 +1269,30 @@ async def admin_imprimir_relatorio(request: Request, rel_id: int):
         aluno, relatorio["matricula"], relatorio["semestre"],
         relatorio, temas, respostas,
     ))
+
+
+@app.get("/admin/relatorios/imprimir", response_class=HTMLResponse)
+async def admin_imprimir_relatorios_lote(request: Request, semestre: int, turma: str = ""):
+    """Impressão em lote de todos os relatórios de um semestre (Ed. Infantil),
+    opcionalmente filtrados por turma."""
+    if not check_staff(request):
+        return _redir_login()
+    if semestre not in (1, 2):
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    itens = []
+    for mat, al in sorted(get_all_alunos().items(), key=lambda x: (x[1].get("turma", ""), x[1].get("nome", ""))):
+        t = al.get("turma", "")
+        if not is_infantil(t):
+            continue
+        if turma and t != turma:
+            continue
+        relatorio = get_relatorio(mat, semestre, al.get("ano_letivo", "2026"))
+        if not relatorio:
+            continue
+        temas = get_temas_para_turma(t)
+        respostas = get_respostas(relatorio["id"])
+        itens.append((al, mat, relatorio, temas, respostas))
+
+    return HTMLResponse(gerar_relatorios_print_html_multiplos(itens, semestre))
 

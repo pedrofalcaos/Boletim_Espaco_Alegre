@@ -1,4 +1,5 @@
 """Páginas extras do painel admin: professoras e temas avaliativos."""
+from urllib.parse import quote
 from templates import page_shell, admin_nav
 
 # Todas as turmas disponíveis (para seleção na criação/edição da professora)
@@ -604,13 +605,21 @@ def _pill_status(status: str, rel_id: int | None = None, trancado: bool = False,
                   abrir_href: str | None = None) -> str:
     cor, bg, bd, ico, label = _ST.get(status, _ST["pendente"])
     cadeado = ' <span title="Trancado pelo administrador">🔒</span>' if trancado else ""
-    pill = (f'<span style="background:{bg};border:1px solid {bd};color:{cor};'
+    return (f'<span style="background:{bg};border:1px solid {bd};color:{cor};'
             f'font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;'
             f'white-space:nowrap;">{ico} {label}{cadeado}</span>')
+
+
+def _btn_abrir(status: str, rel_id: int | None, abrir_href: str | None) -> str:
+    """Botão explícito para abrir/editar o relatório — visível independente do status,
+    já que clicar apenas na pill de status não é intuitivo o suficiente."""
     href = f"/admin/relatorio/{rel_id}" if rel_id else abrir_href
-    if href:
-        return f'<a href="{href}" style="text-decoration:none;">{pill}</a>'
-    return pill
+    if not href:
+        return ""
+    label = "✏️ Editar" if status == "concluido" else "📋 Abrir"
+    return (f'<a href="{href}" style="font-family:\'Nunito\',sans-serif;font-size:10px;font-weight:800;'
+            f'background:#e8eaf8;color:#2b3990;border:1px solid #b0b8e8;border-radius:7px;'
+            f'padding:3px 9px;margin-left:6px;text-decoration:none;white-space:nowrap;">{label}</a>')
 
 
 def _btn_trancar(matricula: str, semestre: int, trancado: bool, filtros: dict) -> str:
@@ -642,25 +651,36 @@ def admin_relatorios_page(
     nav   = admin_nav("relatorios", staff_only=staff_only)
     aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
 
-    # ── Cards de resumo ──
+    # ── Cards de resumo (totais + divisão por semestre) ──
+    def _cards_semestre(label: str, c: dict) -> str:
+        return f"""
+<div style="flex:1;min-width:260px;">
+  <div style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">{label}</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px 14px;text-align:center;">
+      <div style="font-size:22px;font-weight:900;color:#b52222;">{c['pendentes']}</div>
+      <div style="font-size:10px;color:#b52222;font-weight:700;margin-top:2px;">🔴 Pendentes</div>
+    </div>
+    <div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:12px;padding:12px 14px;text-align:center;">
+      <div style="font-size:22px;font-weight:900;color:#c25b0d;">{c['andamento']}</div>
+      <div style="font-size:10px;color:#c25b0d;font-weight:700;margin-top:2px;">🟡 Andamento</div>
+    </div>
+    <div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:12px;padding:12px 14px;text-align:center;">
+      <div style="font-size:22px;font-weight:900;color:#0a7c3e;">{c['concluidos']}</div>
+      <div style="font-size:10px;color:#0a7c3e;font-weight:700;margin-top:2px;">🟢 Concluídos</div>
+    </div>
+  </div>
+</div>"""
+
     resumo = f"""
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
-  <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.07);text-align:center;">
-    <div style="font-size:28px;font-weight:900;color:#2b3990;">{contadores['total']}</div>
-    <div style="font-size:11px;color:#aaa;font-weight:700;margin-top:2px;">Total de alunos</div>
-  </div>
-  <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px 18px;text-align:center;">
-    <div style="font-size:28px;font-weight:900;color:#b52222;">{contadores['pendentes']}</div>
-    <div style="font-size:11px;color:#b52222;font-weight:700;margin-top:2px;">🔴 Pendentes</div>
-  </div>
-  <div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:12px;padding:16px 18px;text-align:center;">
-    <div style="font-size:28px;font-weight:900;color:#c25b0d;">{contadores['andamento']}</div>
-    <div style="font-size:11px;color:#c25b0d;font-weight:700;margin-top:2px;">🟡 Em andamento</div>
-  </div>
-  <div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:12px;padding:16px 18px;text-align:center;">
-    <div style="font-size:28px;font-weight:900;color:#0a7c3e;">{contadores['concluidos']}</div>
-    <div style="font-size:11px;color:#0a7c3e;font-weight:700;margin-top:2px;">🟢 Concluídos</div>
-  </div>
+<div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.07);
+            text-align:center;margin-bottom:12px;max-width:220px;">
+  <div style="font-size:28px;font-weight:900;color:#2b3990;">{contadores['total']}</div>
+  <div style="font-size:11px;color:#aaa;font-weight:700;margin-top:2px;">Total de alunos</div>
+</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+  {_cards_semestre("1º Semestre", contadores['s1'])}
+  {_cards_semestre("2º Semestre", contadores['s2'])}
 </div>"""
 
     # ── Filtros ──
@@ -734,7 +754,7 @@ def admin_relatorios_page(
   </button>
 </form>"""
 
-    trava_massa_card = "" if staff_only else _card(f"""
+    trava_massa_card = _card(f"""
 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
   <span style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">
     Trava em massa ({escopo_label}):
@@ -744,6 +764,26 @@ def admin_relatorios_page(
   <span style="width:1px;height:24px;background:#e8e8e4;"></span>
   {_form_massa(2, "trancar")}
   {_form_massa(2, "destrancar")}
+</div>""")
+
+    imp_lote_card = _card(f"""
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <span style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">
+    Impressão em lote ({escopo_label}):
+  </span>
+  <a href="/admin/relatorios/imprimir?semestre=1&turma={quote(turma_atual)}" target="_blank"
+     style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
+            background:#e8eaf8;color:#2b3990;border:1.5px solid #b0b8e8;
+            border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap;text-decoration:none;">
+    🖨️ Imprimir todos — 1º Semestre
+  </a>
+  <a href="/admin/relatorios/imprimir?semestre=2&turma={quote(turma_atual)}" target="_blank"
+     style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
+            background:#e8eaf8;color:#2b3990;border:1.5px solid #b0b8e8;
+            border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap;text-decoration:none;">
+    🖨️ Imprimir todos — 2º Semestre
+  </a>
+  <span style="font-size:10px;color:#aaa;">💡 Use o filtro de turma acima para restringir a impressão a uma turma.</span>
 </div>""")
 
     # ── Tabela de alunos ──
@@ -760,17 +800,17 @@ def admin_relatorios_page(
             td_s1 = ""
             td_s2 = ""
             if mostrar_s1:
-                pill = _pill_status(r["s1_status"], r.get("s1_id"), r.get("s1_trancado", False),
-                                     abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/1')
+                pill = _pill_status(r["s1_status"], r.get("s1_id"), r.get("s1_trancado", False))
+                abrir = _btn_abrir(r["s1_status"], r.get("s1_id"), abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/1')
                 imp  = f'<a href="/admin/relatorio/{r["s1_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s1_id") else ""
-                trv  = "" if staff_only else _btn_trancar(r["matricula"], 1, r.get("s1_trancado", False), filtros)
-                td_s1 = f'<td style="padding:9px 12px;text-align:center;">{pill}{imp}{trv}</td>'
+                trv  = _btn_trancar(r["matricula"], 1, r.get("s1_trancado", False), filtros)
+                td_s1 = f'<td style="padding:9px 12px;text-align:center;">{pill}{abrir}{imp}{trv}</td>'
             if mostrar_s2:
-                pill = _pill_status(r["s2_status"], r.get("s2_id"), r.get("s2_trancado", False),
-                                     abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/2')
+                pill = _pill_status(r["s2_status"], r.get("s2_id"), r.get("s2_trancado", False))
+                abrir = _btn_abrir(r["s2_status"], r.get("s2_id"), abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/2')
                 imp  = f'<a href="/admin/relatorio/{r["s2_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;margin-left:6px;">🖨️</a>' if r.get("s2_id") else ""
-                trv  = "" if staff_only else _btn_trancar(r["matricula"], 2, r.get("s2_trancado", False), filtros)
-                td_s2 = f'<td style="padding:9px 12px;text-align:center;">{pill}{imp}{trv}</td>'
+                trv  = _btn_trancar(r["matricula"], 2, r.get("s2_trancado", False), filtros)
+                td_s2 = f'<td style="padding:9px 12px;text-align:center;">{pill}{abrir}{imp}{trv}</td>'
 
             linhas += f"""
 <tr style="border-bottom:.5px solid #f0f0ee;">
@@ -815,6 +855,7 @@ def admin_relatorios_page(
   {resumo}
   {filtros_card}
   {trava_massa_card}
+  {imp_lote_card}
   {tabela_html}
 </div>"""
     return page_shell("Relatórios Semestrais — Escola Espaço Alegre", body)
