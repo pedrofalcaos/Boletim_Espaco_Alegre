@@ -21,6 +21,27 @@ LIQUID_GLASS_CSS = """
   --lg-glass:rgba(255,255,255,.6);
   --lg-shadow:0 8px 32px rgba(26,37,112,.16), inset 0 1px 0 rgba(255,255,255,.65);
   --lg-shadow-sm:0 4px 18px rgba(26,37,112,.12);
+  --lg-shadow-lift:0 16px 48px rgba(26,37,112,.22), inset 0 1px 0 rgba(255,255,255,.7);
+
+  /* Escala tipográfica */
+  --fs-display: clamp(28px, 5vw, 44px);
+  --fs-h1: 24px;
+  --fs-h2: 18px;
+  --fs-h3: 15px;
+  --fs-body: 14px;
+  --fs-small: 12px;
+  --fs-label: 10px;
+
+  /* Espaçamento (escala 4px) */
+  --space-1:4px; --space-2:8px; --space-3:12px;
+  --space-4:16px; --space-5:24px; --space-6:32px; --space-7:48px;
+
+  /* Cores de texto secundário com contraste adequado (substituem #aaa/#bbb/#ccc) */
+  --text-secondary:#6b7094;
+  --text-tertiary:#9a9db8;
+
+  /* Raios padronizados */
+  --radius-sm:12px; --radius-md:18px; --radius-lg:26px; --radius-pill:999px;
 }
 *{ -webkit-tap-highlight-color:transparent; }
 body{
@@ -88,6 +109,23 @@ input:focus,select:focus,textarea:focus{
   border-color:#2b3990 !important;
   box-shadow:0 0 0 4px rgba(43,57,144,.14) !important;
   outline:none !important;
+}
+
+/* ── Contraste: substitui cinzas claros de baixo contraste por tokens legíveis ── */
+[style*="color:#aaa"],[style*="color: #aaa"],
+[style*="color:#bbb"],[style*="color: #bbb"],
+[style*="color:#ccc"],[style*="color: #ccc"]{
+  color:var(--text-secondary) !important;
+}
+
+/* ── Acessibilidade: foco sempre visível, mesmo sobre vidro ── */
+button:focus-visible,a:focus-visible,.btn:focus-visible{
+  outline:2px solid #2b3990 !important;
+  outline-offset:2px !important;
+}
+input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid #2b3990 !important;
+  outline-offset:1px !important;
 }
 
 @media print{
