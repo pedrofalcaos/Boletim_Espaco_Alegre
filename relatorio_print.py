@@ -1,5 +1,6 @@
 """HTML otimizado para impressão/PDF do Relatório Semestral da Ed. Infantil."""
 from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS
+from icons import ICON_PRINTER
 
 # _HTML_HEAD usa .format(), então chaves literais do CSS importado precisam
 # ser escapadas (dobradas) antes de entrar no template.
@@ -252,7 +253,7 @@ body{{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing
     style="font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:13px;font-weight:800;
            background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;border:none;border-radius:999px;
            padding:10px 24px;cursor:pointer;box-shadow:0 6px 18px rgba(26,37,112,.35);">
-    🖨️ Imprimir / Salvar PDF
+    """ + ICON_PRINTER + """Imprimir / Salvar PDF
   </button>
   <button onclick="window.history.back()"
     style="font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:13px;font-weight:700;

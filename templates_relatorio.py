@@ -1,5 +1,6 @@
 """Formulário de preenchimento e visualização do Relatório Semestral da Ed. Infantil."""
 from templates import page_shell
+from icons import ICON_LOCK, ICON_UNLOCK, ICON_REFRESH, ICON_TOOL, dot
 
 _OPCOES = ["CA", "CC", "ED"]
 
@@ -253,30 +254,30 @@ def relatorio_form_page(
     # ── Banner read-only ──
     banner_concluido = ""
     if trancado and not is_staff:
-        banner_concluido = """
+        banner_concluido = f"""
 <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 18px;
             margin-bottom:18px;display:flex;align-items:center;gap:10px;">
-  <span style="font-size:20px;">🔒</span>
+  <span style="font-size:18px;color:#b52222;">{ICON_LOCK}</span>
   <div>
     <div style="font-weight:800;color:#b52222;font-size:13px;">Relatório trancado pelo administrador</div>
     <div style="font-size:11px;color:#c25b5b;">Este relatório está temporariamente bloqueado para edição. Fale com a administração caso precise alterá-lo.</div>
   </div>
 </div>"""
     elif is_readonly:
-        banner_concluido = """
+        banner_concluido = f"""
 <div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:10px;padding:12px 18px;
             margin-bottom:18px;display:flex;align-items:center;gap:10px;">
-  <span style="font-size:20px;">🟢</span>
+  <span>{dot("#0a7c3e", 14)}</span>
   <div>
     <div style="font-weight:800;color:#0a7c3e;font-size:13px;">Relatório confirmado</div>
     <div style="font-size:11px;color:#5a9a74;">Este relatório foi confirmado e não pode mais ser editado pela professora.</div>
   </div>
 </div>"""
     elif is_staff and status == "concluido":
-        banner_concluido = """
+        banner_concluido = f"""
 <div style="background:#e8eaf8;border:1px solid #b0b8e8;border-radius:10px;padding:12px 18px;
             margin-bottom:18px;display:flex;align-items:center;gap:10px;">
-  <span style="font-size:20px;">🔧</span>
+  <span style="font-size:18px;color:#2b3990;">{ICON_TOOL}</span>
   <div>
     <div style="font-weight:800;color:#2b3990;font-size:13px;">Modo administração — edição após confirmação</div>
     <div style="font-size:11px;color:#666;">Como admin/coordenação, você pode editar mesmo após a confirmação.</div>
@@ -293,7 +294,7 @@ def relatorio_form_page(
     style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
            background:#fffbe6;color:#a67c00;border:1.5px solid #f7d800;
            border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap;">
-    🔄 Liberar para a professora preencher novamente
+    {ICON_REFRESH}Liberar para a professora preencher novamente
   </button>
 </form>"""
 
@@ -307,7 +308,7 @@ def relatorio_form_page(
     style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
            background:#fef2f2;color:#b52222;border:1.5px solid #fecaca;
            border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap;">
-    🔓 Destrancar relatório
+    {ICON_UNLOCK}Destrancar relatório
   </button>
 </form>"""
         else:
@@ -318,7 +319,7 @@ def relatorio_form_page(
     style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
            background:#f7f7f5;color:#2b3990;border:1.5px solid #b0b8e8;
            border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap;">
-    🔒 Trancar relatório
+    {ICON_LOCK}Trancar relatório
   </button>
 </form>"""
 

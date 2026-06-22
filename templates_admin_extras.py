@@ -1,6 +1,8 @@
 """Páginas extras do painel admin: professoras e temas avaliativos."""
 from urllib.parse import quote
 from templates import page_shell, admin_nav
+from icons import (ICON_EDIT, ICON_CLIPBOARD, ICON_PRINTER, ICON_LOCK, ICON_UNLOCK,
+                    ICON_REFRESH, ICON_KEY, ICON_PLUS, ICON_TRASH, dot)
 
 # Todas as turmas disponíveis (para seleção na criação/edição da professora)
 _TODAS_TURMAS = [
@@ -17,7 +19,6 @@ _TODAS_TURMAS = [
 _ST_COR = {"pendente":"#b52222","em_andamento":"#c25b0d","concluido":"#0a7c3e"}
 _ST_BG  = {"pendente":"#fef2f2","em_andamento":"#fef0e4","concluido":"#e3f5ec"}
 _ST_BD  = {"pendente":"#fecaca","em_andamento":"#f8d4a8","concluido":"#a8ddc0"}
-_ST_ICO = {"pendente":"🔴","em_andamento":"🟡","concluido":"🟢"}
 _ST_LAB = {"pendente":"Não preenchido","em_andamento":"Em preenchimento","concluido":"Preenchido"}
 
 
@@ -64,7 +65,7 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
         senha_box = f"""
 <div style="background:#fffbe6;border:2px solid #f7d800;border-radius:10px;padding:14px 18px;margin-bottom:20px;">
   <div style="font-size:11px;font-weight:800;color:#a67c00;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
-    🔑 Nova senha temporária gerada
+    {ICON_KEY}Nova senha temporária gerada
   </div>
   <div style="font-family:monospace;font-size:20px;font-weight:900;color:#2b3990;background:#fff;
               border:1px dashed #ccc;border-radius:7px;padding:8px 16px;display:inline-block;letter-spacing:2px;">
@@ -125,15 +126,15 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
     </div>
     <button type="button" onclick="toggleTurmas({pid})"
       style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">
-      ✏️ Editar turmas
+      {ICON_EDIT}Editar turmas
     </button>
     <form method="POST" action="/admin/professoras/{pid}/resetar-senha"
           onsubmit="return confirm('Gerar uma nova senha temporária para {p["nome"]}?\\n\\nA senha atual deixará de funcionar e ela precisará trocá-la no próximo acesso.');">
-      <button type="submit" style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">🔑 Resetar senha</button>
+      <button type="submit" style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">{ICON_KEY}Resetar senha</button>
     </form>
     <form method="POST" action="/admin/professoras/{pid}/excluir"
           onsubmit="return confirm('Excluir {p["nome"]}? Os alunos não são apagados.');">
-      <button type="submit" style="{_BTN_VM}">🗑</button>
+      <button type="submit" style="{_BTN_VM}">{ICON_TRASH}</button>
     </form>
   </div>
   <div style="margin-top:10px;">{chips}</div>
@@ -159,7 +160,7 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
     nova_checkboxes = _turma_checkboxes([], "nova")
 
     nova_card = _card(f"""
-{_secao("➕ Nova Professora")}
+{_secao(f"{ICON_PLUS}Nova Professora")}
 <form method="POST" action="/admin/professoras/nova">
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;">
     <div>
@@ -210,11 +211,11 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
     </div>
     <form method="POST" action="/admin/professoras/{cid}/resetar-senha"
           onsubmit="return confirm('Gerar uma nova senha temporária para {c["nome"]}?\\n\\nA senha atual deixará de funcionar e ela precisará trocá-la no próximo acesso.');">
-      <button type="submit" style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">🔑 Resetar senha</button>
+      <button type="submit" style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">{ICON_KEY}Resetar senha</button>
     </form>
     <form method="POST" action="/admin/professoras/{cid}/excluir"
           onsubmit="return confirm('Excluir {c["nome"]}?');">
-      <button type="submit" style="{_BTN_VM}">🗑</button>
+      <button type="submit" style="{_BTN_VM}">{ICON_TRASH}</button>
     </form>
   </div>
 </div>"""
@@ -225,7 +226,7 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
     coord_lista_card = _card(_secao("🧑‍💼 Coordenação cadastrada") + coord_lista)
 
     coord_nova_card = _card(f"""
-{_secao("➕ Nova Coordenadora")}
+{_secao(f"{ICON_PLUS}Nova Coordenadora")}
 <form method="POST" action="/admin/coordenacao/nova">
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;">
     <div>
@@ -347,7 +348,7 @@ def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
   </form>
   <form method="POST" action="/admin/temas/{tid}/excluir"
         onsubmit="return confirm('Excluir este tema e todos os subtemas?');">
-    <button type="submit" style="{_BTN_VM}">🗑 Excluir</button>
+    <button type="submit" style="{_BTN_VM}">{ICON_TRASH}Excluir</button>
   </form>
 </div>
 <form method="POST" action="/admin/temas/{tid}/turmas">
@@ -463,7 +464,7 @@ def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
   </form>
   <form method="POST" action="/admin/topicos/{tp_id}/excluir"
         onsubmit="return confirm('{aviso_excluir}');">
-    <button type="submit" style="{_BTN_VM}">🗑 Excluir tópico</button>
+    <button type="submit" style="{_BTN_VM}">{ICON_TRASH}Excluir tópico</button>
   </form>
 </div>
 <div style="background:#f0f4ff;border-radius:9px;padding:12px 14px;margin-bottom:14px;">
@@ -596,18 +597,18 @@ def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
 # ════════════════════════════════════════════════════════════════════════
 
 _ST = {
-    "pendente":     ("#b52222", "#fef2f2", "#fecaca", "🔴", "Pendente"),
-    "em_andamento": ("#c25b0d", "#fef0e4", "#f8d4a8", "🟡", "Em andamento"),
-    "concluido":    ("#0a7c3e", "#e3f5ec", "#a8ddc0", "🟢", "Concluído"),
+    "pendente":     ("#b52222", "#fef2f2", "#fecaca", "Pendente"),
+    "em_andamento": ("#c25b0d", "#fef0e4", "#f8d4a8", "Em andamento"),
+    "concluido":    ("#0a7c3e", "#e3f5ec", "#a8ddc0", "Concluído"),
 }
 
 def _pill_status(status: str, rel_id: int | None = None, trancado: bool = False,
                   abrir_href: str | None = None) -> str:
-    cor, bg, bd, ico, label = _ST.get(status, _ST["pendente"])
-    cadeado = ' <span title="Trancado pelo administrador">🔒</span>' if trancado else ""
+    cor, bg, bd, label = _ST.get(status, _ST["pendente"])
+    cadeado = f' <span title="Trancado pelo administrador" style="color:{cor};">{ICON_LOCK}</span>' if trancado else ""
     return (f'<span style="background:{bg};border:1px solid {bd};color:{cor};'
             f'font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;'
-            f'white-space:nowrap;">{ico} {label}{cadeado}</span>')
+            f'white-space:nowrap;">{dot(cor)}{label}{cadeado}</span>')
 
 
 def _btn_abrir(status: str, rel_id: int | None, abrir_href: str | None) -> str:
@@ -616,7 +617,7 @@ def _btn_abrir(status: str, rel_id: int | None, abrir_href: str | None) -> str:
     href = f"/admin/relatorio/{rel_id}" if rel_id else abrir_href
     if not href:
         return ""
-    label = "✏️ Editar" if status == "concluido" else "📋 Abrir"
+    label = f"{ICON_EDIT}Editar" if status == "concluido" else f"{ICON_CLIPBOARD}Abrir"
     return (f'<a href="{href}" style="font-family:\'Nunito\',sans-serif;font-size:10px;font-weight:800;'
             f'background:#e8eaf8;color:#2b3990;border:1px solid #b0b8e8;border-radius:7px;'
             f'padding:3px 9px;text-decoration:none;white-space:nowrap;">{label}</a>')
@@ -624,7 +625,7 @@ def _btn_abrir(status: str, rel_id: int | None, abrir_href: str | None) -> str:
 
 def _btn_trancar(matricula: str, semestre: int, trancado: bool, filtros: dict) -> str:
     acao = "destrancar" if trancado else "trancar"
-    icone = "🔓" if trancado else "🔒"
+    icone = ICON_UNLOCK if trancado else ICON_LOCK
     titulo = "Destrancar relatório" if trancado else "Trancar relatório (impede edição da professora)"
     confirma = "" if trancado else (
         " onsubmit=\"return confirm('Trancar este relatório? A professora não poderá mais editá-lo até você destrancar.');\""
@@ -659,15 +660,15 @@ def admin_relatorios_page(
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
     <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px 14px;text-align:center;">
       <div style="font-size:22px;font-weight:900;color:#b52222;">{c['pendentes']}</div>
-      <div style="font-size:10px;color:#b52222;font-weight:700;margin-top:2px;">🔴 Pendentes</div>
+      <div style="font-size:10px;color:#b52222;font-weight:700;margin-top:2px;">{dot("#b52222")}Pendentes</div>
     </div>
     <div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:12px;padding:12px 14px;text-align:center;">
       <div style="font-size:22px;font-weight:900;color:#c25b0d;">{c['andamento']}</div>
-      <div style="font-size:10px;color:#c25b0d;font-weight:700;margin-top:2px;">🟡 Andamento</div>
+      <div style="font-size:10px;color:#c25b0d;font-weight:700;margin-top:2px;">{dot("#c25b0d")}Andamento</div>
     </div>
     <div style="background:#e3f5ec;border:1px solid #a8ddc0;border-radius:12px;padding:12px 14px;text-align:center;">
       <div style="font-size:22px;font-weight:900;color:#0a7c3e;">{c['concluidos']}</div>
-      <div style="font-size:10px;color:#0a7c3e;font-weight:700;margin-top:2px;">🟢 Concluídos</div>
+      <div style="font-size:10px;color:#0a7c3e;font-weight:700;margin-top:2px;">{dot("#0a7c3e")}Concluídos</div>
     </div>
   </div>
 </div>"""
@@ -735,8 +736,8 @@ def admin_relatorios_page(
         cor = "#b52222" if trancar else "#0a7c3e"
         bg  = "#fef2f2" if trancar else "#e3f5ec"
         bd  = "#fecaca" if trancar else "#a8ddc0"
-        icone = "🔒" if trancar else "🔓"
-        label = f"{icone} {'Trancar' if trancar else 'Destrancar'} {semestre}º Semestre"
+        icone = ICON_LOCK if trancar else ICON_UNLOCK
+        label = f"{icone}{'Trancar' if trancar else 'Destrancar'} {semestre}º Semestre"
         confirma = (f"return confirm('{'Trancar' if trancar else 'Destrancar'} TODOS os relatórios "
                     f"do {semestre}º semestre {escopo_label}?');")
         return f"""
@@ -775,13 +776,13 @@ def admin_relatorios_page(
      style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
             background:#e8eaf8;color:#2b3990;border:1.5px solid #b0b8e8;
             border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap;text-decoration:none;">
-    🖨️ Imprimir todos — 1º Semestre
+    {ICON_PRINTER}Imprimir todos — 1º Semestre
   </a>
   <a href="/admin/relatorios/imprimir?semestre=2&turma={quote(turma_atual)}" target="_blank"
      style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
             background:#e8eaf8;color:#2b3990;border:1.5px solid #b0b8e8;
             border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap;text-decoration:none;">
-    🖨️ Imprimir todos — 2º Semestre
+    {ICON_PRINTER}Imprimir todos — 2º Semestre
   </a>
   <span style="font-size:10px;color:#aaa;">💡 Use o filtro de turma acima para restringir a impressão a uma turma.</span>
 </div>""")
@@ -802,7 +803,7 @@ def admin_relatorios_page(
             if mostrar_s1:
                 pill = _pill_status(r["s1_status"], r.get("s1_id"), r.get("s1_trancado", False))
                 abrir = _btn_abrir(r["s1_status"], r.get("s1_id"), abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/1')
-                imp  = f'<a href="/admin/relatorio/{r["s1_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;">🖨️</a>' if r.get("s1_id") else ""
+                imp  = f'<a href="/admin/relatorio/{r["s1_id"]}/imprimir" target="_blank" title="Imprimir" style="color:#2b3990;">{ICON_PRINTER}</a>' if r.get("s1_id") else ""
                 trv  = _btn_trancar(r["matricula"], 1, r.get("s1_trancado", False), filtros)
                 td_s1 = (f'<td style="padding:9px 12px;text-align:center;">'
                          f'<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;">'
@@ -810,7 +811,7 @@ def admin_relatorios_page(
             if mostrar_s2:
                 pill = _pill_status(r["s2_status"], r.get("s2_id"), r.get("s2_trancado", False))
                 abrir = _btn_abrir(r["s2_status"], r.get("s2_id"), abrir_href=f'/admin/relatorio/aluno/{r["matricula"]}/2')
-                imp  = f'<a href="/admin/relatorio/{r["s2_id"]}/imprimir" target="_blank" title="Imprimir" style="font-size:12px;">🖨️</a>' if r.get("s2_id") else ""
+                imp  = f'<a href="/admin/relatorio/{r["s2_id"]}/imprimir" target="_blank" title="Imprimir" style="color:#2b3990;">{ICON_PRINTER}</a>' if r.get("s2_id") else ""
                 trv  = _btn_trancar(r["matricula"], 2, r.get("s2_trancado", False), filtros)
                 td_s2 = (f'<td style="padding:9px 12px;text-align:center;">'
                          f'<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;">'
@@ -885,12 +886,12 @@ def admin_aluno_relatorios_page(aluno: dict, matricula: str, rel1: dict | None, 
         if rel is None:
             status_html = (
                 f'<span style="background:#fef2f2;border:1px solid #fecaca;color:#b52222;'
-                f'font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;">🔴 Não preenchido</span>'
+                f'font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;">{dot("#b52222")}Não preenchido</span>'
             )
             btn = (f'<a href="/admin/relatorio/aluno/{matricula}/{sem}" '
                    f'style="background:#2b3990;color:#fff;font-family:\'Nunito\',sans-serif;'
                    f'font-weight:800;font-size:13px;padding:9px 20px;border-radius:9px;'
-                   f'text-decoration:none;">✏️ Iniciar relatório</a>')
+                   f'text-decoration:none;">{ICON_EDIT}Iniciar relatório</a>')
             impressao = ""
         else:
             s = rel.get("status", "pendente")
@@ -898,16 +899,16 @@ def admin_aluno_relatorios_page(aluno: dict, matricula: str, rel1: dict | None, 
             status_html = (
                 f'<span style="background:{bg};border:1px solid {bd};color:{cor};'
                 f'font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;">'
-                f'{_ST_ICO[s]} {_ST_LAB[s]}</span>'
+                f'{dot(cor)}{_ST_LAB[s]}</span>'
             )
             btn = (f'<a href="/admin/relatorio/{rel["id"]}" '
                    f'style="background:#2b3990;color:#fff;font-family:\'Nunito\',sans-serif;'
                    f'font-weight:800;font-size:13px;padding:9px 20px;border-radius:9px;'
-                   f'text-decoration:none;">✏️ Ver / Editar</a>')
+                   f'text-decoration:none;">{ICON_EDIT}Ver / Editar</a>')
             impressao = (f' &nbsp;<a href="/admin/relatorio/{rel["id"]}/imprimir" target="_blank"'
                          f' style="background:#e8eaf8;color:#2b3990;font-family:\'Nunito\',sans-serif;'
                          f'font-weight:800;font-size:13px;padding:9px 18px;border-radius:9px;'
-                         f'text-decoration:none;">🖨️ Imprimir</a>')
+                         f'text-decoration:none;">{ICON_PRINTER}Imprimir</a>')
 
         return f"""
 <div style="background:#fff;border-radius:12px;padding:20px 24px;margin-bottom:14px;
@@ -944,7 +945,7 @@ def admin_aluno_relatorios_page(aluno: dict, matricula: str, rel1: dict | None, 
   </div>
 
   <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;margin-bottom:14px;">
-    📋 Relatórios Semestrais
+    {ICON_CLIPBOARD}Relatórios Semestrais
   </div>
 
   {_sem_card(1, rel1)}

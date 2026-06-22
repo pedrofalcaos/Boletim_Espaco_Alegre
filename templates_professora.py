@@ -1,20 +1,21 @@
 """Páginas da área da professora."""
 from urllib.parse import quote
 from templates import page_shell, _ANO_ATUAL
+from icons import ICON_EDIT, ICON_VIEW, ICON_KEY, dot
 
 # ── Helpers de status ─────────────────────────────────────────────────────────
 
 _STATUS = {
-    "pendente":     ("#b52222", "#fef2f2", "#fecaca", "🔴 Pendente"),
-    "em_andamento": ("#c25b0d", "#fef0e4", "#f8d4a8", "🟡 Em andamento"),
-    "concluido":    ("#0a7c3e", "#e3f5ec", "#a8ddc0", "🟢 Concluído"),
+    "pendente":     ("#b52222", "#fef2f2", "#fecaca", "Pendente"),
+    "em_andamento": ("#c25b0d", "#fef0e4", "#f8d4a8", "Em andamento"),
+    "concluido":    ("#0a7c3e", "#e3f5ec", "#a8ddc0", "Concluído"),
 }
 
 def _badge_status(status: str) -> str:
     cor, bg, borda, label = _STATUS.get(status, _STATUS["pendente"])
     return (f'<span style="background:{bg};border:1px solid {borda};color:{cor};'
             f'font-size:11px;font-weight:800;padding:3px 11px;border-radius:20px;'
-            f'white-space:nowrap;">{label}</span>')
+            f'white-space:nowrap;">{dot(cor)}{label}</span>')
 
 def _dot(status: str) -> str:
     cores = {"pendente": "#b52222", "em_andamento": "#c25b0d", "concluido": "#0a7c3e"}
@@ -84,9 +85,9 @@ def professora_trocar_senha_page(user: dict, obrigatorio: bool = False, erro: st
 
     aviso_html = ""
     if obrigatorio:
-        aviso_html = """
+        aviso_html = f"""
 <div style="background:#fef0e4;border:1px solid #f8d4a8;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#c25b0d;font-weight:700;text-align:center;">
-  🔑 Sua senha é temporária. Por segurança, defina uma nova senha para continuar.
+  {ICON_KEY}Sua senha é temporária. Por segurança, defina uma nova senha para continuar.
 </div>"""
 
     cancelar_html = "" if obrigatorio else """
@@ -229,7 +230,7 @@ def professora_dashboard(user: dict, turmas_data: list, msg: str = "", bemvindo:
        style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
               background:rgba(255,255,255,.15);color:#fff;padding:8px 16px;
               border-radius:9px;border:1px solid rgba(255,255,255,.3);">
-      🔑 Trocar senha
+      {ICON_KEY}Trocar senha
     </a>
     <a href="/professora/logout"
        style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
@@ -267,11 +268,11 @@ def professora_turma_page(user: dict, turma: str, alunos: list, msg: str = "") -
     def _btn_acao(matricula: str, semestre: int, status: str) -> str:
         href = f"/professora/relatorio/{matricula}/{semestre}"
         if status == "concluido":
-            return f'<a href="{href}" style="background:#e3f5ec;color:#0a7c3e;font-size:11px;font-weight:800;padding:5px 13px;border-radius:7px;white-space:nowrap;">👁 Ver</a>'
+            return f'<a href="{href}" style="background:#e3f5ec;color:#0a7c3e;font-size:11px;font-weight:800;padding:5px 13px;border-radius:7px;white-space:nowrap;">{ICON_VIEW}Ver</a>'
         elif status == "em_andamento":
-            return f'<a href="{href}" style="background:#fef0e4;color:#c25b0d;font-size:11px;font-weight:800;padding:5px 13px;border-radius:7px;white-space:nowrap;">✏️ Continuar</a>'
+            return f'<a href="{href}" style="background:#fef0e4;color:#c25b0d;font-size:11px;font-weight:800;padding:5px 13px;border-radius:7px;white-space:nowrap;">{ICON_EDIT}Continuar</a>'
         else:
-            return f'<a href="{href}" style="background:#e8eaf8;color:#2b3990;font-size:11px;font-weight:800;padding:5px 13px;border-radius:7px;white-space:nowrap;">✏️ Preencher</a>'
+            return f'<a href="{href}" style="background:#e8eaf8;color:#2b3990;font-size:11px;font-weight:800;padding:5px 13px;border-radius:7px;white-space:nowrap;">{ICON_EDIT}Preencher</a>'
 
     if not alunos:
         tabela = '<p style="text-align:center;color:#aaa;padding:30px;">Nenhum aluno encontrado nesta turma.</p>'
@@ -323,7 +324,7 @@ def professora_turma_page(user: dict, turma: str, alunos: list, msg: str = "") -
   <td style="padding:10px 12px;">
     <a href="/boletim/{al['matricula']}" target="_blank"
        style="background:#e8eaf8;color:#2b3990;font-size:11px;font-weight:800;padding:5px 13px;border-radius:7px;">
-      👁 Ver Boletim
+      {ICON_VIEW}Ver Boletim
     </a>
   </td>
 </tr>"""

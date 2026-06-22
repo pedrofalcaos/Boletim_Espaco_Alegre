@@ -1,5 +1,6 @@
 import re, os
 from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS
+from icons import ICON_PRINTER, icon_printer
 
 DISCIPLINAS = [
     'Língua Portuguesa','Matemática','História','Geografia',
@@ -466,7 +467,7 @@ _MODAL_HTML = '''
      z-index:999;align-items:center;justify-content:center;padding:16px;">
   <div style="background:#fff;border-radius:18px;padding:28px 28px 20px;max-width:340px;
               width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3);">
-    <div style="font-size:40px;margin-bottom:10px;">🖨️</div>
+    <div style="color:#2b3990;margin-bottom:10px;">''' + icon_printer(40) + '''</div>
     <h3 style="font-family:\'Fredoka One\',cursive;color:#2b3990;font-size:19px;margin-bottom:10px;">
       Antes de imprimir
     </h3>
@@ -535,7 +536,7 @@ def gerar_boletim_html(aluno: dict, back_url: str = '/') -> str:
     <a href="{back_url}" class="back-btn">← Voltar</a>
     <span>Boletim de <strong>{nome}</strong> — {turma} ({periodo})</span>
   </div>
-  <button class="print-btn" onclick="abrirImpressao()">🖨️ Imprimir / Salvar PDF</button>
+  <button class="print-btn" onclick="abrirImpressao()">{ICON_PRINTER}Imprimir / Salvar PDF</button>
 </div>'''
     return _html_shell(f'Boletim – {nome}', topbar, _gerar_pagina(aluno))
 
@@ -547,7 +548,7 @@ def gerar_boletins_multiplos_html(alunos: list, titulo: str) -> str:
     <a href="/admin" class="back-btn">← Painel Admin</a>
     <span><strong>{titulo}</strong> — {n} boletim(s)</span>
   </div>
-  <button class="print-btn" onclick="abrirImpressao()">🖨️ Imprimir Todos ({n})</button>
+  <button class="print-btn" onclick="abrirImpressao()">{ICON_PRINTER}Imprimir Todos ({n})</button>
 </div>'''
     pages = '\n'.join(_gerar_pagina(a) for a in alunos)
     return _html_shell(f'Boletins – {titulo}', topbar, pages)
