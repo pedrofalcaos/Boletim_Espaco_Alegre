@@ -1129,6 +1129,36 @@ def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "")
 #  AVALIAÇÃO DE INGLÊS (PDF)
 # ════════════════════════════════════════════════════════════════════════
 
+def banner_festas_pais() -> str:
+    """Banner acolhedor de São João / boas férias exibido ao responsável ao abrir
+    o boletim ou relatório. Não aparece na impressão (.no-print)."""
+    return """
+<div class="no-print" style="max-width:750px;margin:0 auto 18px;padding:0 16px;position:relative;z-index:1;">
+  <div style="position:relative;overflow:hidden;border-radius:18px;
+              background:linear-gradient(135deg,#2b3990 0%,#3b49b8 55%,#1a5fa8 100%);
+              box-shadow:0 12px 34px rgba(26,37,112,.28);">
+    <div style="height:8px;width:100%;
+                background:repeating-linear-gradient(45deg,#f7d800 0 18px,#ff5a5f 18px 36px,#19c7b4 36px 54px,#ff9f1c 54px 72px);
+                opacity:.95;"></div>
+    <div style="padding:20px 22px 22px;text-align:center;color:#fff;">
+      <div style="font-size:30px;line-height:1;margin-bottom:8px;">🎉 🌽 🔥 🎈</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:20px;letter-spacing:.3px;margin-bottom:8px;">
+        Feliz São João e boas férias! 💛
+      </div>
+      <p style="font-size:13.5px;line-height:1.7;color:#eef0ff;max-width:560px;margin:0 auto;font-weight:600;">
+        Chegamos ao fim de mais um semestre cheio de descobertas, sorrisos e conquistas.
+        Obrigado, família, por caminhar lado a lado com a gente em cada passo do seu pequeno.
+        Que estas férias sejam de muito descanso, brincadeiras ao pé da fogueira e momentos
+        especiais juntos — e que voltem com o coração quentinho para a próxima etapa! 🌻
+      </p>
+      <div style="margin-top:12px;font-size:12px;color:#c7cdf5;font-weight:700;">
+        Com carinho, Equipe Escola Espaço Alegre
+      </div>
+    </div>
+  </div>
+</div>"""
+
+
 def card_avaliacao_pais(matricula: str, label: str = "Avaliação de Inglês") -> str:
     """Card discreto exibido na área do responsável quando há PDF vinculado.
     Abre o PDF em nova aba. Some por completo na impressão (.no-print)."""

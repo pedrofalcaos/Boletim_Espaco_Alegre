@@ -8,6 +8,29 @@ _FONTS_LINK_ESC = FONTS_LINK.replace("{", "{{").replace("}", "}}")
 _GLASS_BG_BLOBS_ESC = GLASS_BG_BLOBS.replace("{", "{{").replace("}", "}}")
 _LIQUID_GLASS_CSS_ESC = LIQUID_GLASS_CSS.replace("{", "{{").replace("}", "}}")
 
+# Lembrete exibido antes de imprimir, para o navegador não inserir a URL na folha.
+_MODAL_REL = """
+<div id="print-modal-rel" class="no-print" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:18px;padding:26px 26px 20px;max-width:360px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+    <div style="font-size:38px;margin-bottom:6px;">🖨️</div>
+    <h3 style="font-family:'Fredoka One',cursive;color:#2b3990;font-size:18px;margin-bottom:10px;">Antes de imprimir</h3>
+    <p style="font-size:13px;color:#555;line-height:1.6;margin-bottom:10px;">No diálogo de impressão, ajuste:</p>
+    <div style="background:#e8eaf8;border-radius:10px;padding:11px 14px;margin-bottom:16px;text-align:left;">
+      <div style="font-size:13px;color:#2b3990;font-weight:800;margin-bottom:5px;">📐 Margens &rarr; <strong>Nenhuma</strong></div>
+      <div style="font-size:13px;color:#2b3990;font-weight:800;">🚫 Desmarque <strong>Cabe&ccedil;alhos e rodap&eacute;s</strong></div>
+      <div style="font-size:11px;color:#888;margin-top:6px;">Assim o endere&ccedil;o do site n&atilde;o aparece na folha.</div>
+    </div>
+    <button onclick="fecharEImprimirRel()" style="width:100%;background:#2b3990;color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:8px;">Imprimir agora</button>
+    <button onclick="document.getElementById('print-modal-rel').style.display='none'" style="width:100%;background:#f3f3f3;color:#666;border:none;border-radius:10px;padding:10px;font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">Cancelar</button>
+  </div>
+</div>
+<script>
+function abrirImpressaoRel(){document.getElementById('print-modal-rel').style.display='flex';}
+function fecharEImprimirRel(){document.getElementById('print-modal-rel').style.display='none';setTimeout(function(){window.print();},150);}
+</script>
+"""
+_MODAL_REL_ESC = _MODAL_REL.replace("{", "{{").replace("}", "}}")
+
 _COR_RESP = {
     "CA": ("#0a7c3e", "#e3f5ec"),
     "CC": ("#2b3990", "#e8eaf8"),
@@ -252,7 +275,7 @@ body{{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing
 <body>
 """ + _GLASS_BG_BLOBS_ESC + """
 <div class="no-print" style="text-align:right;margin-bottom:16px;padding:0 16px;position:relative;z-index:1;">
-  <button onclick="window.print()"
+  <button onclick="abrirImpressaoRel()"
     style="font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-size:13px;font-weight:800;
            background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;border:none;border-radius:999px;
            padding:10px 24px;cursor:pointer;box-shadow:0 6px 18px rgba(26,37,112,.35);">
@@ -267,6 +290,7 @@ body{{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing
 </div>
 {extra_top}
 {paginas}
+""" + _MODAL_REL_ESC + """
 </body>
 </html>"""
 

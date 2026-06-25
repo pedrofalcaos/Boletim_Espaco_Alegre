@@ -30,7 +30,7 @@ from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import (
     admin_professoras_page, admin_temas_page, admin_relatorios_page,
     admin_aluno_relatorios_page, aluno_infantil_form, admin_avaliacoes_page,
-    card_avaliacao_pais, admin_acessos_page,
+    card_avaliacao_pais, admin_acessos_page, banner_festas_pais,
 )
 from templates_professora import (
     professora_login_page, professora_dashboard, professora_turma_page,
@@ -327,10 +327,13 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else ""
 
 
-def _registrar_acesso_pai(request: Request, aluno: dict, matricula: str, documento: str):
-    """Registra o acesso de um responsável a um documento — apenas para
-    visitantes que NÃO são da equipe (admin/coordenação não contam como pais)."""
-    if check_staff(request):
+def _registrar_acesso_pai(request: Request, aluno: dict, matricula: str, documento: str, ref: str = ""):
+    """Registra o acesso de um responsável a um documento.
+
+    Só NÃO conta quando a equipe abre pelo painel ("Ver Boletim", ref=admin) —
+    aí é gestão interna. Abrir o link público normal conta como acesso (mesmo
+    logado), o que também permite à coordenação testar a funcionalidade."""
+    if ref == "admin" and check_staff(request):
         return
     dac.registrar_acesso(
         matricula=matricula,
@@ -436,9 +439,10 @@ async def ver_boletim(request: Request, matricula: str, ref: str = ""):
     aluno_completo = dict(aluno)
     aluno_completo['matricula'] = mat_clean
     back_url = "/admin" if ref == "admin" else "/"
-    _registrar_acesso_pai(request, aluno, mat_clean, "boletim")
+    _registrar_acesso_pai(request, aluno, mat_clean, "boletim", ref=ref)
     card = card_avaliacao_pais(mat_clean) if dav.get_avaliacao(mat_clean) else ""
-    return HTMLResponse(inject_player(gerar_boletim_html(aluno_completo, back_url=back_url, extra_html=card)))
+    extra = banner_festas_pais() + card
+    return HTMLResponse(inject_player(gerar_boletim_html(aluno_completo, back_url=back_url, extra_html=extra)))
 
 
 @app.get("/relatorio/{matricula}", response_class=HTMLResponse)
@@ -472,7 +476,8 @@ async def ver_relatorio_responsavel(request: Request, matricula: str):
 
     _registrar_acesso_pai(request, aluno, mat_clean, "relatorio")
     card = card_avaliacao_pais(mat_clean) if dav.get_avaliacao(mat_clean) else ""
-    return HTMLResponse(inject_player(gerar_relatorios_aluno_print_html(aluno, mat_clean, itens, extra_html=card)))
+    extra = banner_festas_pais() + card
+    return HTMLResponse(inject_player(gerar_relatorios_aluno_print_html(aluno, mat_clean, itens, extra_html=extra)))
 
 @app.get("/admin/imprimir", response_class=HTMLResponse)
 async def imprimir_boletins(request: Request, turma: str = "todos"):
