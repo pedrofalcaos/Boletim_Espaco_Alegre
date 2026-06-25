@@ -17,43 +17,60 @@ GLASS_BG_BLOBS = """<div class="lg-bg" aria-hidden="true">
 # escuras ficam sob html[data-tema="dark"] e dentro de @media screen, de modo que
 # o tema claro (padrão) e a impressão permanecem 100% inalterados.
 TEMA_TOGGLE = """
-<button class="tema-btn no-print" onclick="toggleTema()" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro"><span class="tema-ico">\U0001F319</span></button>
+<button class="tema-btn no-print" onclick="toggleTema()" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro"><span class="tema-ico">\U0001F319</span><span class="tema-txt">Modo escuro</span></button>
 <style>
-.tema-btn{position:fixed;bottom:18px;left:18px;z-index:3000;width:46px;height:46px;border-radius:50%;border:none;background:#2b3990;color:#fff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;}
+.tema-btn{position:fixed;bottom:18px;left:18px;z-index:9999;display:inline-flex;align-items:center;gap:8px;border:2px solid rgba(255,255,255,.3);border-radius:999px;background:#2b3990;color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;line-height:1;padding:11px 18px;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.38);}
+.tema-btn .tema-ico{font-size:16px;}
 .tema-btn:hover{transform:translateY(-2px);}
 @media print{.tema-btn{display:none!important;}}
 @media screen{
-  html[data-tema="dark"]{--azul-lt:#222a48;--cinza-lt:#1b2034;--cinza-md:#39406a;--borda:#39406a;}
-  html[data-tema="dark"] body{background:linear-gradient(160deg,#0f1320 0%,#131a30 55%,#0e1c30 100%)!important;color:#d7daea!important;}
-  html[data-tema="dark"] .lg-bg,html[data-tema="dark"] .lg-blob{opacity:.22!important;}
-  html[data-tema="dark"] .tema-btn{background:#f7d800;color:#1a2570;}
+  /* Paleta escura azul-marinho (coesa com o azul da escola). Sobrescreve as
+     variáveis de cor para corrigir elementos que usam var(--azul) etc. */
+  html[data-tema="dark"]{--azul:#7488f0;--azul-lt:#243056;--azul-md:#4a5890;
+    --cinza-lt:#1d2540;--cinza-md:#3a4568;--cinza-dk:#cdd2e8;--borda:#3a4568;}
+  html[data-tema="dark"] body{background:linear-gradient(160deg,#111733 0%,#141d3d 55%,#0f1c38 100%)!important;color:#dfe3f3!important;}
+  html[data-tema="dark"] .lg-bg,html[data-tema="dark"] .lg-blob{opacity:.28!important;}
+  html[data-tema="dark"] .tema-btn{background:#f7d800;color:#1a2570;border-color:rgba(0,0,0,.18);}
+  /* cartões e caixas brancas */
   html[data-tema="dark"] [style*="background:#fff"],
   html[data-tema="dark"] [style*="background:#ffffff"],
   html[data-tema="dark"] [style*="background: #fff"],
-  html[data-tema="dark"] .pagina,html[data-tema="dark"] .page{background:#1b2034!important;color:#d7daea!important;}
+  html[data-tema="dark"] .pagina,html[data-tema="dark"] .page{background:#1c2342!important;color:#e7eaf6!important;}
+  /* áreas cinza-claras */
   html[data-tema="dark"] [style*="background:#f7f7f5"],
   html[data-tema="dark"] [style*="background:#f5f7ff"],
   html[data-tema="dark"] [style*="background:#fafafa"],
   html[data-tema="dark"] [style*="background:#f2f2f0"],
-  html[data-tema="dark"] [style*="background:#f7f8ff"]{background:#232a44!important;}
-  html[data-tema="dark"] [style*="background:#e8eaf8"]{background:#2a3358!important;color:#cfd6ff!important;}
+  html[data-tema="dark"] [style*="background:#f3f3f3"],
+  html[data-tema="dark"] [style*="background:#f7f8ff"]{background:#232c4f!important;}
+  /* cabeçalho de tabela / chips azul-claro */
+  html[data-tema="dark"] [style*="background:#e8eaf8"]{background:#2a3565!important;color:#d3dbff!important;}
+  /* textos escuros -> claros */
   html[data-tema="dark"] [style*="color:#333"],
   html[data-tema="dark"] [style*="color:#444"],
   html[data-tema="dark"] [style*="color:#555"],
   html[data-tema="dark"] [style*="color:#4a4a4a"],
-  html[data-tema="dark"] [style*="color:#666"]{color:#c7cce4!important;}
+  html[data-tema="dark"] [style*="color:#666"]{color:#d3d8ee!important;}
+  html[data-tema="dark"] [style*="color:#777"],
   html[data-tema="dark"] [style*="color:#888"],
   html[data-tema="dark"] [style*="color:#999"],
   html[data-tema="dark"] [style*="color:#aaa"],
-  html[data-tema="dark"] [style*="color:#bbb"]{color:#9aa0bf!important;}
-  html[data-tema="dark"] [style*="color:#2b3990"]{color:#9fb0ff!important;}
-  html[data-tema="dark"] input,html[data-tema="dark"] select,html[data-tema="dark"] textarea{background:#232a44!important;color:#e6e8f4!important;border-color:#39406a!important;}
-  html[data-tema="dark"] table tr{border-color:#2c3354!important;}
+  html[data-tema="dark"] [style*="color:#bbb"],
+  html[data-tema="dark"] [style*="color:#ccc"]{color:#a3abce!important;}
+  /* azul de marca (hardcoded) -> azul claro legível */
+  html[data-tema="dark"] [style*="color:#2b3990"]{color:#aab8ff!important;}
+  html[data-tema="dark"] input,html[data-tema="dark"] select,html[data-tema="dark"] textarea{background:#232c4f!important;color:#eef0fa!important;border-color:#3a4568!important;}
+  html[data-tema="dark"] table tr{border-color:#2e3760!important;}
 }
 </style>
 <script>
 (function(){var t=localStorage.getItem('tema')==='dark'?'dark':'light';document.documentElement.setAttribute('data-tema',t);})();
-function toggleTema(){var h=document.documentElement;var n=h.getAttribute('data-tema')==='dark'?'light':'dark';h.setAttribute('data-tema',n);localStorage.setItem('tema',n);document.querySelectorAll('.tema-ico').forEach(function(e){e.textContent=n==='dark'?'☀️':'\U0001F319';});}
+function _temaLabel(t){
+  document.querySelectorAll('.tema-ico').forEach(function(e){e.textContent=t==='dark'?'☀️':'\U0001F319';});
+  document.querySelectorAll('.tema-txt').forEach(function(e){e.textContent=t==='dark'?'Modo claro':'Modo escuro';});
+}
+function toggleTema(){var h=document.documentElement;var n=h.getAttribute('data-tema')==='dark'?'light':'dark';h.setAttribute('data-tema',n);try{localStorage.setItem('tema',n);}catch(e){}_temaLabel(n);}
+document.addEventListener('DOMContentLoaded',function(){_temaLabel(document.documentElement.getAttribute('data-tema'));});
 </script>"""
 
 LIQUID_GLASS_CSS = """
