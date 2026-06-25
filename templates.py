@@ -49,8 +49,13 @@ a{{text-decoration:none;color:inherit;}}
 </html>"""
 
 # ── Página de login ──────────────────────────────────────────────────────────
-def login_page(erro: bool = False) -> str:
-    erro_html = '<div class="erro">Usuário ou senha incorretos.</div>' if erro else ''
+def login_page(erro: bool = False, bloqueado: bool = False) -> str:
+    if bloqueado:
+        erro_html = '<div class="erro">Muitas tentativas de login. Aguarde alguns minutos e tente novamente.</div>'
+    elif erro:
+        erro_html = '<div class="erro">Usuário ou senha incorretos.</div>'
+    else:
+        erro_html = ''
     body = f"""
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
 <div style="background:#fff;border-radius:20px;box-shadow:0 8px 48px rgba(0,0,0,.22);width:100%;max-width:400px;overflow:hidden;">

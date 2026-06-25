@@ -30,8 +30,11 @@ def is_infantil(turma: str) -> bool:
 #  LOGIN
 # ════════════════════════════════════════════════════════════════════════
 
-def professora_login_page(erro: bool = False) -> str:
-    erro_html = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#b52222;font-weight:700;text-align:center;">Usuário ou senha incorretos.</div>' if erro else ''
+def professora_login_page(erro: bool = False, bloqueado: bool = False) -> str:
+    _msg = ("Muitas tentativas de login. Aguarde alguns minutos e tente novamente."
+            if bloqueado else "Usuário ou senha incorretos.")
+    erro_html = (f'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#b52222;font-weight:700;text-align:center;">{_msg}</div>'
+                 if (erro or bloqueado) else '')
     body = f"""
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
 <div style="background:#fff;border-radius:20px;box-shadow:0 8px 48px rgba(0,0,0,.22);width:100%;max-width:400px;overflow:hidden;">

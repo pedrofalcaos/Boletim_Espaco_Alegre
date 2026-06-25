@@ -28,6 +28,24 @@ DOCUMENTOS = {
 DEDUP_MINUTOS = 30
 
 
+def anonimizar_ip(ip: str) -> str:
+    """Minimização de dados (LGPD): guarda o IP de forma parcial, suficiente para
+    distinguir acessos sem identificar precisamente o dispositivo do titular.
+    IPv4 -> zera o último octeto (200.1.2.3 -> 200.1.2.0);
+    IPv6 -> mantém só o prefixo /48."""
+    ip = (ip or "").strip()
+    if not ip:
+        return ""
+    if ":" in ip:  # IPv6
+        partes = ip.split(":")
+        return ":".join(partes[:3]) + "::"
+    partes = ip.split(".")
+    if len(partes) == 4:
+        partes[3] = "0"
+        return ".".join(partes)
+    return ip
+
+
 def detectar_dispositivo(user_agent: str) -> str:
     """Classifica o dispositivo a partir do user-agent: 'tablet', 'mobile' ou 'web'."""
     ua = (user_agent or "").lower()
@@ -92,6 +110,7 @@ if DATABASE_URL:
         (mesma matrícula+documento+IP) ocorreu dentro da janela de dedup."""
         if documento not in DOCUMENTOS:
             return False
+        ip = anonimizar_ip(ip)
         _init()
         disp = detectar_dispositivo(user_agent)
         conn = _connect()
@@ -155,6 +174,7 @@ else:
                          ip: str = "", user_agent: str = "") -> bool:
         if documento not in DOCUMENTOS:
             return False
+        ip = anonimizar_ip(ip)
         with _lock:
             db = _load()
             limite = (datetime.now() - timedelta(minutes=DEDUP_MINUTOS)).isoformat(sep=" ")[:19]

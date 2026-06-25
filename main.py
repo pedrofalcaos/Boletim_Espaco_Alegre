@@ -7,7 +7,8 @@ from fastapi.staticfiles import StaticFiles
 from db import get_aluno, get_all_alunos, upsert_aluno, delete_aluno, reset_db, DISCIPLINAS
 from boletim_html import gerar_boletim_html, gerar_boletins_multiplos_html
 from auth import (check_session, check_admin, check_staff, get_session_user, make_session_token,
-                  COOKIE_NAME, COOKIE_MAX)
+                  COOKIE_NAME, COOKIE_MAX, COOKIE_SECURE, IS_PROD,
+                  login_bloqueado, registrar_falha_login, limpar_falhas_login)
 from db_relatorio import (
     authenticate_user,
     get_all_usuarios, create_usuario, delete_usuario,
@@ -43,6 +44,35 @@ from relatorio_print import (
 from music_player import inject_player
 
 app = FastAPI(docs_url=None, redoc_url=None)
+
+# ── Cabeçalhos de segurança + cache em conteúdo sensível ─────────────────────
+_CSP = (
+    "default-src 'self'; "
+    "img-src 'self' data:; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "font-src 'self' https://fonts.gstatic.com; "
+    "script-src 'self' 'unsafe-inline'; "
+    "media-src 'self'; object-src 'self'; "
+    "base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+)
+# Prefixos cujo conteúdo não deve ser cacheado (dados pessoais / painel).
+_SEM_CACHE = ("/boletim", "/relatorio", "/avaliacao-ingles", "/admin", "/professora")
+
+
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    resp = await call_next(request)
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    resp.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+    resp.headers.setdefault("Content-Security-Policy", _CSP)
+    if IS_PROD:
+        resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    path = request.url.path
+    if any(path.startswith(p) for p in _SEM_CACHE):
+        resp.headers["Cache-Control"] = "private, no-store"
+    return resp
 
 # ── Estáticos ────────────────────────────────────────────────────────────────
 @app.get("/static/logo.png")
@@ -189,7 +219,8 @@ input:not(:placeholder-shown)~.clr{display:block;}
   <a href="/professora/login" class="prof-link">
     👩‍🏫 &nbsp;Sou Professor(a) &nbsp;<span>Acessar →</span>
   </a>
-  <div class="footer">Escola Espaço Alegre &nbsp;|&nbsp; Ed. Infantil e Fundamental Anos Iniciais &nbsp;|&nbsp; Bilíngue &nbsp;|&nbsp; 2026</div>
+  <div class="footer">Escola Espaço Alegre &nbsp;|&nbsp; Ed. Infantil e Fundamental Anos Iniciais &nbsp;|&nbsp; Bilíngue &nbsp;|&nbsp; 2026<br>
+    <a href="/privacidade" style="color:#2b3990;font-weight:700;text-decoration:none;">Política de Privacidade</a></div>
 </div>
 <script>
 function buscar(e){
@@ -315,6 +346,77 @@ def _registrar_acesso_pai(request: Request, aluno: dict, matricula: str, documen
 async def index():
     return inject_player(INDEX_HTML)
 
+
+PRIVACIDADE_HTML = """<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Política de Privacidade — Escola Espaço Alegre</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:linear-gradient(160deg,#e9ecfb,#cfe7f0);
+  color:#2b3344;min-height:100vh;padding:28px 16px;}
+.wrap{max-width:760px;margin:0 auto;background:#fff;border-radius:22px;padding:34px 32px;
+  box-shadow:0 16px 50px rgba(43,57,144,.16);}
+h1{font-family:'Fredoka One',cursive;color:#2b3990;font-size:24px;margin-bottom:4px;}
+.sub{color:#7d83a3;font-size:13px;margin-bottom:22px;}
+h2{color:#2b3990;font-size:16px;margin:22px 0 8px;}
+p,li{font-size:14px;line-height:1.7;color:#41476b;}
+ul{margin:6px 0 6px 20px;}
+.back{display:inline-block;margin-top:26px;text-decoration:none;background:#2b3990;color:#fff;
+  font-weight:800;padding:12px 26px;border-radius:999px;font-size:14px;}
+.box{background:#f5f7ff;border:1px solid #e0e5ff;border-radius:12px;padding:14px 16px;margin-top:10px;font-size:13px;}
+</style></head><body>
+<div class="wrap">
+  <h1>Política de Privacidade</h1>
+  <div class="sub">Escola Espaço Alegre — tratamento de dados conforme a LGPD (Lei nº 13.709/2018)</div>
+
+  <p>Esta plataforma permite que responsáveis consultem boletins, relatórios semestrais e
+  avaliações dos alunos, e que a equipe pedagógica gerencie essas informações.</p>
+
+  <h2>1. Quais dados tratamos</h2>
+  <ul>
+    <li><strong>Dos alunos (crianças):</strong> nome, turma, período, professora, matrícula, notas,
+        frequência, observações pedagógicas, relatórios e avaliações em PDF.</li>
+    <li><strong>Da equipe (usuários internos):</strong> nome, usuário/e-mail de acesso e senha (armazenada
+        de forma criptografada).</li>
+    <li><strong>De navegação:</strong> ao abrir um documento, registramos data/hora, tipo de documento,
+        dispositivo (web/celular/tablet) e um <strong>IP parcial/anonimizado</strong>, para acompanhamento
+        interno de acesso. Não usamos cookies de rastreamento ou publicidade.</li>
+  </ul>
+
+  <h2>2. Por que tratamos esses dados</h2>
+  <p>Para a finalidade educacional de acompanhamento escolar e comunicação com as famílias
+  (execução do contrato educacional e legítimo interesse pedagógico da escola).</p>
+
+  <h2>3. Quem tem acesso</h2>
+  <p>Apenas a administração e a coordenação têm acesso pleno. Professoras acessam somente as turmas
+  vinculadas a elas. Os responsáveis acessam exclusivamente os documentos do próprio aluno.</p>
+
+  <h2>4. Por quanto tempo guardamos</h2>
+  <p>Os dados são mantidos enquanto durar o vínculo escolar e pelo prazo necessário ao cumprimento de
+  obrigações legais. Registros de acesso são mantidos apenas pelo tempo útil ao acompanhamento.</p>
+
+  <h2>5. Seus direitos</h2>
+  <p>O titular (ou seu responsável legal) pode solicitar confirmação, acesso, correção, anonimização
+  ou exclusão de dados, bem como informações sobre o tratamento.</p>
+  <div class="box">📧 Para exercer seus direitos ou tirar dúvidas, entre em contato com a secretaria da
+  Escola Espaço Alegre.</div>
+
+  <h2>6. Segurança</h2>
+  <p>Adotamos medidas técnicas como senhas criptografadas, acesso restrito por perfil, conexão segura
+  (HTTPS), cabeçalhos de segurança e registro de acessos. Ainda assim, nenhum sistema é 100% imune;
+  trabalhamos continuamente para proteger os dados das crianças e famílias.</p>
+
+  <a href="/" class="back">← Voltar ao início</a>
+</div>
+</body></html>"""
+
+
+@app.get("/privacidade", response_class=HTMLResponse)
+async def privacidade():
+    return HTMLResponse(PRIVACIDADE_HTML)
+
 @app.get("/boletim/{matricula}", response_class=HTMLResponse)
 async def ver_boletim(request: Request, matricula: str, ref: str = ""):
     if _pais_bloqueado(request, ref):
@@ -402,7 +504,7 @@ def _redir_login():
 async def get_login(request: Request, erro: str = ""):
     if check_session(request):
         return RedirectResponse("/admin", status_code=302)
-    return login_page(erro="1" in erro)
+    return login_page(erro="1" in erro, bloqueado="bloqueado" in erro)
 
 @app.post("/admin/login")
 async def post_login(
@@ -410,12 +512,18 @@ async def post_login(
     usuario: str = Form(...),
     senha:   str = Form(...),
 ):
+    ip = _client_ip(request)
+    if login_bloqueado(ip):
+        return RedirectResponse("/admin/login?erro=bloqueado", status_code=302)
     user = authenticate_user(usuario, senha)
     if user and user.get("role") in ("admin", "coordenacao"):
+        limpar_falhas_login(ip)
         resp = RedirectResponse("/admin", status_code=302)
         resp.set_cookie(COOKIE_NAME, make_session_token(user),
-                        max_age=COOKIE_MAX, httponly=True, samesite="lax")
+                        max_age=COOKIE_MAX, httponly=True, samesite="lax",
+                        secure=COOKIE_SECURE)
         return resp
+    registrar_falha_login(ip)
     return RedirectResponse("/admin/login?erro=1", status_code=302)
 
 @app.get("/admin/logout")
@@ -941,7 +1049,7 @@ async def prof_get_login(request: Request, erro: str = ""):
     # Apenas professoras já autenticadas pulam o login; admin sempre vê o formulário
     if user and user.get("role") == "professora":
         return RedirectResponse("/professora", status_code=302)
-    return professora_login_page(erro="1" in erro)
+    return professora_login_page(erro="1" in erro, bloqueado="bloqueado" in erro)
 
 
 @app.post("/professora/login")
@@ -950,12 +1058,18 @@ async def prof_post_login(
     usuario: str = Form(...),
     senha:   str = Form(...),
 ):
+    ip = _client_ip(request)
+    if login_bloqueado(ip):
+        return RedirectResponse("/professora/login?erro=bloqueado", status_code=302)
     user = authenticate_user(usuario, senha)
     if user and user.get("role") in ("admin", "professora"):
+        limpar_falhas_login(ip)
         resp = RedirectResponse("/professora?bemvindo=1", status_code=302)
         resp.set_cookie(COOKIE_NAME, make_session_token(user),
-                        max_age=COOKIE_MAX, httponly=True, samesite="lax")
+                        max_age=COOKIE_MAX, httponly=True, samesite="lax",
+                        secure=COOKIE_SECURE)
         return resp
+    registrar_falha_login(ip)
     return RedirectResponse("/professora/login?erro=1", status_code=302)
 
 
