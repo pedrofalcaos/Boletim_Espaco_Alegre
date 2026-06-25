@@ -21,6 +21,7 @@ from db_relatorio import (
     get_status_relatorios,
     get_all_topicos, create_topico, update_topico, delete_topico,
     update_topico_turmas, update_tema_turmas,
+    get_pais_liberado, set_pais_liberado,
 )
 from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import (
@@ -41,12 +42,18 @@ from music_player import inject_player
 app = FastAPI(docs_url=None, redoc_url=None)
 
 # ── Estáticos ────────────────────────────────────────────────────────────────
-@app.get("/static/logo.jpg")
+@app.get("/static/logo.png")
 async def logo():
-    path = "/mnt/user-data/uploads/logo_espaço_alegre_com_qualidade_page-0001.jpg"
+    # Logo com fundo transparente (PNG). Mantém compat. com /static/logo.jpg.
+    path = "static/logo.png"
     if not os.path.exists(path):
         path = "static/logo.jpg"
     return FileResponse(path)
+
+@app.get("/static/logo.jpg")
+async def logo_jpg():
+    # Compatibilidade: PDFs e páginas antigas que ainda referenciam o .jpg.
+    return FileResponse("static/logo.jpg")
 
 @app.get("/static/musica_escola.mp3")
 async def musica_escola():
@@ -92,8 +99,9 @@ body{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing:
   border-bottom:4px solid #f7d800;position:relative;overflow:hidden;}
 .top::after{content:'';position:absolute;top:-60%;left:-20%;width:140%;height:160%;
   background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.16),transparent 60%);pointer-events:none;}
-.top img{height:60px;object-fit:contain;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;
-  filter:drop-shadow(0 4px 10px rgba(0,0,0,.25));position:relative;z-index:1;}
+.top img{height:54px;object-fit:contain;margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;
+  background:#fff;padding:10px 18px;border-radius:18px;position:relative;z-index:1;
+  box-shadow:0 6px 18px rgba(0,0,0,.22);}
 .top h1{font-family:'Fredoka One',cursive;font-size:22px;color:#fff;letter-spacing:.2px;
   position:relative;z-index:1;line-height:1.25;}
 .top p{font-size:12.5px;color:#c7cdf5;margin-top:6px;font-weight:600;position:relative;z-index:1;}
@@ -152,7 +160,7 @@ input:not(:placeholder-shown)~.clr{display:block;}
 </div>
 <div class="card">
   <div class="top">
-    <img src="/static/logo.jpg" alt="Escola Espaço Alegre">
+    <img src="/static/logo.png" alt="Escola Espaço Alegre">
     <h1>Acompanhe a jornada do seu filho</h1>
     <p>Boletins e relatórios escolares, sempre à mão</p>
   </div>
@@ -204,12 +212,79 @@ if(new URLSearchParams(location.search).get('erro')==='1')
 </body>
 </html>"""
 
+MANUTENCAO_HTML = """<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Escola Espaço Alegre – Em atualização</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing:antialiased;
+  background:linear-gradient(160deg,#1a2570 0%,#2b3990 40%,#1a5fa8 100%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;
+  position:relative;overflow-x:hidden;}
+.lg-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.lg-blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.45;}
+.lg-blob-1{width:460px;height:460px;top:-140px;left:-120px;background:#7d8bff;}
+.lg-blob-2{width:400px;height:400px;bottom:-160px;right:-100px;background:#f7d800;opacity:.3;}
+.card{position:relative;z-index:1;background:rgba(255,255,255,.62);backdrop-filter:blur(26px) saturate(180%);
+  -webkit-backdrop-filter:blur(26px) saturate(180%);border:1px solid rgba(255,255,255,.55);
+  border-radius:26px;box-shadow:0 20px 60px rgba(10,15,50,.35),inset 0 1px 0 rgba(255,255,255,.6);
+  width:100%;max-width:440px;overflow:hidden;text-align:center;}
+.top{background:linear-gradient(135deg,#3b49b8,#1a2570);padding:34px 32px 26px;
+  border-bottom:4px solid #f7d800;}
+.top img{height:54px;object-fit:contain;background:#fff;padding:10px 18px;border-radius:18px;
+  box-shadow:0 6px 18px rgba(0,0,0,.22);}
+.body{padding:34px 32px 32px;}
+.icone{font-size:46px;margin-bottom:14px;line-height:1;}
+.body h1{font-family:'Fredoka One',cursive;font-size:21px;color:#1a2570;line-height:1.3;margin-bottom:12px;}
+.body p{font-size:14px;color:#41476b;font-weight:600;line-height:1.6;}
+.body p.sub{font-size:12.5px;color:#7d83a3;margin-top:14px;}
+.btn{display:inline-flex;align-items:center;gap:8px;margin-top:24px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:800;text-decoration:none;
+  background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;border-radius:999px;
+  padding:13px 26px;box-shadow:0 8px 22px rgba(26,37,112,.4);}
+.footer{border-top:1px solid rgba(0,0,0,.06);padding:13px 32px;font-size:11px;color:#7d83a3;}
+</style>
+</head>
+<body>
+<div class="lg-bg" aria-hidden="true">
+  <span class="lg-blob lg-blob-1"></span>
+  <span class="lg-blob lg-blob-2"></span>
+</div>
+<div class="card">
+  <div class="top"><img src="/static/logo.png" alt="Escola Espaço Alegre"></div>
+  <div class="body">
+    <div class="icone">🛠️</div>
+    <h1>Estamos preparando tudo para você</h1>
+    <p>A área de boletins e relatórios está <b>temporariamente indisponível</b>
+       enquanto a coordenação atualiza as informações na plataforma.</p>
+    <p class="sub">Por favor, volte um pouco mais tarde para consultar o material do seu filho. 💛</p>
+    <a href="/" class="btn">Voltar ao início</a>
+  </div>
+  <div class="footer">Escola Espaço Alegre &nbsp;|&nbsp; Ed. Infantil e Fundamental Anos Iniciais</div>
+</div>
+</body>
+</html>"""
+
+def _pais_bloqueado(request: Request) -> bool:
+    """True quando a área dos pais está desativada e o visitante não é staff.
+    Admin e coordenação continuam visualizando para conferir antes de liberar."""
+    return (not get_pais_liberado()) and (not check_staff(request))
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index():
     return inject_player(INDEX_HTML)
 
 @app.get("/boletim/{matricula}", response_class=HTMLResponse)
-async def ver_boletim(matricula: str, ref: str = ""):
+async def ver_boletim(request: Request, matricula: str, ref: str = ""):
+    if _pais_bloqueado(request):
+        return HTMLResponse(MANUTENCAO_HTML)
     mat_clean = re.sub(r'\D', '', matricula)
     if not mat_clean:
         return RedirectResponse("/?erro=1")
@@ -229,11 +304,13 @@ async def ver_boletim(matricula: str, ref: str = ""):
 
 
 @app.get("/relatorio/{matricula}", response_class=HTMLResponse)
-async def ver_relatorio_responsavel(matricula: str):
+async def ver_relatorio_responsavel(request: Request, matricula: str):
     """Área pública do responsável para alunos da Ed. Infantil: mostra os
     relatórios semestrais já confirmados pela professora/coordenação/admin,
     prontos para impressão/PDF (1 ou 2 páginas no mesmo arquivo, conforme os
     semestres já concluídos)."""
+    if _pais_bloqueado(request):
+        return HTMLResponse(MANUTENCAO_HTML)
     mat_clean = re.sub(r'\D', '', matricula)
     if not mat_clean:
         return RedirectResponse("/?erro=1")
@@ -1146,7 +1223,21 @@ async def admin_relatorios(
     rows, turmas_inf, cont = _painel_relatorios_data(turma, semestre, status)
     filtros = {"turma": turma, "semestre": semestre, "status": status}
     is_admin_user = check_admin(request)
-    return admin_relatorios_page(rows, turmas_inf, filtros, cont, msg=ok, erro=erro, staff_only=not is_admin_user)
+    return admin_relatorios_page(rows, turmas_inf, filtros, cont, msg=ok, erro=erro,
+                                 staff_only=not is_admin_user, pais_liberado=get_pais_liberado())
+
+
+@app.post("/admin/visibilidade")
+async def admin_visibilidade(request: Request, liberar: str = Form("")):
+    """Liga/desliga o acesso dos pais aos boletins e relatórios.
+    Disponível para admin e coordenação."""
+    if not check_staff(request):
+        return _redir_login()
+    set_pais_liberado(liberar == "1")
+    msg = ("Área dos pais LIBERADA — os responsáveis já conseguem consultar."
+           if liberar == "1" else
+           "Área dos pais DESATIVADA — os responsáveis verão a mensagem de atualização.")
+    return RedirectResponse(f"/admin/relatorios?ok={quote(msg)}", status_code=302)
 
 
 def _get_or_create_relatorio(matricula: str, semestre: int) -> dict | None:

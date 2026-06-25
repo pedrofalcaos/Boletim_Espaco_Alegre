@@ -262,7 +262,7 @@ function toggleTurmas(id) {
     body = f"""
 <div style="max-width:960px;margin:0 auto;padding:24px 16px;">
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
-    <img src="/static/logo.jpg" style="height:44px;object-fit:contain;">
+    <img src="/static/logo.png" style="height:44px;object-fit:contain;">
     <div style="flex:1;">
       <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Colaboradoras</h1>
       <p style="font-size:12px;color:#888;">{len(professoras)} professora(s) · {len(coordenadoras)} coordenadora(s) cadastrada(s)</p>
@@ -575,7 +575,7 @@ def admin_temas_page(topicos: list, msg: str = "", erro: str = "") -> str:
     body = f"""
 <div style="max-width:1080px;margin:0 auto;padding:24px 16px;">
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
-    <img src="/static/logo.jpg" style="height:44px;object-fit:contain;">
+    <img src="/static/logo.png" style="height:44px;object-fit:contain;">
     <div style="flex:1;">
       <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Estrutura Avaliativa</h1>
       <p style="font-size:12px;color:#888;">{len(topicos)} tópico(s) · {total_temas} tema(s) · {total_subtemas} subtema(s)</p>
@@ -648,9 +648,55 @@ def admin_relatorios_page(
     msg: str = "",
     erro: str = "",
     staff_only: bool = False,
+    pais_liberado: bool = True,
 ) -> str:
     nav   = admin_nav("relatorios", staff_only=staff_only)
     aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
+
+    # ── Controle de visibilidade para os pais (admin + coordenação) ──
+    if pais_liberado:
+        vis_cor, vis_bg, vis_bd = "#0a7c3e", "#e3f5ec", "#a8ddc0"
+        vis_ico   = "🟢"
+        vis_titulo = "Área dos pais LIBERADA"
+        vis_texto  = "Os responsáveis conseguem consultar os boletins e relatórios neste momento."
+        vis_btn_lbl = "Desativar para os pais"
+        vis_btn_val = "0"
+        vis_btn_bg, vis_btn_cor, vis_btn_bd = "#fef2f2", "#b52222", "#fecaca"
+        vis_confirma = ("return confirm('Desativar o acesso dos pais? Eles passarão a ver a "
+                        "mensagem de que o site está em atualização.');")
+    else:
+        vis_cor, vis_bg, vis_bd = "#c25b0d", "#fef0e4", "#f8d4a8"
+        vis_ico   = "🟠"
+        vis_titulo = "Área dos pais DESATIVADA"
+        vis_texto  = ("Os responsáveis veem a mensagem de \"site em atualização\". "
+                      "Ative quando terminar de lançar as informações.")
+        vis_btn_lbl = "Liberar para os pais"
+        vis_btn_val = "1"
+        vis_btn_bg, vis_btn_cor, vis_btn_bd = "#e3f5ec", "#0a7c3e", "#a8ddc0"
+        vis_confirma = "return confirm('Liberar a consulta para todos os pais agora?');"
+
+    visibilidade_card = _card(f"""
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+  <div style="flex:1;min-width:240px;">
+    <div style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">
+      Visibilidade dos pais
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:8px;background:{vis_bg};border:1.5px solid {vis_bd};
+                color:{vis_cor};font-weight:900;font-size:13px;padding:6px 14px;border-radius:20px;">
+      {vis_ico} {vis_titulo}
+    </div>
+    <p style="font-size:12px;color:#777;margin-top:8px;line-height:1.5;max-width:520px;">{vis_texto}</p>
+  </div>
+  <form method="POST" action="/admin/visibilidade" onsubmit="{vis_confirma}">
+    <input type="hidden" name="liberar" value="{vis_btn_val}">
+    <button type="submit"
+      style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;
+             background:{vis_btn_bg};color:{vis_btn_cor};border:1.5px solid {vis_btn_bd};
+             border-radius:10px;padding:11px 22px;cursor:pointer;white-space:nowrap;">
+      {vis_btn_lbl}
+    </button>
+  </form>
+</div>""")
 
     # ── Cards de resumo (totais + divisão por semestre) ──
     def _cards_semestre(label: str, c: dict) -> str:
@@ -847,7 +893,7 @@ def admin_relatorios_page(
     body = f"""
 <div style="max-width:1000px;margin:0 auto;padding:24px 16px;">
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
-    <img src="/static/logo.jpg" style="height:44px;object-fit:contain;">
+    <img src="/static/logo.png" style="height:44px;object-fit:contain;">
     <div style="flex:1;">
       <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Relatórios Semestrais</h1>
       <p style="font-size:12px;color:#888;">Ed. Infantil — {contadores['total']} aluno(s)</p>
@@ -857,6 +903,7 @@ def admin_relatorios_page(
 
   {nav}
   {aviso}
+  {visibilidade_card}
   {resumo}
   {filtros_card}
   {trava_massa_card}

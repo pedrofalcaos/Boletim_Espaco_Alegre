@@ -36,7 +36,7 @@ def professora_login_page(erro: bool = False) -> str:
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
 <div style="background:#fff;border-radius:20px;box-shadow:0 8px 48px rgba(0,0,0,.22);width:100%;max-width:400px;overflow:hidden;">
   <div style="background:#2b3990;padding:28px 32px 24px;text-align:center;border-bottom:4px solid #f7d800;">
-    <img src="/static/logo.jpg" style="height:56px;object-fit:contain;margin-bottom:10px;" alt="Logo">
+    <img src="/static/logo.png" style="height:48px;object-fit:contain;margin-bottom:12px;background:#fff;padding:9px 15px;border-radius:15px;box-shadow:0 5px 14px rgba(0,0,0,.18);" alt="Logo">
     <h1 style="font-family:'Fredoka One',cursive;font-size:20px;color:#fff;">Área da Professora</h1>
     <p style="font-size:11px;color:#b0b8e8;margin-top:3px;">Relatórios Semestrais — Ed. Infantil</p>
   </div>
@@ -102,7 +102,7 @@ def professora_trocar_senha_page(user: dict, obrigatorio: bool = False, erro: st
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
 <div style="background:#fff;border-radius:20px;box-shadow:0 8px 48px rgba(0,0,0,.22);width:100%;max-width:400px;overflow:hidden;">
   <div style="background:#2b3990;padding:28px 32px 24px;text-align:center;border-bottom:4px solid #f7d800;">
-    <img src="/static/logo.jpg" style="height:56px;object-fit:contain;margin-bottom:10px;" alt="Logo">
+    <img src="/static/logo.png" style="height:48px;object-fit:contain;margin-bottom:12px;background:#fff;padding:9px 15px;border-radius:15px;box-shadow:0 5px 14px rgba(0,0,0,.18);" alt="Logo">
     <h1 style="font-family:'Fredoka One',cursive;font-size:20px;color:#fff;">Definir Nova Senha</h1>
     <p style="font-size:11px;color:#b0b8e8;margin-top:3px;">Olá, {nome}</p>
   </div>
@@ -219,7 +219,7 @@ def professora_dashboard(user: dict, turmas_data: list, msg: str = "", bemvindo:
   <!-- Header -->
   <div style="background:#2b3990;border-radius:16px;padding:24px 28px;margin-bottom:24px;
               display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-    <img src="/static/logo.jpg" style="height:48px;object-fit:contain;">
+    <img src="/static/logo.png" style="height:44px;object-fit:contain;background:#fff;padding:8px 14px;border-radius:14px;box-shadow:0 5px 14px rgba(0,0,0,.18);">
     <div style="flex:1;">
       <div style="font-family:'Fredoka One',cursive;font-size:22px;color:#fff;">Olá, {nome}! 👋</div>
       <div style="font-size:12px;color:#b0b8e8;margin-top:3px;">

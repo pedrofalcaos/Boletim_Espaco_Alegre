@@ -141,7 +141,7 @@ def _pagina_relatorio_html(
   <!-- Cabeçalho -->
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;
               border-bottom:3px solid #2b3990;padding-bottom:10px;break-inside:avoid;page-break-inside:avoid;">
-    <img src="/static/logo.jpg" style="height:48px;object-fit:contain;" alt="Logo">
+    <img src="/static/logo.png" style="height:48px;object-fit:contain;" alt="Logo">
     <div style="flex:1;">
       <div style="font-family:'Fredoka One',cursive;font-size:16px;color:#2b3990;">
         Escola Espaço Alegre

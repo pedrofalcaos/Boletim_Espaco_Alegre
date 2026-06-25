@@ -92,6 +92,11 @@ if DATABASE_URL:
             resposta     VARCHAR(30),
             UNIQUE (relatorio_id, subtema_id)
         );
+
+        CREATE TABLE IF NOT EXISTS config (
+            chave VARCHAR(60) PRIMARY KEY,
+            valor TEXT NOT NULL DEFAULT ''
+        );
     """
 
     def _connect():
@@ -144,6 +149,33 @@ if DATABASE_URL:
             finally:
                 conn.close()
             _ready = True
+
+    # ── Config (chave/valor) ────────────────────────────────────────────────────
+
+    def get_config(chave: str, default=None):
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT valor FROM config WHERE chave = %s", (chave,))
+                row = cur.fetchone()
+            return row[0] if row else default
+        finally:
+            conn.close()
+
+    def set_config(chave: str, valor) -> None:
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO config (chave, valor) VALUES (%s, %s) "
+                    "ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor",
+                    (chave, str(valor)),
+                )
+            conn.commit()
+        finally:
+            conn.close()
 
     # ── Usuários ──────────────────────────────────────────────────────────────
 
@@ -798,6 +830,9 @@ else:
                 if "editado_por_nome" not in r:
                     r["editado_por_nome"] = ""
                     changed = True
+            if "_config" not in db:
+                db["_config"] = {}
+                changed = True
             if changed:
                 _save(db)
             return db
@@ -822,6 +857,7 @@ else:
             "subtemas": [],
             "relatorios_semestrais": [],
             "respostas_subtemas": [],
+            "_config": {},
             "_seq": {
                 "usuarios": len(_SEED_USUARIOS_JSON) + 1,
                 "topicos": 1,
@@ -853,6 +889,19 @@ else:
         seq = db["_seq"].get(table, 1)
         db["_seq"][table] = seq + 1
         return seq
+
+    # ── Config (chave/valor) ────────────────────────────────────────────────────
+
+    def get_config(chave: str, default=None):
+        with _lock:
+            db = _load()
+            return db.get("_config", {}).get(chave, default)
+
+    def set_config(chave: str, valor) -> None:
+        with _lock:
+            db = _load()
+            db.setdefault("_config", {})[chave] = str(valor)
+            _save(db)
 
     # ── Usuários ──────────────────────────────────────────────────────────────
 
@@ -1341,3 +1390,19 @@ else:
                         "resposta": resposta,
                     })
             _save(db)
+
+
+# ══════════════════════════════════════════════════════════════════
+#  VISIBILIDADE PARA OS PAIS  (válido para ambos os backends)
+# ══════════════════════════════════════════════════════════════════
+# Quando ligado, os responsáveis conseguem consultar boletins e relatórios.
+# Quando desligado, veem uma mensagem de "em atualização" — usado enquanto a
+# coordenação ainda está lançando as informações na plataforma.
+_PAIS_LIBERADO_KEY = "pais_liberado"
+
+def get_pais_liberado() -> bool:
+    """True (padrão) se a área dos pais está liberada para consulta."""
+    return str(get_config(_PAIS_LIBERADO_KEY, "1")) == "1"
+
+def set_pais_liberado(liberado: bool) -> None:
+    set_config(_PAIS_LIBERADO_KEY, "1" if liberado else "0")

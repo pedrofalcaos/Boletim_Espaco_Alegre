@@ -55,7 +55,7 @@ def login_page(erro: bool = False) -> str:
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
 <div style="background:#fff;border-radius:20px;box-shadow:0 8px 48px rgba(0,0,0,.22);width:100%;max-width:400px;overflow:hidden;">
   <div style="background:var(--azul);padding:28px 32px 24px;text-align:center;border-bottom:4px solid var(--amarelo);">
-    <img src="/static/logo.jpg" style="height:56px;object-fit:contain;margin-bottom:10px;" alt="Logo">
+    <img src="/static/logo.png" style="height:48px;object-fit:contain;margin-bottom:12px;background:#fff;padding:9px 15px;border-radius:15px;box-shadow:0 5px 14px rgba(0,0,0,.18);" alt="Logo">
     <h1 style="font-family:'Fredoka One',cursive;font-size:20px;color:#fff;">Painel Administrativo</h1>
     <p style="font-size:11px;color:#b0b8e8;margin-top:3px;">Acesso exclusivo para professores e coordenação</p>
   </div>
@@ -234,7 +234,7 @@ def admin_dashboard(alunos: dict, resetado: bool = False, rel_status: dict = Non
 <div style="max-width:960px;margin:0 auto;padding:24px 16px;">
   <!-- Header -->
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
-    <img src="/static/logo.jpg" style="height:48px;object-fit:contain;">
+    <img src="/static/logo.png" style="height:48px;object-fit:contain;">
     <div style="flex:1;">
       <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:var(--azul);">Painel Administrativo</h1>
       <p style="font-size:12px;color:#888;">{total} alunos cadastrados</p>

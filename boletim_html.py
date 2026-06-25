@@ -380,7 +380,7 @@ def _gerar_pagina(aluno: dict) -> str:
 
     return f'''<div class="page">
   <div class="header">
-    <div class="header-logo"><img src="/static/logo.jpg" alt="Escola Espaço Alegre"></div>
+    <div class="header-logo"><img src="/static/logo.png" alt="Escola Espaço Alegre"></div>
     <div class="header-center">
       <h1>Escola Espaço Alegre</h1>
       <p>R. Manoel de Arruda Câmara, 54 – Prado, Recife &nbsp;|&nbsp; Tel: (81) 3227-3158</p>
