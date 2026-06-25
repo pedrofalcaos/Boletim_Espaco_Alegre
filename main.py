@@ -271,10 +271,18 @@ body{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing:
 </body>
 </html>"""
 
-def _pais_bloqueado(request: Request) -> bool:
-    """True quando a área dos pais está desativada e o visitante não é staff.
-    Admin e coordenação continuam visualizando para conferir antes de liberar."""
-    return (not get_pais_liberado()) and (not check_staff(request))
+def _pais_bloqueado(request: Request, ref: str = "") -> bool:
+    """True quando a área dos pais está desativada e o acesso deve ser barrado.
+
+    Liberada -> nunca bloqueia.
+    Desativada -> bloqueia todos (inclusive admin/coordenação abrindo o link
+    público, para que o efeito do botão seja visível ao testar). A equipe só
+    continua acessando quando abre pelo painel ("Ver Boletim", ref=admin)."""
+    if get_pais_liberado():
+        return False
+    if ref == "admin" and check_staff(request):
+        return False
+    return True
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -283,7 +291,7 @@ async def index():
 
 @app.get("/boletim/{matricula}", response_class=HTMLResponse)
 async def ver_boletim(request: Request, matricula: str, ref: str = ""):
-    if _pais_bloqueado(request):
+    if _pais_bloqueado(request, ref):
         return HTMLResponse(MANUTENCAO_HTML)
     mat_clean = re.sub(r'\D', '', matricula)
     if not mat_clean:
