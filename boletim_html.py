@@ -515,6 +515,7 @@ def _html_shell(title: str, topbar: str, pages: str, extra_html: str = '') -> st
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>{title}</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
 {FONTS_LINK}
 <style>{_CSS}</style>
 </head>

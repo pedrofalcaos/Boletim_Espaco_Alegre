@@ -27,6 +27,7 @@ def page_shell(title: str, body: str, extra_head: str = "") -> str:
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>{title}</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
 {FONTS_LINK}
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}

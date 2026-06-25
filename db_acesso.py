@@ -11,10 +11,17 @@ Backends: PostgreSQL (Railway) quando DATABASE_URL existe; JSON local caso
 contrário — mesmo padrão de db.py / db_relatorio.py / db_avaliacao.py.
 """
 import json, os, threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 _lock = threading.Lock()
+
+# Horário de Brasília/Recife (UTC-3, sem horário de verão). O servidor roda em
+# UTC, então registramos sempre neste fuso para a data/hora bater com a escola.
+_TZ_BR = timezone(timedelta(hours=-3))
+
+def _agora_dt() -> datetime:
+    return datetime.now(_TZ_BR).replace(tzinfo=None)
 
 # Tipos de documento e rótulos amigáveis
 DOCUMENTOS = {
@@ -57,7 +64,7 @@ def detectar_dispositivo(user_agent: str) -> str:
 
 
 def _agora() -> str:
-    return datetime.now().isoformat(sep=" ")[:19]
+    return _agora_dt().isoformat(sep=" ")[:19]
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -115,21 +122,23 @@ if DATABASE_URL:
         disp = detectar_dispositivo(user_agent)
         conn = _connect()
         try:
+            agora = _agora_dt()
+            limite = agora - timedelta(minutes=DEDUP_MINUTOS)
             with conn.cursor() as cur:
                 cur.execute(
                     """SELECT 1 FROM acessos_documentos
                        WHERE matricula=%s AND documento=%s AND ip=%s
-                         AND acessado_em > NOW() - (%s * INTERVAL '1 minute')
+                         AND acessado_em > %s
                        LIMIT 1""",
-                    (matricula, documento, ip, DEDUP_MINUTOS),
+                    (matricula, documento, ip, limite),
                 )
                 if cur.fetchone():
                     return False
                 cur.execute(
                     """INSERT INTO acessos_documentos
-                           (matricula, nome_aluno, turma, documento, ip, user_agent, dispositivo)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-                    (matricula, nome_aluno, turma, documento, ip, (user_agent or "")[:400], disp),
+                           (matricula, nome_aluno, turma, documento, ip, user_agent, dispositivo, acessado_em)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    (matricula, nome_aluno, turma, documento, ip, (user_agent or "")[:400], disp, agora),
                 )
             conn.commit()
             return True

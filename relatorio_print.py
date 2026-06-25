@@ -138,9 +138,9 @@ def _pagina_relatorio_html(
   </div>
 </div>"""
 
-    # ── Assinaturas ──
+    # ── Assinaturas ── (espaço extra acima para caber a assinatura à mão)
     assinaturas = """
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:20px;break-inside:avoid;page-break-inside:avoid;">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:52px;break-inside:avoid;page-break-inside:avoid;">
   <div style="text-align:center;">
     <div style="border-top:1.5px solid #333;padding-top:6px;font-size:11px;color:#555;">
       Professora
@@ -239,6 +239,7 @@ _HTML_HEAD = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <title>{titulo}</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
 """ + _FONTS_LINK_ESC + """
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
@@ -362,6 +363,7 @@ def _shell_responsavel(titulo: str, corpo: str, extra_html: str = "") -> str:
     cabeca = (
         '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1.0">'
+        '<link rel="icon" type="image/png" href="/static/favicon.png">'
         f'<title>{titulo}</title>'
     )
     estilo = (

@@ -91,6 +91,18 @@ async def logo_jpg():
     # Compatibilidade: PDFs e páginas antigas que ainda referenciam o .jpg.
     return FileResponse("static/logo.jpg")
 
+@app.get("/static/favicon.png")
+async def favicon_png():
+    return FileResponse("static/favicon.png", media_type="image/png")
+
+@app.get("/favicon.ico")
+async def favicon_ico():
+    # Navegadores pedem /favicon.ico por padrão — servimos o PNG personalizado.
+    path = "static/favicon.png"
+    if os.path.exists(path):
+        return FileResponse(path, media_type="image/png")
+    return FileResponse("static/logo.png", media_type="image/png")
+
 @app.get("/static/musica_escola.mp3")
 async def musica_escola():
     path = "/mnt/user-data/uploads/musica_escola.mp3"
@@ -108,6 +120,7 @@ INDEX_HTML = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Escola Espaço Alegre – Portal do Responsável</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -173,7 +186,13 @@ input:not(:placeholder-shown)~.clr{display:block;}
   transition:background .15s;}
 .prof-link:hover{background:rgba(247,248,255,.6);}
 .prof-link span{background:rgba(232,234,248,.8);border-radius:999px;padding:4px 12px;font-size:11px;font-weight:900;}
-.footer{border-top:1px solid rgba(0,0,0,.06);padding:12px 32px;text-align:center;font-size:11px;color:#7d83a3;}
+.footer{border-top:1px solid rgba(0,0,0,.08);padding:16px 28px 18px;text-align:center;}
+.footer-name{font-family:'Fredoka One',cursive;font-size:12.5px;color:#2b3990;letter-spacing:.2px;}
+.footer-sub{font-size:10.5px;color:#8b90b3;font-weight:600;margin-top:3px;letter-spacing:.3px;}
+.footer-link{display:inline-block;margin-top:11px;font-size:11px;font-weight:800;color:#2b3990;
+  text-decoration:none;background:rgba(43,57,144,.09);padding:6px 16px;border-radius:999px;transition:background .15s,transform .15s;}
+.footer-link:hover{background:rgba(43,57,144,.17);transform:translateY(-1px);}
+.footer-link:focus-visible{outline:2px solid #2b3990;outline-offset:2px;}
 .loading{display:none;text-align:center;padding:16px 0 2px;}
 .loading.show{display:block;}
 .spinner{width:26px;height:26px;border:3px solid #e8eaf8;border-top-color:#2b3990;
@@ -222,8 +241,11 @@ input:not(:placeholder-shown)~.clr{display:block;}
   <a href="/professora/login" class="prof-link">
     👩‍🏫 &nbsp;Sou Professor(a) &nbsp;<span>Acessar →</span>
   </a>
-  <div class="footer">Escola Espaço Alegre &nbsp;|&nbsp; Ed. Infantil e Fundamental Anos Iniciais &nbsp;|&nbsp; Bilíngue &nbsp;|&nbsp; 2026<br>
-    <a href="/privacidade" style="color:#2b3990;font-weight:700;text-decoration:none;">Política de Privacidade</a></div>
+  <div class="footer">
+    <div class="footer-name">Escola Espaço Alegre</div>
+    <div class="footer-sub">Ed. Infantil e Fundamental Anos Iniciais · Bilíngue · 2026</div>
+    <a href="/privacidade" class="footer-link">🔒 Política de Privacidade</a>
+  </div>
 </div>
 <script>
 function buscar(e){
@@ -255,6 +277,7 @@ MANUTENCAO_HTML = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Escola Espaço Alegre – Em atualização</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -357,6 +380,7 @@ PRIVACIDADE_HTML = """<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Política de Privacidade — Escola Espaço Alegre</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1614,6 +1638,7 @@ def _entregar_avaliacao_pdf(matricula: str, semestre: int = 1):
 _PDF_NAO_ENCONTRADO = """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Avaliação indisponível</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
 <style>body{font-family:'Nunito',system-ui,sans-serif;background:linear-gradient(160deg,#1a2570,#1a5fa8);
 min-height:100vh;display:flex;align-items:center;justify-content:center;margin:0;padding:24px;}
 .c{background:#fff;border-radius:22px;padding:38px 34px;max-width:420px;text-align:center;
