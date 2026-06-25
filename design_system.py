@@ -12,6 +12,50 @@ GLASS_BG_BLOBS = """<div class="lg-bg" aria-hidden="true">
   <span class="lg-blob lg-blob-3"></span>
 </div>"""
 
+# ── Tema claro/escuro ────────────────────────────────────────────────────────
+# Botão flutuante + tema salvo por dispositivo (localStorage). TODAS as regras
+# escuras ficam sob html[data-tema="dark"] e dentro de @media screen, de modo que
+# o tema claro (padrão) e a impressão permanecem 100% inalterados.
+TEMA_TOGGLE = """
+<button class="tema-btn no-print" onclick="toggleTema()" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro"><span class="tema-ico">\U0001F319</span></button>
+<style>
+.tema-btn{position:fixed;bottom:18px;left:18px;z-index:3000;width:46px;height:46px;border-radius:50%;border:none;background:#2b3990;color:#fff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;}
+.tema-btn:hover{transform:translateY(-2px);}
+@media print{.tema-btn{display:none!important;}}
+@media screen{
+  html[data-tema="dark"]{--azul-lt:#222a48;--cinza-lt:#1b2034;--cinza-md:#39406a;--borda:#39406a;}
+  html[data-tema="dark"] body{background:linear-gradient(160deg,#0f1320 0%,#131a30 55%,#0e1c30 100%)!important;color:#d7daea!important;}
+  html[data-tema="dark"] .lg-bg,html[data-tema="dark"] .lg-blob{opacity:.22!important;}
+  html[data-tema="dark"] .tema-btn{background:#f7d800;color:#1a2570;}
+  html[data-tema="dark"] [style*="background:#fff"],
+  html[data-tema="dark"] [style*="background:#ffffff"],
+  html[data-tema="dark"] [style*="background: #fff"],
+  html[data-tema="dark"] .pagina,html[data-tema="dark"] .page{background:#1b2034!important;color:#d7daea!important;}
+  html[data-tema="dark"] [style*="background:#f7f7f5"],
+  html[data-tema="dark"] [style*="background:#f5f7ff"],
+  html[data-tema="dark"] [style*="background:#fafafa"],
+  html[data-tema="dark"] [style*="background:#f2f2f0"],
+  html[data-tema="dark"] [style*="background:#f7f8ff"]{background:#232a44!important;}
+  html[data-tema="dark"] [style*="background:#e8eaf8"]{background:#2a3358!important;color:#cfd6ff!important;}
+  html[data-tema="dark"] [style*="color:#333"],
+  html[data-tema="dark"] [style*="color:#444"],
+  html[data-tema="dark"] [style*="color:#555"],
+  html[data-tema="dark"] [style*="color:#4a4a4a"],
+  html[data-tema="dark"] [style*="color:#666"]{color:#c7cce4!important;}
+  html[data-tema="dark"] [style*="color:#888"],
+  html[data-tema="dark"] [style*="color:#999"],
+  html[data-tema="dark"] [style*="color:#aaa"],
+  html[data-tema="dark"] [style*="color:#bbb"]{color:#9aa0bf!important;}
+  html[data-tema="dark"] [style*="color:#2b3990"]{color:#9fb0ff!important;}
+  html[data-tema="dark"] input,html[data-tema="dark"] select,html[data-tema="dark"] textarea{background:#232a44!important;color:#e6e8f4!important;border-color:#39406a!important;}
+  html[data-tema="dark"] table tr{border-color:#2c3354!important;}
+}
+</style>
+<script>
+(function(){var t=localStorage.getItem('tema')==='dark'?'dark':'light';document.documentElement.setAttribute('data-tema',t);})();
+function toggleTema(){var h=document.documentElement;var n=h.getAttribute('data-tema')==='dark'?'light':'dark';h.setAttribute('data-tema',n);localStorage.setItem('tema',n);document.querySelectorAll('.tema-ico').forEach(function(e){e.textContent=n==='dark'?'☀️':'\U0001F319';});}
+</script>"""
+
 LIQUID_GLASS_CSS = """
 :root{
   --lg-blur:22px;

@@ -235,7 +235,7 @@ input:not(:placeholder-shown)~.clr{display:block;}
                oninput="limpaErro()">
         <button type="button" class="clr" onclick="limpar()" aria-label="Limpar campo">✕</button>
       </div>
-      <button type="submit" class="btn">Consultar boletim →</button>
+      <button type="submit" class="btn">Acessar plataforma →</button>
     </form>
     <div class="loading" id="loading"><div class="spinner"></div><p style="font-size:12px;color:#7d83a3;">Buscando...</p></div>
     <div class="erro" id="erro" role="alert">❌ Matrícula não encontrada. Verifique o número e tente novamente.</div>

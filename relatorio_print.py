@@ -52,6 +52,7 @@ def _pagina_relatorio_html(
     relatorio: dict,
     temas: list,
     respostas: dict,   # {subtema_id: resposta}
+    mostrar_confirmacao: bool = True,   # data de confirmação é interna (não p/ pais)
 ) -> str:
     """Conteúdo de uma página de relatório (cabeçalho, dados, temas, descrição,
     assinaturas) — sem o shell HTML, para poder ser reutilizado tanto na
@@ -159,7 +160,8 @@ def _pagina_relatorio_html(
   </div>
 </div>"""
 
-    confirmado_info = f'<span style="font-size:10px;color:#0a7c3e;font-weight:700;">✔ Confirmado em {confirmado}</span>' if confirmado else ""
+    confirmado_info = (f'<span style="font-size:10px;color:#0a7c3e;font-weight:700;">✔ Confirmado em {confirmado}</span>'
+                       if (confirmado and mostrar_confirmacao) else "")
 
     return f"""
   <!-- Cabeçalho -->
@@ -323,8 +325,9 @@ def gerar_relatorios_aluno_print_html(aluno: dict, matricula: str, itens: list, 
     itens: lista de tuplas (semestre, relatorio, temas, respostas).
     """
     nome = aluno.get("nome", "")
+    # Visão do responsável: NÃO mostra a data de confirmação (dado interno).
     paginas = "".join(
-        f'<div class="pagina">{_pagina_relatorio_html(aluno, matricula, semestre, relatorio, temas, respostas)}</div>'
+        f'<div class="pagina">{_pagina_relatorio_html(aluno, matricula, semestre, relatorio, temas, respostas, mostrar_confirmacao=False)}</div>'
         for semestre, relatorio, temas, respostas in itens
     )
     if not paginas:

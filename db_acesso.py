@@ -31,8 +31,9 @@ DOCUMENTOS = {
 }
 
 # Janela (minutos) para considerar recarregamentos como o mesmo acesso e não
-# duplicar o registro.
-DEDUP_MINUTOS = 30
+# duplicar o registro. Curta o suficiente para que uma nova visita conte, mas
+# evitando contar recarregamentos rápidos da mesma página.
+DEDUP_MINUTOS = 3
 
 
 def anonimizar_ip(ip: str) -> str:
@@ -125,12 +126,14 @@ if DATABASE_URL:
             agora = _agora_dt()
             limite = agora - timedelta(minutes=DEDUP_MINUTOS)
             with conn.cursor() as cur:
+                # Limite superior (acessado_em <= agora) ignora registros com
+                # carimbo "no futuro" (ex.: linhas antigas gravadas em UTC).
                 cur.execute(
                     """SELECT 1 FROM acessos_documentos
                        WHERE matricula=%s AND documento=%s AND ip=%s
-                         AND acessado_em > %s
+                         AND acessado_em > %s AND acessado_em <= %s
                        LIMIT 1""",
-                    (matricula, documento, ip, limite),
+                    (matricula, documento, ip, limite, agora),
                 )
                 if cur.fetchone():
                     return False
@@ -186,10 +189,13 @@ else:
         ip = anonimizar_ip(ip)
         with _lock:
             db = _load()
-            limite = (datetime.now() - timedelta(minutes=DEDUP_MINUTOS)).isoformat(sep=" ")[:19]
+            agora_s = _agora()
+            limite = (_agora_dt() - timedelta(minutes=DEDUP_MINUTOS)).isoformat(sep=" ")[:19]
             for it in db["itens"]:
+                # limite < acessado_em <= agora ignora carimbos "no futuro" (UTC antigo).
                 if (it["matricula"] == matricula and it["documento"] == documento
-                        and it.get("ip", "") == ip and it.get("acessado_em", "") > limite):
+                        and it.get("ip", "") == ip
+                        and limite < it.get("acessado_em", "") <= agora_s):
                     return False
             db["itens"].append({
                 "id": db.get("_seq", 1),

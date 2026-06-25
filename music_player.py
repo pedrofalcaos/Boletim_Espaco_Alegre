@@ -1,5 +1,6 @@
 """Tocador de música ambiente da escola — widget fixo com play/pause e volume,
 reutilizado nas áreas dos pais, professoras e coordenação/admin."""
+from design_system import TEMA_TOGGLE
 
 PLAYER_MUSICA_HTML = """
 <style>@media print{ #player-musica{ display:none!important; } }</style>
@@ -57,7 +58,8 @@ PLAYER_MUSICA_HTML = """
 
 
 def inject_player(html: str) -> str:
-    """Injeta o tocador de música fixo (play/pause + volume) antes do </body>."""
+    """Injeta o tocador de música e o botão de tema (claro/escuro) antes do </body>."""
+    extra = TEMA_TOGGLE + PLAYER_MUSICA_HTML
     if "</body>" in html:
-        return html.replace("</body>", PLAYER_MUSICA_HTML + "</body>", 1)
-    return html + PLAYER_MUSICA_HTML
+        return html.replace("</body>", extra + "</body>", 1)
+    return html + extra

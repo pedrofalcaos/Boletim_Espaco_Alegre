@@ -2,7 +2,7 @@
 from urllib.parse import quote
 from datetime import datetime
 from music_player import PLAYER_MUSICA_HTML
-from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS
+from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS, TEMA_TOGGLE
 
 _ANO_ATUAL = datetime.now().year
 
@@ -45,6 +45,7 @@ a{{text-decoration:none;color:inherit;}}
                font-size:11px;color:#9a9da8;">
   Sistema desenvolvido por <strong style="color:#6a6f87;">Pedro Falcão</strong> © {_ANO_ATUAL} — Todos os direitos reservados.
 </footer>
+{TEMA_TOGGLE}
 {PLAYER_MUSICA_HTML}
 </body>
 </html>"""
