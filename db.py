@@ -195,6 +195,20 @@ if DATABASE_URL:
         finally:
             conn.close()
 
+    def renomear_professora(antigo: str, novo: str) -> int:
+        """Corrige o nome da professora em todos os alunos vinculados.
+        Retorna a quantidade de alunos atualizados."""
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE alunos SET professora=%s WHERE professora=%s", (novo, antigo))
+                n = cur.rowcount
+            conn.commit()
+            return n
+        finally:
+            conn.close()
+
     def reset_db():
         global _pg_ready
         conn = _connect()
@@ -270,6 +284,20 @@ else:
                 _save(db)
                 return True
             return False
+
+    def renomear_professora(antigo: str, novo: str) -> int:
+        """Corrige o nome da professora em todos os alunos vinculados.
+        Retorna a quantidade de alunos atualizados."""
+        with _lock:
+            db = _load()
+            n = 0
+            for al in db["alunos"].values():
+                if al.get("professora", "") == antigo:
+                    al["professora"] = novo
+                    n += 1
+            if n:
+                _save(db)
+            return n
 
     def reset_db():
         with _lock:

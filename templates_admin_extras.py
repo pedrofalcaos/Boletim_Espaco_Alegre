@@ -160,6 +160,35 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
 
     lista_card = _card(_secao("👩‍🏫 Professoras cadastradas") + tabela)
 
+    # ── Corrigir nome de professora (propaga p/ alunos e relatórios) ──
+    nomes_distintos = sorted({n for n in alunos_por_prof.keys() if n})
+    opts_nomes = "".join(f'<option value="{n}">{n}</option>' for n in nomes_distintos)
+    renomear_card = _card(f"""
+{_secao(f"{ICON_EDIT}Corrigir nome de professora")}
+<p style="font-size:12px;color:#888;margin-bottom:14px;">
+  Escreveu o nome errado? Corrija aqui e a mudança vai automaticamente para
+  <strong>todos os alunos vinculados</strong> e seus <strong>boletins e relatórios</strong>
+  (e também para a conta de login, se existir uma com esse nome).
+</p>
+<form method="POST" action="/admin/professoras/renomear"
+      onsubmit="return confirm('Corrigir o nome em todos os alunos vinculados?');">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+    <div>
+      <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Nome atual (como está hoje)</label>
+      <select name="antigo" required style="{_INP}background:#fff;">
+        <option value="">— selecione —</option>
+        {opts_nomes}
+      </select>
+    </div>
+    <div>
+      <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#aaa;display:block;margin-bottom:4px;">Nome corrigido</label>
+      <input name="novo" required placeholder="Ex: Vanessa Silva" style="{_INP}"
+        onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#c8c8c4'">
+    </div>
+  </div>
+  <button type="submit" style="{_BTN_AZ}">Corrigir nome →</button>
+</form>""")
+
     # Seleção de turmas para nova professora
     nova_checkboxes = _turma_checkboxes([], "nova")
 
@@ -278,6 +307,7 @@ function toggleTurmas(id) {
   {aviso}
   {senha_box}
   {lista_card}
+  {renomear_card}
   {nova_card}
   {coord_lista_card}
   {coord_nova_card}

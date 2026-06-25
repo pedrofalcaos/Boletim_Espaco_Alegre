@@ -4,7 +4,8 @@ from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from db import get_aluno, get_all_alunos, upsert_aluno, delete_aluno, reset_db, DISCIPLINAS
+from db import (get_aluno, get_all_alunos, upsert_aluno, delete_aluno, reset_db, DISCIPLINAS,
+                renomear_professora)
 from boletim_html import gerar_boletim_html, gerar_boletins_multiplos_html
 from auth import (check_session, check_admin, check_staff, get_session_user, make_session_token,
                   COOKIE_NAME, COOKIE_MAX, COOKIE_SECURE, IS_PROD,
@@ -13,6 +14,7 @@ from db_relatorio import (
     authenticate_user,
     get_all_usuarios, create_usuario, delete_usuario,
     update_usuario_turmas, update_usuario_senha, reset_usuario_senha, get_usuario_by_id,
+    update_usuario_nome,
     create_tema, update_tema, delete_tema,
     create_subtema, update_subtema, delete_subtema,
     get_relatorio, get_relatorio_by_id, upsert_relatorio, update_relatorio,
@@ -815,6 +817,30 @@ async def criar_professora(request: Request):
         return RedirectResponse(f"/admin/professoras?ok=Professora+{nome}+cadastrada", status_code=302)
     except ValueError:
         return RedirectResponse("/admin/professoras?erro=Usu%C3%A1rio+j%C3%A1+existe", status_code=302)
+
+
+@app.post("/admin/professoras/renomear")
+async def renomear_professora_route(request: Request):
+    """Corrige o nome de uma professora: atualiza todos os alunos vinculados
+    (boletins e relatórios passam a exibir o nome correto) e, se existir, a
+    conta de login correspondente."""
+    if not check_admin(request):
+        return _redir_login()
+    form = await request.form()
+    antigo = form.get("antigo", "").strip()
+    novo   = form.get("novo", "").strip()
+    if not antigo or not novo:
+        return RedirectResponse("/admin/professoras?erro=Informe+o+nome+atual+e+o+novo+nome", status_code=302)
+    if antigo == novo:
+        return RedirectResponse("/admin/professoras?erro=O+novo+nome+%C3%A9+igual+ao+atual", status_code=302)
+
+    n = renomear_professora(antigo, novo)
+    # Corrige também a conta de login da professora, se houver uma com esse nome.
+    for u in get_all_usuarios():
+        if u.get("nome", "").strip() == antigo:
+            update_usuario_nome(u["id"], novo)
+    msg = f"Nome corrigido para '{novo}' em {n} aluno(s). Boletins e relatórios já refletem a mudança."
+    return RedirectResponse(f"/admin/professoras?ok={quote(msg)}", status_code=302)
 
 
 @app.post("/admin/professoras/{user_id}/turmas")

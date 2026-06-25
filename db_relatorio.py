@@ -253,6 +253,18 @@ if DATABASE_URL:
         finally:
             conn.close()
 
+    def update_usuario_nome(user_id: int, nome: str) -> bool:
+        _init()
+        conn = _connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE usuarios SET nome = %s WHERE id = %s", (nome, user_id))
+                ok = cur.rowcount > 0
+            conn.commit()
+            return ok
+        finally:
+            conn.close()
+
     def update_usuario_senha(user_id: int, nova_senha: str) -> bool:
         """Define nova senha definida pelo próprio usuário e encerra o estado de senha temporária."""
         _init()
@@ -952,6 +964,16 @@ else:
             for u in db["usuarios"]:
                 if u["id"] == user_id:
                     u["turmas"] = turmas
+                    _save(db)
+                    return True
+            return False
+
+    def update_usuario_nome(user_id: int, nome: str) -> bool:
+        with _lock:
+            db = _load()
+            for u in db["usuarios"]:
+                if u["id"] == user_id:
+                    u["nome"] = nome
                     _save(db)
                     return True
             return False
