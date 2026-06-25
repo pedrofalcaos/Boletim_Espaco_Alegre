@@ -1242,8 +1242,10 @@ def admin_avaliacoes_page(
             label_associar = "🔗 Vincular"
             preselect = sugerido
 
+        status_attr = "vinc" if v else "sem"
         linhas += f"""
-<tr style="border-bottom:.5px solid #f0f0ee;vertical-align:top;">
+<tr class="av-row" data-nome="{nome}" data-turma="{turma}" data-status="{status_attr}"
+    style="border-bottom:.5px solid #f0f0ee;vertical-align:top;">
   <td style="padding:11px 12px;">
     <div style="font-weight:800;color:#2b3990;font-size:13px;">{nome}</div>
     <div style="font-size:11px;color:#888;">{turma}</div>
@@ -1265,6 +1267,37 @@ def admin_avaliacoes_page(
   </td>
 </tr>"""
 
+    # ── Card de filtro (busca instantânea, sem recarregar) ──
+    turmas_distintas = sorted({al.get("turma", "") for al in alunos.values() if al.get("turma")})
+    opts_turma = "".join(f'<option value="{t}">{t}</option>' for t in turmas_distintas)
+    _lbl = ("font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;"
+            "color:#aaa;display:block;margin-bottom:4px;")
+    filtro_card = _card(f"""
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+  <div style="flex:1;min-width:200px;">
+    <label style="{_lbl}">Buscar por nome</label>
+    <input id="f-nome" type="text" oninput="filtrarAval()" autocomplete="off"
+           placeholder="Digite o nome do aluno…" style="{_INP}background:#fff;">
+  </div>
+  <div style="min-width:170px;">
+    <label style="{_lbl}">Turma</label>
+    <select id="f-turma" onchange="filtrarAval()" style="{_INP}background:#fff;">
+      <option value="">Todas as turmas</option>
+      {opts_turma}
+    </select>
+  </div>
+  <div style="min-width:170px;">
+    <label style="{_lbl}">Situação</label>
+    <select id="f-status" onchange="filtrarAval()" style="{_INP}background:#fff;">
+      <option value="">Todas</option>
+      <option value="vinc">✅ Vinculadas</option>
+      <option value="sem">⬜ Sem vínculo</option>
+    </select>
+  </div>
+  <button type="button" onclick="limparFiltroAval()" style="{_BTN_CINZA}">Limpar</button>
+</div>
+<div id="f-contador" style="font-size:12px;color:#888;margin-top:12px;font-weight:700;"></div>""")
+
     tabela = _card(f"""
 <div style="overflow-x:auto;">
 <table style="width:100%;border-collapse:collapse;font-size:13px;">
@@ -1277,7 +1310,39 @@ def admin_avaliacoes_page(
   </thead>
   <tbody>{linhas}</tbody>
 </table>
+<div id="av-vazio" style="display:none;text-align:center;color:#aaa;padding:26px;font-size:13px;">
+  Nenhum aluno encontrado com esses filtros.
+</div>
 </div>""")
+
+    script = """
+<script>
+function _normAval(s){return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');}
+function filtrarAval(){
+  var nome=_normAval(document.getElementById('f-nome').value.trim());
+  var turma=document.getElementById('f-turma').value;
+  var status=document.getElementById('f-status').value;
+  var rows=document.querySelectorAll('tr.av-row');
+  var vis=0;
+  rows.forEach(function(r){
+    var okNome=!nome||_normAval(r.dataset.nome).indexOf(nome)!==-1;
+    var okTurma=!turma||r.dataset.turma===turma;
+    var okStatus=!status||r.dataset.status===status;
+    var show=okNome&&okTurma&&okStatus;
+    r.style.display=show?'':'none';
+    if(show)vis++;
+  });
+  document.getElementById('f-contador').textContent='Mostrando '+vis+' de '+rows.length+' aluno(s)';
+  document.getElementById('av-vazio').style.display=vis===0?'block':'none';
+}
+function limparFiltroAval(){
+  document.getElementById('f-nome').value='';
+  document.getElementById('f-turma').value='';
+  document.getElementById('f-status').value='';
+  filtrarAval();
+}
+document.addEventListener('DOMContentLoaded',filtrarAval);
+</script>"""
 
     body = f"""
 <div style="max-width:1000px;margin:0 auto;padding:24px 16px;">
@@ -1293,6 +1358,8 @@ def admin_avaliacoes_page(
   {nav}
   {aviso}
   {resumo_card}
+  {filtro_card}
   {tabela}
-</div>"""
+</div>
+{script}"""
     return page_shell("Avaliação de Inglês — Escola Espaço Alegre", body)
