@@ -262,6 +262,7 @@ body{{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing
     ← Voltar
   </button>
 </div>
+{extra_top}
 {paginas}
 </body>
 </html>"""
@@ -281,10 +282,11 @@ def gerar_relatorio_print_html(
     return _HTML_HEAD.format(
         titulo=f"Relatório Semestral — {nome}",
         paginas=f'<div class="pagina">{corpo}</div>',
+        extra_top="",
     )
 
 
-def gerar_relatorios_aluno_print_html(aluno: dict, matricula: str, itens: list) -> str:
+def gerar_relatorios_aluno_print_html(aluno: dict, matricula: str, itens: list, extra_html: str = "") -> str:
     """Impressão combinada dos relatórios de um único aluno (ex.: 1º e 2º semestre
     confirmados), usada na área pública do responsável — todas as páginas saem
     no mesmo documento/PDF, uma por semestre, mantendo a continuidade entre elas.
@@ -301,6 +303,7 @@ def gerar_relatorios_aluno_print_html(aluno: dict, matricula: str, itens: list) 
     return _HTML_HEAD.format(
         titulo=f"Relatório Semestral — {nome}",
         paginas=paginas,
+        extra_top=extra_html,
     )
 
 
@@ -319,4 +322,5 @@ def gerar_relatorios_print_html_multiplos(itens: list, semestre: int) -> str:
     return _HTML_HEAD.format(
         titulo=f"Relatórios Semestrais — {sem_label}",
         paginas=paginas,
+        extra_top="",
     )

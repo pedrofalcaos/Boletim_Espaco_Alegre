@@ -508,7 +508,7 @@ function fecharEImprimir(){
 }
 </script>'''
 
-def _html_shell(title: str, topbar: str, pages: str) -> str:
+def _html_shell(title: str, topbar: str, pages: str, extra_html: str = '') -> str:
     return f'''<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -521,13 +521,14 @@ def _html_shell(title: str, topbar: str, pages: str) -> str:
 <body>
 {GLASS_BG_BLOBS}
 {topbar}
+{extra_html}
 {pages}
 {_MODAL_HTML}
 </body>
 </html>'''
 
 # ── Boletim individual ───────────────────────────────────────────────────────
-def gerar_boletim_html(aluno: dict, back_url: str = '/') -> str:
+def gerar_boletim_html(aluno: dict, back_url: str = '/', extra_html: str = '') -> str:
     nome    = aluno['nome']
     turma   = aluno['turma']
     periodo = aluno.get('periodo', '')
@@ -538,7 +539,7 @@ def gerar_boletim_html(aluno: dict, back_url: str = '/') -> str:
   </div>
   <button class="print-btn" onclick="abrirImpressao()">{ICON_PRINTER}Imprimir / Salvar PDF</button>
 </div>'''
-    return _html_shell(f'Boletim – {nome}', topbar, _gerar_pagina(aluno))
+    return _html_shell(f'Boletim – {nome}', topbar, _gerar_pagina(aluno), extra_html=extra_html)
 
 # ── Impressão em série (turma ou todos) ─────────────────────────────────────
 def gerar_boletins_multiplos_html(alunos: list, titulo: str) -> str:

@@ -1123,3 +1123,176 @@ def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "")
 
 </div>"""
     return page_shell(f"Editar — {nome}", body)
+
+
+# ════════════════════════════════════════════════════════════════════════
+#  AVALIAÇÃO DE INGLÊS (PDF)
+# ════════════════════════════════════════════════════════════════════════
+
+def card_avaliacao_pais(matricula: str, label: str = "Avaliação de Inglês") -> str:
+    """Card discreto exibido na área do responsável quando há PDF vinculado.
+    Abre o PDF em nova aba. Some por completo na impressão (.no-print)."""
+    return f"""
+<div class="no-print" style="max-width:750px;margin:0 auto 18px;padding:0 16px;position:relative;z-index:1;">
+  <a href="/avaliacao-ingles/{quote(matricula)}" target="_blank" rel="noopener"
+     style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;text-decoration:none;
+            background:rgba(255,255,255,.66);backdrop-filter:blur(20px) saturate(180%);
+            -webkit-backdrop-filter:blur(20px) saturate(180%);
+            border:1px solid rgba(255,255,255,.55);border-radius:16px;padding:15px 20px;
+            box-shadow:0 10px 30px rgba(43,57,144,.16);">
+    <span style="font-size:28px;line-height:1;">📄</span>
+    <span style="flex:1;min-width:160px;">
+      <span style="display:block;font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;">{label}</span>
+      <span style="display:block;font-size:12px;color:#5a6079;margin-top:2px;">
+        Clique para visualizar ou baixar o PDF da avaliação.
+      </span>
+    </span>
+    <span style="background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;font-weight:800;
+                 font-size:13px;padding:10px 22px;border-radius:999px;white-space:nowrap;
+                 box-shadow:0 6px 16px rgba(26,37,112,.3);">Visualizar →</span>
+  </a>
+</div>"""
+
+
+def admin_avaliacoes_page(
+    alunos: dict,        # {matricula: {nome, turma, ...}}
+    vinculos: dict,      # {matricula: {arquivo, nome_original, atualizado_em, ...}}
+    arquivos: list,      # nomes de PDFs disponíveis na pasta
+    sugestoes: dict,     # {matricula: arquivo_sugerido}
+    msg: str = "",
+    erro: str = "",
+    staff_only: bool = False,
+) -> str:
+    nav   = admin_nav("avaliacoes", staff_only=staff_only)
+    aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
+
+    # ordena alunos por turma e nome (mesmo critério das demais telas)
+    ordenados = sorted(alunos.items(), key=lambda kv: (kv[1].get("turma", ""), kv[1].get("nome", "")))
+
+    total_vinc = sum(1 for m in alunos if m in vinculos)
+    sugest_novas = sum(1 for m, a in sugestoes.items() if m not in vinculos)
+
+    def _options(selecionado: str) -> str:
+        opts = ['<option value="">— selecione um arquivo —</option>']
+        for a in arquivos:
+            sel = "selected" if a == selecionado else ""
+            opts.append(f'<option value="{a}" {sel}>{a}</option>')
+        return "".join(opts)
+
+    # ── Barra de resumo / ações em massa ──
+    auto_btn = ""
+    if sugest_novas:
+        auto_btn = f"""
+<form method="POST" action="/admin/avaliacoes/auto" style="display:inline;"
+      onsubmit="return confirm('Vincular automaticamente {sugest_novas} avaliação(ões) sugerida(s) pelo nome do arquivo?');">
+  <button type="submit" style="{_BTN_AZ}">✨ Vincular sugestões automáticas ({sugest_novas})</button>
+</form>"""
+
+    resumo_card = _card(f"""
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+  <div style="flex:1;min-width:240px;">
+    <div style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">
+      Resumo
+    </div>
+    <p style="font-size:13px;color:#555;line-height:1.6;">
+      <strong style="color:#2b3990;">{total_vinc}</strong> de <strong>{len(alunos)}</strong> aluno(s) com avaliação vinculada
+      &nbsp;·&nbsp; <strong style="color:#2b3990;">{len(arquivos)}</strong> PDF(s) disponíveis na pasta.
+    </p>
+    <p style="font-size:11px;color:#aaa;margin-top:6px;">
+      💡 As sugestões automáticas casam o nome do arquivo com o nome do aluno (ex.: <em>João Pedro - INFANTIL 4A.pdf</em>).
+    </p>
+  </div>
+  {auto_btn}
+</div>""")
+
+    # ── Linhas da tabela ──
+    linhas = ""
+    for mat, al in ordenados:
+        nome  = al.get("nome", "")
+        turma = al.get("turma", "")
+        v     = vinculos.get(mat)
+        sugerido = sugestoes.get(mat, "")
+
+        if v:
+            data = (v.get("atualizado_em") or v.get("criado_em") or "")[:10]
+            vinc_html = f"""
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+  <span style="background:#e3f5ec;border:1px solid #a8ddc0;color:#0a7c3e;font-size:11px;font-weight:800;
+               padding:3px 10px;border-radius:20px;">📄 Vinculado</span>
+  <a href="/admin/avaliacao/{quote(mat)}/ver" target="_blank" rel="noopener"
+     style="color:#2b3990;font-weight:800;font-size:12px;text-decoration:underline;word-break:break-all;">{v.get('arquivo','')}</a>
+</div>
+<div style="font-size:10px;color:#aaa;margin-top:3px;">Atualizado em {data}</div>"""
+            acao_links = f"""
+<a href="/admin/avaliacao/{quote(mat)}/ver" target="_blank" rel="noopener"
+   style="font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;background:#e8eaf8;color:#2b3990;
+          border:1px solid #b0b8e8;border-radius:7px;padding:5px 12px;text-decoration:none;white-space:nowrap;">👁 Visualizar</a>
+<form method="POST" action="/admin/avaliacoes/remover" style="display:inline;"
+      onsubmit="return confirm('Remover o vínculo da avaliação de {nome}? O arquivo PDF será mantido na pasta.');">
+  <input type="hidden" name="matricula" value="{mat}">
+  <button type="submit" style="{_BTN_VM}">🗑 Remover vínculo</button>
+</form>"""
+            label_associar = "🔁 Trocar arquivo"
+            preselect = v.get("arquivo", "")
+        else:
+            vinc_html = '<span style="color:#bbb;font-size:12px;">— Sem avaliação vinculada</span>'
+            if sugerido:
+                vinc_html += f'<div style="font-size:10px;color:#c25b0d;margin-top:3px;">Sugestão: {sugerido}</div>'
+            acao_links = ""
+            label_associar = "🔗 Vincular"
+            preselect = sugerido
+
+        linhas += f"""
+<tr style="border-bottom:.5px solid #f0f0ee;vertical-align:top;">
+  <td style="padding:11px 12px;">
+    <div style="font-weight:800;color:#2b3990;font-size:13px;">{nome}</div>
+    <div style="font-size:11px;color:#888;">{turma}</div>
+  </td>
+  <td style="padding:11px 12px;min-width:200px;">{vinc_html}<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap;">{acao_links}</div></td>
+  <td style="padding:11px 12px;min-width:260px;">
+    <form method="POST" action="/admin/avaliacoes/associar" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+      <input type="hidden" name="matricula" value="{mat}">
+      <select name="arquivo" required style="{_INP}background:#fff;max-width:230px;">{_options(preselect)}</select>
+      <button type="submit" style="{_BTN_AZ}padding:8px 16px;font-size:12px;">{label_associar}</button>
+    </form>
+    <form method="POST" action="/admin/avaliacoes/upload" enctype="multipart/form-data"
+          style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <input type="hidden" name="matricula" value="{mat}">
+      <input type="file" name="pdf" accept="application/pdf,.pdf" required
+             style="font-family:'Nunito',sans-serif;font-size:11px;color:#555;max-width:200px;">
+      <button type="submit" style="{_BTN_CINZA}padding:8px 16px;font-size:12px;">⬆ Enviar novo PDF</button>
+    </form>
+  </td>
+</tr>"""
+
+    tabela = _card(f"""
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  <thead>
+    <tr style="background:#e8eaf8;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#2b3990;">
+      <th style="padding:9px 12px;text-align:left;">Aluno</th>
+      <th style="padding:9px 12px;text-align:left;">Avaliação vinculada</th>
+      <th style="padding:9px 12px;text-align:left;">Associar / Enviar</th>
+    </tr>
+  </thead>
+  <tbody>{linhas}</tbody>
+</table>
+</div>""")
+
+    body = f"""
+<div style="max-width:1000px;margin:0 auto;padding:24px 16px;">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
+    <img src="/static/logo.png" style="height:44px;object-fit:contain;">
+    <div style="flex:1;">
+      <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Avaliação de Inglês</h1>
+      <p style="font-size:12px;color:#888;">Vincule o PDF da avaliação a cada aluno — os responsáveis verão o botão na área deles.</p>
+    </div>
+    <a href="/admin/logout" style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;padding:9px 16px;border-radius:10px;border:1px solid #dcdcd8;">Sair</a>
+  </div>
+
+  {nav}
+  {aviso}
+  {resumo_card}
+  {tabela}
+</div>"""
+    return page_shell("Avaliação de Inglês — Escola Espaço Alegre", body)
