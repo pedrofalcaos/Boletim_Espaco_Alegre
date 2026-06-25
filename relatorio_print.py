@@ -202,11 +202,12 @@ def _pagina_relatorio_html(
   <!-- Temas e subtemas -->
   {temas_html}
 
-  <!-- Descrição final -->
-  {desc_html}
-
-  <!-- Assinaturas -->
-  {assinaturas}
+  <!-- Descrição final + assinaturas: mantidas no mesmo bloco para não se
+       separarem na impressão; se não couberem, vão juntas para a próxima página -->
+  <div style="break-inside:avoid;page-break-inside:avoid;">
+    {desc_html}
+    {assinaturas}
+  </div>
 """
 
 
@@ -229,10 +230,12 @@ body{{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing
 @media print{{
   body{{margin:0;padding:0;background:#fff;}}
   .lg-bg{{display:none!important;}}
-  .pagina{{max-width:100%;padding:0;margin:0;background:#fff!important;backdrop-filter:none!important;
+  /* Margem vai para o padding do conteúdo; a @page fica com margin:0 para o
+     navegador NÃO imprimir cabeçalho/rodapé (URL, data, número de página). */
+  .pagina{{max-width:100%;padding:11mm 12mm;margin:0;background:#fff!important;backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;border:none!important;box-shadow:none!important;border-radius:0!important;}}
   .no-print{{display:none!important;}}
-  @page{{size:A4 portrait;margin:10mm 10mm;}}
+  @page{{size:A4 portrait;margin:0;}}
 }}
 .pagina + .pagina{{page-break-before:always;}}
 .desc-rendered{{text-align:justify;text-justify:inter-word;}}
