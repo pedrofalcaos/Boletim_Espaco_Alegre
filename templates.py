@@ -107,6 +107,7 @@ def admin_nav(current: str = "alunos", staff_only: bool = False) -> str:
         ("relatorios",  "/admin/relatorios",     "📋 Relatórios Semestrais"),
         ("avaliacoes",  "/admin/avaliacoes",     "🇬🇧 Avaliação de Inglês"),
         ("acessos",     "/admin/acessos",        "📊 Controle de Acessos"),
+        ("auditoria",   "/admin/auditoria",      "🔎 Auditoria"),
     ]
     if staff_only:
         items = [item for item in items if item[0] in ("relatorios", "avaliacoes", "acessos")]

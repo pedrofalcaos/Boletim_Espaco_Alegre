@@ -1725,3 +1725,114 @@ document.addEventListener('DOMContentLoaded',filtrarAcessos);
 </div>
 {script}"""
     return page_shell("Controle de Acessos — Escola Espaço Alegre", body)
+
+
+# ════════════════════════════════════════════════════════════════════════
+#  AUDITORIA — trilha de alterações da equipe
+# ════════════════════════════════════════════════════════════════════════
+
+_ROLE_BADGE = {
+    "admin":       ("#2b3990", "#e8eaf8", "#b0b8e8"),
+    "coordenacao": ("#6a1a8a", "#f5eafc", "#e0c8f0"),
+    "professora":  ("#0a7c3e", "#e3f5ec", "#a8ddc0"),
+}
+
+
+def admin_auditoria_page(registros: list) -> str:
+    """Lista a trilha de auditoria (mais recentes primeiro). Apenas admin."""
+    nav = admin_nav("auditoria")
+
+    linhas = ""
+    for r in registros:
+        cor, bg, bd = _ROLE_BADGE.get(r.get("role", ""), ("#888", "#f0f0ee", "#ddd"))
+        role = r.get("role", "") or "—"
+        linhas += f"""
+<tr class="aud-row" data-busca="{(r.get('usuario','') + ' ' + r.get('acao','') + ' ' + r.get('alvo','') + ' ' + r.get('detalhe','')).lower()}"
+    style="border-bottom:.5px solid #f0f0ee;">
+  <td style="padding:9px 12px;font-size:12px;color:#333;white-space:nowrap;">{_fmt_dt(r.get('criado_em',''))}</td>
+  <td style="padding:9px 12px;">
+    <span style="font-weight:800;color:#2b3990;font-size:13px;">{r.get('usuario','?')}</span>
+    <span style="background:{bg};border:1px solid {bd};color:{cor};font-size:9px;font-weight:800;
+                 padding:1px 7px;border-radius:10px;margin-left:6px;white-space:nowrap;">{role}</span>
+  </td>
+  <td style="padding:9px 12px;font-size:12px;color:#333;font-weight:700;">{r.get('acao','')}</td>
+  <td style="padding:9px 12px;font-size:12px;color:#555;">{r.get('alvo','') or '—'}</td>
+  <td style="padding:9px 12px;font-size:12px;color:#888;">{r.get('detalhe','') or '—'}</td>
+</tr>"""
+
+    if registros:
+        tabela = _card(f"""
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  <thead>
+    <tr style="background:#e8eaf8;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#2b3990;">
+      <th style="padding:9px 12px;text-align:left;">Data/hora</th>
+      <th style="padding:9px 12px;text-align:left;">Quem</th>
+      <th style="padding:9px 12px;text-align:left;">Ação</th>
+      <th style="padding:9px 12px;text-align:left;">Alvo</th>
+      <th style="padding:9px 12px;text-align:left;">Detalhe</th>
+    </tr>
+  </thead>
+  <tbody>{linhas}</tbody>
+</table>
+<div id="aud-vazio" style="display:none;text-align:center;color:#aaa;padding:26px;font-size:13px;">
+  Nenhum registro encontrado.
+</div>
+</div>""")
+    else:
+        tabela = _card('<p style="text-align:center;color:#aaa;padding:24px;">Nenhuma alteração registrada ainda.</p>')
+
+    _lbl = ("font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;"
+            "color:#aaa;display:block;margin-bottom:4px;")
+    filtro_card = _card(f"""
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+  <div style="flex:1;min-width:220px;">
+    <label style="{_lbl}">Buscar (usuário, ação, aluno…)</label>
+    <input id="aud-busca" type="text" oninput="filtrarAud()" autocomplete="off"
+           placeholder="Digite para filtrar…" style="{_INP}background:#fff;">
+  </div>
+  <button type="button" onclick="document.getElementById('aud-busca').value='';filtrarAud()" style="{_BTN_CINZA}">Limpar</button>
+</div>
+<div id="aud-contador" style="font-size:12px;color:#888;margin-top:12px;font-weight:700;"></div>""")
+
+    script = """
+<script>
+function _normAud(s){return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');}
+function filtrarAud(){
+  var q=_normAud(document.getElementById('aud-busca').value.trim());
+  var rows=document.querySelectorAll('tr.aud-row');var vis=0;
+  rows.forEach(function(r){
+    var show=!q||_normAud(r.dataset.busca).indexOf(q)!==-1;
+    r.style.display=show?'':'none';if(show)vis++;
+  });
+  document.getElementById('aud-contador').textContent='Mostrando '+vis+' de '+rows.length+' registro(s)';
+  var v=document.getElementById('aud-vazio');if(v)v.style.display=vis===0?'block':'none';
+}
+document.addEventListener('DOMContentLoaded',filtrarAud);
+</script>"""
+
+    nota = _card("""
+<p style="font-size:12px;color:#888;line-height:1.6;margin:0;">
+  🔎 Registro interno das alterações feitas pela equipe (cadastros, edições, confirmações de
+  relatório, vínculos de avaliação, visibilidade dos pais, etc.). Mostra as 500 ações mais recentes.
+  Visível apenas para a administração.
+</p>""")
+
+    body = f"""
+<div style="max-width:1080px;margin:0 auto;padding:24px 16px;">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
+    <img src="/static/logo.png" style="height:44px;object-fit:contain;">
+    <div style="flex:1;">
+      <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Auditoria</h1>
+      <p style="font-size:12px;color:#888;">Histórico de alterações feitas pela equipe.</p>
+    </div>
+    <a href="/admin/logout" style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;padding:9px 16px;border-radius:10px;border:1px solid #dcdcd8;">Sair</a>
+  </div>
+
+  {nav}
+  {filtro_card}
+  {tabela}
+  {nota}
+</div>
+{script}"""
+    return page_shell("Auditoria — Escola Espaço Alegre", body)

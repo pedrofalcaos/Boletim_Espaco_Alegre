@@ -9,7 +9,8 @@ from db import (get_aluno, get_all_alunos, upsert_aluno, delete_aluno, reset_db,
 from boletim_html import gerar_boletim_html, gerar_boletins_multiplos_html
 from auth import (check_session, check_admin, check_staff, get_session_user, make_session_token,
                   COOKIE_NAME, COOKIE_MAX, COOKIE_SECURE, IS_PROD,
-                  login_bloqueado, registrar_falha_login, limpar_falhas_login)
+                  login_bloqueado, registrar_falha_login, limpar_falhas_login,
+                  consulta_bloqueada)
 from db_relatorio import (
     authenticate_user,
     get_all_usuarios, create_usuario, delete_usuario,
@@ -28,11 +29,13 @@ from db_relatorio import (
 )
 import db_avaliacao as dav
 import db_acesso as dac
+import db_auditoria as daud
+from sanitize import sanitizar_html
 from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import (
     admin_professoras_page, admin_temas_page, admin_relatorios_page,
     admin_aluno_relatorios_page, aluno_infantil_form, admin_avaliacoes_page,
-    card_avaliacao_pais, admin_acessos_page, banner_festas_pais,
+    card_avaliacao_pais, admin_acessos_page, banner_festas_pais, admin_auditoria_page,
 )
 from templates_professora import (
     professora_login_page, professora_dashboard, professora_turma_page,
@@ -353,6 +356,43 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else ""
 
 
+_CONSULTA_BLOQUEADA_HTML = """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<title>Muitas consultas</title>
+<style>body{font-family:'Nunito',system-ui,sans-serif;background:linear-gradient(160deg,#1a2570,#1a5fa8);
+min-height:100vh;display:flex;align-items:center;justify-content:center;margin:0;padding:24px;}
+.c{background:#fff;border-radius:22px;padding:38px 34px;max-width:420px;text-align:center;
+box-shadow:0 20px 60px rgba(10,15,50,.35);}h1{font-size:20px;color:#1a2570;margin:10px 0;}
+p{font-size:14px;color:#555;line-height:1.6;}a{display:inline-block;margin-top:22px;text-decoration:none;
+background:#2b3990;color:#fff;font-weight:800;padding:12px 26px;border-radius:999px;font-size:14px;}</style>
+</head><body><div class="c"><div style="font-size:44px;">🛡️</div>
+<h1>Muitas consultas em pouco tempo</h1>
+<p>Detectamos um número alto de consultas a partir deste acesso. Por segurança dos dados dos
+alunos, aguarde alguns minutos e tente novamente.</p>
+<a href="/">Voltar ao início</a></div></body></html>"""
+
+
+def _auditar(request: Request, acao: str, alvo: str = "", detalhe: str = ""):
+    """Registra na trilha de auditoria uma ação feita por um usuário logado."""
+    user = get_session_user(request) or {}
+    daud.registrar(
+        usuario=user.get("nome") or user.get("username", "?"),
+        role=user.get("role", ""),
+        acao=acao, alvo=alvo, detalhe=detalhe,
+    )
+
+
+def _consulta_bloqueada_resp(request: Request, matricula: str):
+    """Retorna uma resposta de bloqueio se o visitante (não-equipe) estiver
+    fazendo varredura de matrículas; caso contrário, None."""
+    if check_staff(request):
+        return None
+    if consulta_bloqueada(_client_ip(request), matricula):
+        return HTMLResponse(_CONSULTA_BLOQUEADA_HTML, status_code=429)
+    return None
+
+
 def _registrar_acesso_pai(request: Request, aluno: dict, matricula: str, documento: str, ref: str = ""):
     """Registra o acesso de um responsável a um documento.
 
@@ -454,6 +494,9 @@ async def ver_boletim(request: Request, matricula: str, ref: str = ""):
     mat_clean = re.sub(r'\D', '', matricula)
     if not mat_clean:
         return RedirectResponse("/?erro=1")
+    bloq = _consulta_bloqueada_resp(request, mat_clean)
+    if bloq:
+        return bloq
 
     aluno = get_aluno(mat_clean)
     if not aluno:
@@ -492,6 +535,9 @@ async def ver_relatorio_responsavel(request: Request, matricula: str):
     """Tela onde o responsável escolhe qual semestre do relatório deseja ver."""
     if _pais_bloqueado(request):
         return HTMLResponse(MANUTENCAO_HTML)
+    bloq = _consulta_bloqueada_resp(request, re.sub(r'\D', '', matricula))
+    if bloq:
+        return bloq
     dados, redir = _aluno_infantil_responsavel(matricula)
     if redir:
         return redir
@@ -516,6 +562,9 @@ async def ver_relatorio_semestre(request: Request, matricula: str, semestre: int
     caso contrário, exibe a mensagem amigável de indisponível."""
     if _pais_bloqueado(request):
         return HTMLResponse(MANUTENCAO_HTML)
+    bloq = _consulta_bloqueada_resp(request, re.sub(r'\D', '', matricula))
+    if bloq:
+        return bloq
     dados, redir = _aluno_infantil_responsavel(matricula)
     if redir:
         return redir
@@ -678,14 +727,19 @@ async def salvar_aluno(request: Request, matricula: str):
     else:
         mat = matricula
 
+    novo = matricula == "novo"
     upsert_aluno(mat, dados)
+    _auditar(request, "Cadastrar aluno" if novo else "Editar aluno",
+             alvo=mat, detalhe=dados.get("nome", ""))
     return RedirectResponse(f"/admin/aluno/{mat}?ok=1", status_code=302)
 
 @app.get("/admin/aluno/{matricula}/excluir")
 async def excluir_aluno(request: Request, matricula: str):
     if not check_admin(request):
         return _redir_login()
+    alvo = (get_aluno(matricula) or {}).get("nome", matricula)
     delete_aluno(matricula)
+    _auditar(request, "Excluir aluno", alvo=matricula, detalhe=alvo)
     return RedirectResponse("/admin", status_code=302)
 
 @app.get("/admin/aluno/{matricula}/editar-infantil", response_class=HTMLResponse)
@@ -838,6 +892,7 @@ async def criar_professora(request: Request):
         return RedirectResponse("/admin/professoras?erro=Senha+deve+ter+ao+menos+6+caracteres", status_code=302)
     try:
         create_usuario(username, senha, nome, role="professora", turmas=turmas)
+        _auditar(request, "Cadastrar professora", alvo=nome)
         return RedirectResponse(f"/admin/professoras?ok=Professora+{nome}+cadastrada", status_code=302)
     except ValueError:
         return RedirectResponse("/admin/professoras?erro=Usu%C3%A1rio+j%C3%A1+existe", status_code=302)
@@ -863,6 +918,7 @@ async def renomear_professora_route(request: Request):
     for u in get_all_usuarios():
         if u.get("nome", "").strip() == antigo:
             update_usuario_nome(u["id"], novo)
+    _auditar(request, "Renomear professora", alvo=novo, detalhe=f"'{antigo}' → '{novo}' ({n} aluno(s))")
     msg = f"Nome corrigido para '{novo}' em {n} aluno(s). Boletins e relatórios já refletem a mudança."
     return RedirectResponse(f"/admin/professoras?ok={quote(msg)}", status_code=302)
 
@@ -874,6 +930,8 @@ async def salvar_turmas_professora(request: Request, user_id: int):
     form   = await request.form()
     turmas = list(form.getlist("turma"))
     update_usuario_turmas(user_id, turmas)
+    alvo = (get_usuario_by_id(user_id) or {}).get("nome", str(user_id))
+    _auditar(request, "Atualizar turmas da professora", alvo=alvo, detalhe=", ".join(turmas))
     return RedirectResponse("/admin/professoras?ok=Turmas+atualizadas", status_code=302)
 
 
@@ -881,7 +939,9 @@ async def salvar_turmas_professora(request: Request, user_id: int):
 async def excluir_professora(request: Request, user_id: int):
     if not check_admin(request):
         return _redir_login()
+    alvo = (get_usuario_by_id(user_id) or {}).get("nome", str(user_id))
     delete_usuario(user_id)
+    _auditar(request, "Excluir colaboradora", alvo=alvo)
     return RedirectResponse("/admin/professoras?ok=Professora+removida", status_code=302)
 
 
@@ -891,6 +951,8 @@ async def resetar_senha_professora(request: Request, user_id: int):
         return _redir_login()
     nova_senha = reset_usuario_senha(user_id)
     if nova_senha:
+        alvo = (get_usuario_by_id(user_id) or {}).get("nome", str(user_id))
+        _auditar(request, "Resetar senha", alvo=alvo)
         return RedirectResponse(
             f"/admin/professoras?ok=Senha+resetada+com+sucesso&senha_gerada={quote(nova_senha)}",
             status_code=302,
@@ -1301,7 +1363,7 @@ async def prof_relatorio_salvar(request: Request, matricula: str, semestre: int)
 
     form = dict(await request.form())
     respostas  = _parse_respostas(form)
-    descricao  = form.get("descricao_final", "").strip()
+    descricao  = sanitizar_html(form.get("descricao_final", "").strip())
 
     save_respostas(relatorio["id"], respostas)
     update_relatorio(relatorio["id"], "em_andamento", descricao, editado_por=user["nome"])
@@ -1339,7 +1401,7 @@ async def prof_relatorio_confirmar(request: Request, matricula: str, semestre: i
 
     form = dict(await request.form())
     respostas = _parse_respostas(form)
-    descricao = form.get("descricao_final", "").strip()
+    descricao = sanitizar_html(form.get("descricao_final", "").strip())
 
     # Validação server-side: todos os subtemas da turma respondidos
     turma = aluno.get("turma", "")
@@ -1364,6 +1426,8 @@ async def prof_relatorio_confirmar(request: Request, matricula: str, semestre: i
 
     save_respostas(relatorio["id"], respostas)
     update_relatorio(relatorio["id"], "concluido", descricao, editado_por=user["nome"])
+    _auditar(request, "Confirmar relatório", alvo=matricula,
+             detalhe=f"{semestre}º sem · {aluno.get('nome','')}")
 
     turma_enc = aluno.get("turma", "").replace(" ", "%20")
     return RedirectResponse(
@@ -1469,6 +1533,7 @@ async def admin_visibilidade(request: Request, liberar: str = Form("")):
     if not check_staff(request):
         return _redir_login()
     set_pais_liberado(liberar == "1")
+    _auditar(request, "Visibilidade dos pais", detalhe=("liberada" if liberar == "1" else "desativada"))
     msg = ("Área dos pais LIBERADA — os responsáveis já conseguem consultar."
            if liberar == "1" else
            "Área dos pais DESATIVADA — os responsáveis verão a mensagem de atualização.")
@@ -1521,6 +1586,7 @@ async def admin_avaliacoes_associar(
         return _redir_avaliacoes(erro="Arquivo selecionado é inválido ou não foi encontrado.", semestre=sem)
     user = get_session_user(request) or {}
     dav.set_avaliacao(matricula, arquivo, arquivo, user.get("nome", ""), semestre=sem)
+    _auditar(request, "Vincular avaliação de inglês", alvo=matricula, detalhe=f"{sem}º sem · {arquivo}")
     return _redir_avaliacoes(msg="Avaliação vinculada com sucesso.", semestre=sem)
 
 
@@ -1541,6 +1607,7 @@ async def admin_avaliacoes_auto(request: Request, semestre: str = Form("1")):
             dav.set_avaliacao(mat, arq, arq, user.get("nome", ""), semestre=sem)
             n += 1
     if n:
+        _auditar(request, "Vínculo automático de avaliações", detalhe=f"{sem}º sem · {n} aluno(s)")
         return _redir_avaliacoes(msg=f"{n} avaliação(ões) vinculada(s) automaticamente.", semestre=sem)
     return _redir_avaliacoes(msg="Nenhuma sugestão nova para vincular.", semestre=sem)
 
@@ -1573,6 +1640,7 @@ async def admin_avaliacoes_upload(
         return _redir_avaliacoes(erro="Falha ao salvar o arquivo. Tente novamente.", semestre=sem)
     user = get_session_user(request) or {}
     dav.set_avaliacao(matricula, arquivo, nome, user.get("nome", ""), semestre=sem)
+    _auditar(request, "Upload de avaliação de inglês", alvo=matricula, detalhe=f"{sem}º sem · {arquivo}")
     return _redir_avaliacoes(msg="PDF enviado e vinculado com sucesso.", semestre=sem)
 
 
@@ -1583,6 +1651,7 @@ async def admin_avaliacoes_remover(request: Request, matricula: str = Form(...),
         return _redir_login()
     sem = _sem_aval(semestre)
     dav.remover_avaliacao(matricula, semestre=sem)
+    _auditar(request, "Remover vínculo de avaliação", alvo=matricula, detalhe=f"{sem}º sem")
     return _redir_avaliacoes(msg="Vínculo removido. (O arquivo PDF foi mantido na pasta.)", semestre=sem)
 
 
@@ -1606,8 +1675,11 @@ async def ver_avaliacao_responsavel(request: Request, matricula: str, semestre: 
     identificado pela matrícula. Respeita o controle de visibilidade dos pais."""
     if _pais_bloqueado(request):
         return HTMLResponse(MANUTENCAO_HTML)
-    sem = _sem_aval(semestre)
     mat_clean = re.sub(r'\D', '', matricula)
+    bloq = _consulta_bloqueada_resp(request, mat_clean)
+    if bloq:
+        return bloq
+    sem = _sem_aval(semestre)
     aluno = get_aluno(mat_clean) if mat_clean else None
     if aluno and dav.get_avaliacao(mat_clean, semestre=sem):
         _registrar_acesso_pai(request, aluno, mat_clean, "avaliacao_ingles")
@@ -1654,6 +1726,13 @@ background:#2b3990;color:#fff;font-weight:800;padding:12px 26px;border-radius:99
 # ════════════════════════════════════════════════════════════════════════════
 #  CONTROLE DE ACESSOS DOS RESPONSÁVEIS — admin/coordenação
 # ════════════════════════════════════════════════════════════════════════════
+
+@app.get("/admin/auditoria", response_class=HTMLResponse)
+async def admin_auditoria(request: Request):
+    if not check_admin(request):
+        return _redir_login()
+    return admin_auditoria_page(daud.listar(500))
+
 
 @app.get("/admin/acessos", response_class=HTMLResponse)
 async def admin_acessos(request: Request):
@@ -1795,7 +1874,7 @@ async def admin_salvar_relatorio(request: Request, rel_id: int):
 
     form      = dict(await request.form())
     respostas = _parse_respostas(form)
-    descricao = form.get("descricao_final", "").strip()
+    descricao = sanitizar_html(form.get("descricao_final", "").strip())
     novo_status = "em_andamento" if relatorio["status"] == "pendente" else relatorio["status"]
 
     save_respostas(rel_id, respostas)
@@ -1816,7 +1895,7 @@ async def admin_confirmar_relatorio(request: Request, rel_id: int):
 
     form      = dict(await request.form())
     respostas = _parse_respostas(form)
-    descricao = form.get("descricao_final", "").strip()
+    descricao = sanitizar_html(form.get("descricao_final", "").strip())
 
     aluno_rel = get_aluno(relatorio["matricula"])
     turma_rel = aluno_rel.get("turma", "") if aluno_rel else ""
@@ -1834,6 +1913,7 @@ async def admin_confirmar_relatorio(request: Request, rel_id: int):
 
     save_respostas(rel_id, respostas)
     update_relatorio(rel_id, "concluido", descricao, editado_por=user_staff["nome"])
+    _auditar(request, "Confirmar relatório", alvo=relatorio.get("matricula", str(rel_id)))
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+confirmado+com+sucesso", status_code=302)
 
 
@@ -1842,6 +1922,7 @@ async def admin_trancar_relatorio(request: Request, rel_id: int):
     if not check_staff(request):
         return _redir_login()
     set_relatorio_trancado(rel_id, True)
+    _auditar(request, "Trancar relatório", alvo=str(rel_id))
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+trancado", status_code=302)
 
 
@@ -1850,6 +1931,7 @@ async def admin_destrancar_relatorio(request: Request, rel_id: int):
     if not check_staff(request):
         return _redir_login()
     set_relatorio_trancado(rel_id, False)
+    _auditar(request, "Destrancar relatório", alvo=str(rel_id))
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+destrancado", status_code=302)
 
 
@@ -1859,6 +1941,7 @@ async def admin_reabrir_relatorio(request: Request, rel_id: int):
     if not check_staff(request):
         return _redir_login()
     reabrir_relatorio(rel_id)
+    _auditar(request, "Reabrir relatório", alvo=str(rel_id))
     return RedirectResponse(f"/admin/relatorio/{rel_id}?msg=Relatório+reaberto+para+a+professora+preencher+novamente", status_code=302)
 
 

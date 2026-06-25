@@ -60,15 +60,13 @@ RESPONSÁVEL (sem login)                EQUIPE (login + cookie assinado)
 
 ### 🔴 CRÍTICO
 
-1. **Enumeração de matrícula / IDOR (não corrigido — decisão de produto).** ⏳
-   As matrículas são **sequenciais** (`20261001`, `20261002`…) e são o **único segredo**
-   de acesso do responsável. Qualquer pessoa pode iterar e abrir boletim, relatório e PDF
-   de **qualquer criança**. O `matriculas.csv` inclusive contém links públicos prontos.
-   *Recomendações (escolher uma):* (a) exigir um 2º fator simples conhecido só pela família
-   (ex.: data de nascimento do aluno) antes de exibir; (b) trocar a URL por **token
-   aleatório por aluno** (o QR já distribuído passaria a apontar para o token); (c)
-   manter por matrícula mas com rate-limit por IP nas consultas. — *Posso implementar a opção
-   escolhida; afeta os QR codes já distribuídos, por isso não alterei sozinho.*
+1. **Enumeração de matrícula / IDOR — mitigado por rate-limit.** ⚠️ As matrículas são
+   **sequenciais** e são o único segredo de acesso do responsável. Decisão da escola: manter o
+   acesso por matrícula (sem reemitir QR codes) e aplicar **rate-limit anti-varredura** ✅ —
+   um IP que consulta muitas matrículas distintas numa janela é bloqueado (`auth.py:
+   consulta_bloqueada`; não afeta a equipe nem famílias com poucos filhos). É uma **mitigação**,
+   não eliminação: um atacante com muitos IPs ainda poderia varrer lentamente. Proteção forte
+   (2º fator por data de nascimento, ou token por aluno) fica como melhoria futura.
 
 2. **SECRET_KEY / ADMIN_PASSWORD com valor público fixo.** ✅ parcial
    `SECRET_KEY` não usa mais um valor fixo público: deriva uma chave estável do
@@ -90,19 +88,20 @@ RESPONSÁVEL (sem login)                EQUIPE (login + cookie assinado)
 
 ### 🟡 MÉDIO
 
-7. **XSS armazenado via texto rico do relatório.** ⏳ `descricao_final` é renderizada como
-   **HTML cru** para o responsável (editor de texto rico da professora). Conta-corrente
-   entre usabilidade e risco: se uma conta de professora for comprometida, é um vetor de XSS.
-   *Recomendação:* sanitizar o HTML no salvamento (ex.: lista branca de tags com `bleach` ou
-   `nh3`). Não apliquei para não alterar a formatação existente sem validação.
+7. **XSS armazenado via texto rico do relatório.** ✅ A `descricao_final` agora é **sanitizada**
+   (`sanitize.py` com `nh3`): lista branca de tags + `font[color]`, removendo `script`,
+   `onerror`/handlers, `style` e `javascript:`. Aplicada ao **salvar** e ao **renderizar**
+   (cobre dados antigos). Mantém negrito, itálico, listas, cor.
 8. **Logs guardavam IP completo.** ✅ IP agora **anonimizado** (último octeto zerado / prefixo
    /48 em IPv6) — minimização de dados.
 9. **Sem política de privacidade.** ✅ Página `/privacidade` (LGPD) criada e linkada no rodapé.
 
 ### 🟢 BAIXO
 
-10. **Sem trilha de auditoria de alterações da equipe** (quem editou nota/relatório). ⏳
-    Há `editado_por_nome` em relatórios; estender a um log de auditoria geral é desejável.
+10. **Trilha de auditoria de alterações da equipe.** ✅ `db_auditoria.py` registra quem/quando/o
+    quê (cadastro e edição de alunos, confirmação/trancamento de relatórios, vínculos de
+    avaliação, visibilidade dos pais, gestão de colaboradoras). Tela `/admin/auditoria`
+    (somente admin) com busca.
 11. **Mensagem de erro genérica** já é usada no login (sem vazar se o usuário existe) — manter.
 12. **`itsdangerous`/dependências** — manter atualizadas (Dependabot/`pip list --outdated`).
 
@@ -126,10 +125,13 @@ RESPONSÁVEL (sem login)                EQUIPE (login + cookie assinado)
 
 | Arquivo | Mudança |
 |---------|---------|
-| `auth.py` | SECRET_KEY sem valor público fixo; `COOKIE_SECURE`; rate-limit de login |
-| `main.py` | Middleware de cabeçalhos de segurança + `no-store`; cookies `Secure`; rate-limit nos 2 logins; página `/privacidade`; link no rodapé |
-| `db_acesso.py` | Anonimização de IP nos registros de acesso |
-| `templates.py`, `templates_professora.py` | Mensagem de bloqueio por excesso de tentativas |
+| `auth.py` | SECRET_KEY sem valor público fixo; `COOKIE_SECURE`; rate-limit de login; **rate-limit anti-varredura das consultas dos pais** |
+| `main.py` | Middleware de cabeçalhos de segurança + `no-store`; cookies `Secure`; rate-limit nos 2 logins; página `/privacidade`; **bloqueio de varredura nas rotas dos pais (429)**; **sanitização da descrição ao salvar**; **trilha de auditoria nas mutações** + rota `/admin/auditoria` |
+| `db_acesso.py` | Anonimização de IP; data/hora em horário de Brasília |
+| `sanitize.py` (novo) | Sanitização anti-XSS do texto rico (nh3) |
+| `db_auditoria.py` (novo) | Trilha de auditoria (dual backend) |
+| `relatorio_print.py`, `templates_relatorio.py` | Sanitização da descrição ao renderizar |
+| `templates.py` | Mensagem de bloqueio de login; itens de nav (Auditoria) |
 
 Nenhuma funcionalidade existente foi alterada em comportamento (apenas reforço de segurança).
 
@@ -146,10 +148,11 @@ Nenhuma funcionalidade existente foi alterada em comportamento (apenas reforço 
 - [x] Rate-limit no login
 - [x] Cabeçalhos de segurança (CSP, HSTS, X-Frame-Options, nosniff, Referrer-Policy)
 - [x] `no-store` em páginas com dados pessoais
-- [ ] Corrigir enumeração de matrícula (item crítico nº 1) ⏳
-- [ ] Definir `SECRET_KEY`/`ADMIN_PASSWORD` no Railway e trocar senha admin ⏳
-- [ ] Sanitizar HTML do relatório (anti-XSS armazenado) ⏳
-- [ ] Trilha de auditoria de alterações da equipe ⏳
+- [x] Rate-limit anti-varredura nas consultas dos pais (mitiga enumeração)
+- [x] Sanitização anti-XSS do HTML do relatório
+- [x] Trilha de auditoria de alterações da equipe
+- [ ] Definir `SECRET_KEY`/`ADMIN_PASSWORD` no Railway e trocar senha admin ⏳ (ação na escola)
+- [ ] Proteção forte contra enumeração (2º fator data de nascimento ou token por aluno) ⏳ (melhoria futura)
 
 **LGPD**
 - [x] Inventário de dados pessoais (este documento)

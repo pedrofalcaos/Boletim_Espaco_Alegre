@@ -153,3 +153,26 @@ def registrar_falha_login(ip: str) -> None:
 def limpar_falhas_login(ip: str) -> None:
     with _LOGIN_LOCK:
         _login_falhas.pop(ip, None)
+
+
+# ── Anti-enumeração: limita matrículas distintas consultadas por IP ───────────
+# Famílias consultam poucas matrículas (seus filhos); uma varredura tenta muitas
+# matrículas sequenciais. Bloqueamos o IP que pede matrículas distintas demais
+# numa janela. Limite folgado para não pegar IPs compartilhados (CGNAT móvel).
+_CONSULTA_LOCK = threading.Lock()
+_consulta_hist: dict = {}          # ip -> [(timestamp, matricula)]
+_CONSULTA_JANELA_SEG = 15 * 60
+_CONSULTA_MAX_DISTINTAS = 25       # matrículas distintas por janela antes de bloquear
+
+
+def consulta_bloqueada(ip: str, matricula: str) -> bool:
+    """Registra a consulta e retorna True se o IP excedeu o limite de matrículas
+    distintas na janela (provável varredura)."""
+    if not ip:
+        return False
+    agora = time.time()
+    with _CONSULTA_LOCK:
+        hist = [(t, m) for (t, m) in _consulta_hist.get(ip, []) if agora - t < _CONSULTA_JANELA_SEG]
+        hist.append((agora, matricula))
+        _consulta_hist[ip] = hist
+        return len({m for (_, m) in hist}) > _CONSULTA_MAX_DISTINTAS

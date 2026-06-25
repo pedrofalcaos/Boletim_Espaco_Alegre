@@ -1,6 +1,7 @@
 """HTML otimizado para impressão/PDF do Relatório Semestral da Ed. Infantil."""
 from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS
 from icons import ICON_PRINTER
+from sanitize import sanitizar_html
 
 # _HTML_HEAD usa .format(), então chaves literais do CSS importado precisam
 # ser escapadas (dobradas) antes de entrar no template.
@@ -61,7 +62,7 @@ def _pagina_relatorio_html(
     professora = aluno.get("professora", "")
     ano        = aluno.get("ano_letivo", "2026")
     sem_label  = "1º Semestre" if semestre == 1 else "2º Semestre"
-    descricao  = relatorio.get("descricao_final", "")
+    descricao  = sanitizar_html(relatorio.get("descricao_final", ""))
     confirmado = relatorio.get("confirmado_em", "")
     if confirmado and isinstance(confirmado, str):
         confirmado = confirmado[:10]  # só a data

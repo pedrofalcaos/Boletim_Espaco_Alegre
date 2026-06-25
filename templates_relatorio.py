@@ -1,6 +1,7 @@
 """Formulário de preenchimento e visualização do Relatório Semestral da Ed. Infantil."""
 from templates import page_shell
 from icons import ICON_LOCK, ICON_UNLOCK, ICON_REFRESH, ICON_TOOL, dot
+from sanitize import sanitizar_html
 
 _OPCOES = ["CA", "CC", "ED"]
 
@@ -61,7 +62,7 @@ def relatorio_form_page(
     periodo      = aluno.get("periodo", "")
     ano          = aluno.get("ano_letivo", "2026")
     status       = relatorio.get("status", "pendente")
-    descricao    = relatorio.get("descricao_final", "")
+    descricao    = sanitizar_html(relatorio.get("descricao_final", ""))
     rel_id       = relatorio.get("id")
     trancado     = bool(relatorio.get("trancado"))
     sem_label    = "1º Semestre" if semestre == 1 else "2º Semestre"
