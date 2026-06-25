@@ -1363,3 +1363,248 @@ document.addEventListener('DOMContentLoaded',filtrarAval);
 </div>
 {script}"""
     return page_shell("Avaliação de Inglês — Escola Espaço Alegre", body)
+
+
+# ════════════════════════════════════════════════════════════════════════
+#  CONTROLE DE ACESSOS DOS RESPONSÁVEIS
+# ════════════════════════════════════════════════════════════════════════
+
+_DOC_LABEL = {
+    "boletim": "Boletim",
+    "relatorio": "Relatório Semestral",
+    "avaliacao_ingles": "Avaliação de Inglês",
+}
+_DISP_LABEL = {"web": "💻 Web", "mobile": "📱 Celular", "tablet": "📲 Tablet"}
+
+
+def _fmt_dt(s: str) -> str:
+    """'2026-06-25 14:30:00' -> '25/06/2026 14:30'."""
+    if not s:
+        return ""
+    d, h = s[:10], s[11:16]
+    return f"{d[8:10]}/{d[5:7]}/{d[0:4]} {h}" if len(d) == 10 else s
+
+
+def admin_acessos_page(
+    alunos: dict,          # {matricula: {nome, turma, professora, ...}}
+    acessos_agg: list,     # [{matricula, nome_aluno, turma, documento, qtd, ultimo, dispositivo, ip}]
+    total_acessos: int = 0,
+    staff_only: bool = False,
+) -> str:
+    nav = admin_nav("acessos", staff_only=staff_only)
+
+    # ── Métricas dos cards ──
+    matriculas_acessaram = {a["matricula"] for a in acessos_agg if a["matricula"] in alunos}
+    n_acessaram   = len(matriculas_acessaram)
+    n_nao         = max(len(alunos) - n_acessaram, 0)
+    ultimo_global = max((a["ultimo"] for a in acessos_agg), default="")
+    ultimo_aluno  = ""
+    if ultimo_global:
+        for a in acessos_agg:
+            if a["ultimo"] == ultimo_global:
+                ultimo_aluno = a["nome_aluno"] or alunos.get(a["matricula"], {}).get("nome", "")
+                break
+
+    def _metric(valor, rotulo, cor, bg, bd):
+        return f"""
+<div style="flex:1;min-width:170px;background:{bg};border:1px solid {bd};border-radius:14px;padding:16px 18px;">
+  <div style="font-size:28px;font-weight:900;color:{cor};line-height:1;">{valor}</div>
+  <div style="font-size:11px;color:{cor};font-weight:700;margin-top:6px;">{rotulo}</div>
+</div>"""
+
+    ultimo_card = f"""
+<div style="flex:1;min-width:200px;background:#e8eaf8;border:1px solid #b0b8e8;border-radius:14px;padding:16px 18px;">
+  <div style="font-size:14px;font-weight:900;color:#2b3990;line-height:1.2;">{_fmt_dt(ultimo_global) or '—'}</div>
+  <div style="font-size:11px;color:#2b3990;font-weight:700;margin-top:6px;">Último acesso{(' · ' + ultimo_aluno) if ultimo_aluno else ''}</div>
+</div>"""
+
+    cards = f"""
+<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;">
+  {_metric(n_acessaram, "Responsáveis que acessaram", "#0a7c3e", "#e3f5ec", "#a8ddc0")}
+  {_metric(n_nao, "Ainda não acessaram", "#b52222", "#fef2f2", "#fecaca")}
+  {_metric(total_acessos, "Total de acessos registrados", "#2b3990", "#e8eaf8", "#b0b8e8")}
+  {ultimo_card}
+</div>"""
+
+    # ── Linhas: acessos agregados + alunos que nunca acessaram ──
+    turmas_distintas = sorted({al.get("turma", "") for al in alunos.values() if al.get("turma")})
+
+    linhas = ""
+    # 1) quem acessou (uma linha por aluno+documento)
+    for a in sorted(acessos_agg, key=lambda x: x["ultimo"], reverse=True):
+        mat = a["matricula"]
+        al  = alunos.get(mat, {})
+        nome  = a["nome_aluno"] or al.get("nome", "")
+        turma = a["turma"] or al.get("turma", "")
+        prof  = al.get("professora", "")
+        doc   = _DOC_LABEL.get(a["documento"], a["documento"])
+        disp  = _DISP_LABEL.get(a["dispositivo"], a["dispositivo"])
+        linhas += f"""
+<tr class="ac-row" data-nome="{nome}" data-turma="{turma}" data-doc="{a['documento']}" data-status="sim" data-data="{a['ultimo'][:10]}"
+    style="border-bottom:.5px solid #f0f0ee;">
+  <td style="padding:10px 12px;font-weight:800;color:#2b3990;">{nome}</td>
+  <td style="padding:10px 12px;font-size:12px;color:#555;">{turma}</td>
+  <td style="padding:10px 12px;font-size:12px;color:#888;">{prof}</td>
+  <td style="padding:10px 12px;font-size:12px;color:#333;">{doc}</td>
+  <td style="padding:10px 12px;text-align:center;font-weight:900;color:#2b3990;">{a['qtd']}</td>
+  <td style="padding:10px 12px;font-size:12px;color:#333;white-space:nowrap;">{_fmt_dt(a['ultimo'])}</td>
+  <td style="padding:10px 12px;font-size:12px;color:#555;white-space:nowrap;">{disp}</td>
+  <td style="padding:10px 12px;text-align:center;">
+    <span style="background:#e3f5ec;border:1px solid #a8ddc0;color:#0a7c3e;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap;">Acessou</span>
+  </td>
+</tr>"""
+
+    # 2) quem nunca acessou (uma linha por aluno)
+    for mat, al in sorted(alunos.items(), key=lambda kv: (kv[1].get("turma", ""), kv[1].get("nome", ""))):
+        if mat in matriculas_acessaram:
+            continue
+        nome  = al.get("nome", "")
+        turma = al.get("turma", "")
+        prof  = al.get("professora", "")
+        linhas += f"""
+<tr class="ac-row" data-nome="{nome}" data-turma="{turma}" data-doc="nenhum" data-status="nao" data-data=""
+    style="border-bottom:.5px solid #f0f0ee;background:#fffdfa;">
+  <td style="padding:10px 12px;font-weight:800;color:#2b3990;">{nome}</td>
+  <td style="padding:10px 12px;font-size:12px;color:#555;">{turma}</td>
+  <td style="padding:10px 12px;font-size:12px;color:#888;">{prof}</td>
+  <td style="padding:10px 12px;font-size:12px;color:#bbb;">—</td>
+  <td style="padding:10px 12px;text-align:center;color:#bbb;">0</td>
+  <td style="padding:10px 12px;font-size:12px;color:#bbb;">Nunca acessou</td>
+  <td style="padding:10px 12px;font-size:12px;color:#bbb;">—</td>
+  <td style="padding:10px 12px;text-align:center;">
+    <span style="background:#fef2f2;border:1px solid #fecaca;color:#b52222;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap;">Não acessado</span>
+  </td>
+</tr>"""
+
+    opts_turma = "".join(f'<option value="{t}">{t}</option>' for t in turmas_distintas)
+    _lbl = ("font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;"
+            "color:#aaa;display:block;margin-bottom:4px;")
+
+    filtro_card = _card(f"""
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+  <div style="flex:1;min-width:170px;">
+    <label style="{_lbl}">Buscar por aluno</label>
+    <input id="ac-nome" type="text" oninput="filtrarAcessos()" autocomplete="off"
+           placeholder="Nome do aluno…" style="{_INP}background:#fff;">
+  </div>
+  <div style="min-width:150px;">
+    <label style="{_lbl}">Turma</label>
+    <select id="ac-turma" onchange="filtrarAcessos()" style="{_INP}background:#fff;">
+      <option value="">Todas</option>{opts_turma}
+    </select>
+  </div>
+  <div style="min-width:150px;">
+    <label style="{_lbl}">Documento</label>
+    <select id="ac-doc" onchange="filtrarAcessos()" style="{_INP}background:#fff;">
+      <option value="">Todos</option>
+      <option value="boletim">Boletim</option>
+      <option value="relatorio">Relatório Semestral</option>
+      <option value="avaliacao_ingles">Avaliação de Inglês</option>
+    </select>
+  </div>
+  <div style="min-width:150px;">
+    <label style="{_lbl}">Situação</label>
+    <select id="ac-status" onchange="filtrarAcessos()" style="{_INP}background:#fff;">
+      <option value="">Todas</option>
+      <option value="sim">✅ Acessou</option>
+      <option value="nao">⬜ Não acessou</option>
+    </select>
+  </div>
+  <div style="min-width:140px;">
+    <label style="{_lbl}">De</label>
+    <input id="ac-de" type="date" onchange="filtrarAcessos()" style="{_INP}background:#fff;">
+  </div>
+  <div style="min-width:140px;">
+    <label style="{_lbl}">Até</label>
+    <input id="ac-ate" type="date" onchange="filtrarAcessos()" style="{_INP}background:#fff;">
+  </div>
+  <button type="button" onclick="limparFiltroAcessos()" style="{_BTN_CINZA}">Limpar</button>
+</div>
+<div id="ac-contador" style="font-size:12px;color:#888;margin-top:12px;font-weight:700;"></div>""")
+
+    if linhas:
+        tabela = _card(f"""
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  <thead>
+    <tr style="background:#e8eaf8;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#2b3990;">
+      <th style="padding:9px 12px;text-align:left;">Aluno</th>
+      <th style="padding:9px 12px;text-align:left;">Turma</th>
+      <th style="padding:9px 12px;text-align:left;">Professora</th>
+      <th style="padding:9px 12px;text-align:left;">Documento</th>
+      <th style="padding:9px 12px;text-align:center;">Acessos</th>
+      <th style="padding:9px 12px;text-align:left;">Último acesso</th>
+      <th style="padding:9px 12px;text-align:left;">Dispositivo</th>
+      <th style="padding:9px 12px;text-align:center;">Situação</th>
+    </tr>
+  </thead>
+  <tbody>{linhas}</tbody>
+</table>
+<div id="ac-vazio" style="display:none;text-align:center;color:#aaa;padding:26px;font-size:13px;">
+  Nenhum registro encontrado com esses filtros.
+</div>
+</div>""")
+    else:
+        tabela = _card('<p style="text-align:center;color:#aaa;padding:24px;">Nenhum aluno cadastrado ainda.</p>')
+
+    nota = _card("""
+<p style="font-size:12px;color:#888;line-height:1.6;margin:0;">
+  ℹ️ Os pais acessam por matrícula (sem login individual), por isso o registro é por
+  <strong>aluno e documento</strong>. Mostramos a <strong>professora</strong> como referência de contato interno.
+  Recarregamentos rápidos da mesma página não geram acessos duplicados.
+</p>""")
+
+    script = """
+<script>
+function _normAc(s){return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');}
+function filtrarAcessos(){
+  var nome=_normAc(document.getElementById('ac-nome').value.trim());
+  var turma=document.getElementById('ac-turma').value;
+  var doc=document.getElementById('ac-doc').value;
+  var status=document.getElementById('ac-status').value;
+  var de=document.getElementById('ac-de').value;
+  var ate=document.getElementById('ac-ate').value;
+  var rows=document.querySelectorAll('tr.ac-row');
+  var vis=0;
+  rows.forEach(function(r){
+    var d=r.dataset;
+    var ok=(!nome||_normAc(d.nome).indexOf(nome)!==-1)
+        && (!turma||d.turma===turma)
+        && (!doc||d.doc===doc)
+        && (!status||d.status===status);
+    if(ok && (de||ate)){
+      if(!d.data){ ok=false; }
+      else{ if(de && d.data<de) ok=false; if(ate && d.data>ate) ok=false; }
+    }
+    r.style.display=ok?'':'none';
+    if(ok)vis++;
+  });
+  document.getElementById('ac-contador').textContent='Mostrando '+vis+' de '+rows.length+' registro(s)';
+  document.getElementById('ac-vazio').style.display=vis===0?'block':'none';
+}
+function limparFiltroAcessos(){
+  ['ac-nome','ac-turma','ac-doc','ac-status','ac-de','ac-ate'].forEach(function(id){document.getElementById(id).value='';});
+  filtrarAcessos();
+}
+document.addEventListener('DOMContentLoaded',filtrarAcessos);
+</script>"""
+
+    body = f"""
+<div style="max-width:1080px;margin:0 auto;padding:24px 16px;">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
+    <img src="/static/logo.png" style="height:44px;object-fit:contain;">
+    <div style="flex:1;">
+      <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Controle de Acessos dos Responsáveis</h1>
+      <p style="font-size:12px;color:#888;">Histórico de quem visualizou os documentos dos alunos.</p>
+    </div>
+    <a href="/admin/logout" style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;padding:9px 16px;border-radius:10px;border:1px solid #dcdcd8;">Sair</a>
+  </div>
+
+  {nav}
+  {cards}
+  {filtro_card}
+  {tabela}
+  {nota}
+</div>
+{script}"""
+    return page_shell("Controle de Acessos — Escola Espaço Alegre", body)

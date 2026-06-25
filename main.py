@@ -24,11 +24,12 @@ from db_relatorio import (
     get_pais_liberado, set_pais_liberado,
 )
 import db_avaliacao as dav
+import db_acesso as dac
 from templates import login_page, admin_dashboard, aluno_form
 from templates_admin_extras import (
     admin_professoras_page, admin_temas_page, admin_relatorios_page,
     admin_aluno_relatorios_page, aluno_infantil_form, admin_avaliacoes_page,
-    card_avaliacao_pais,
+    card_avaliacao_pais, admin_acessos_page,
 )
 from templates_professora import (
     professora_login_page, professora_dashboard, professora_turma_page,
@@ -287,6 +288,29 @@ def _pais_bloqueado(request: Request, ref: str = "") -> bool:
     return True
 
 
+def _client_ip(request: Request) -> str:
+    """IP real do visitante, considerando o proxy do Railway (X-Forwarded-For)."""
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else ""
+
+
+def _registrar_acesso_pai(request: Request, aluno: dict, matricula: str, documento: str):
+    """Registra o acesso de um responsável a um documento — apenas para
+    visitantes que NÃO são da equipe (admin/coordenação não contam como pais)."""
+    if check_staff(request):
+        return
+    dac.registrar_acesso(
+        matricula=matricula,
+        nome_aluno=aluno.get("nome", ""),
+        turma=aluno.get("turma", ""),
+        documento=documento,
+        ip=_client_ip(request),
+        user_agent=request.headers.get("user-agent", ""),
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index():
     return inject_player(INDEX_HTML)
@@ -310,6 +334,7 @@ async def ver_boletim(request: Request, matricula: str, ref: str = ""):
     aluno_completo = dict(aluno)
     aluno_completo['matricula'] = mat_clean
     back_url = "/admin" if ref == "admin" else "/"
+    _registrar_acesso_pai(request, aluno, mat_clean, "boletim")
     card = card_avaliacao_pais(mat_clean) if dav.get_avaliacao(mat_clean) else ""
     return HTMLResponse(inject_player(gerar_boletim_html(aluno_completo, back_url=back_url, extra_html=card)))
 
@@ -343,6 +368,7 @@ async def ver_relatorio_responsavel(request: Request, matricula: str):
             respostas = get_respostas(relatorio["id"])
             itens.append((semestre, relatorio, temas, respostas))
 
+    _registrar_acesso_pai(request, aluno, mat_clean, "relatorio")
     card = card_avaliacao_pais(mat_clean) if dav.get_avaliacao(mat_clean) else ""
     return HTMLResponse(inject_player(gerar_relatorios_aluno_print_html(aluno, mat_clean, itens, extra_html=card)))
 
@@ -1364,6 +1390,10 @@ async def ver_avaliacao_responsavel(request: Request, matricula: str):
     identificado pela matrícula. Respeita o controle de visibilidade dos pais."""
     if _pais_bloqueado(request):
         return HTMLResponse(MANUTENCAO_HTML)
+    mat_clean = re.sub(r'\D', '', matricula)
+    aluno = get_aluno(mat_clean) if mat_clean else None
+    if aluno and dav.get_avaliacao(mat_clean):
+        _registrar_acesso_pai(request, aluno, mat_clean, "avaliacao_ingles")
     return _entregar_avaliacao_pdf(matricula)
 
 
@@ -1399,6 +1429,23 @@ background:#2b3990;color:#fff;font-weight:800;padding:12px 26px;border-radius:99
 <h1>Avaliação indisponível</h1>
 <p>A avaliação solicitada ainda não está disponível ou foi removida. Caso o problema continue, fale com a coordenação da escola.</p>
 <a href="/">Voltar ao início</a></div></body></html>"""
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  CONTROLE DE ACESSOS DOS RESPONSÁVEIS — admin/coordenação
+# ════════════════════════════════════════════════════════════════════════════
+
+@app.get("/admin/acessos", response_class=HTMLResponse)
+async def admin_acessos(request: Request):
+    if not check_staff(request):
+        return _redir_login()
+    alunos = get_all_alunos()
+    rows = dac.listar_acessos()
+    agg = dac.agregar_por_aluno_documento(rows)
+    return admin_acessos_page(
+        alunos, list(agg.values()), total_acessos=len(rows),
+        staff_only=not check_admin(request),
+    )
 
 
 def _get_or_create_relatorio(matricula: str, semestre: int) -> dict | None:

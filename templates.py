@@ -100,9 +100,10 @@ def admin_nav(current: str = "alunos", staff_only: bool = False) -> str:
         ("temas",       "/admin/temas",          "🗂️ Estrutura Avaliativa"),
         ("relatorios",  "/admin/relatorios",     "📋 Relatórios Semestrais"),
         ("avaliacoes",  "/admin/avaliacoes",     "🇬🇧 Avaliação de Inglês"),
+        ("acessos",     "/admin/acessos",        "📊 Controle de Acessos"),
     ]
     if staff_only:
-        items = [item for item in items if item[0] in ("relatorios", "avaliacoes")]
+        items = [item for item in items if item[0] in ("relatorios", "avaliacoes", "acessos")]
     links = ""
     for key, href, label in items:
         if key == current:
