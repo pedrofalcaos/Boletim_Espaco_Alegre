@@ -1130,30 +1130,56 @@ def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "")
 # ════════════════════════════════════════════════════════════════════════
 
 def banner_festas_pais() -> str:
-    """Banner acolhedor de São João / boas férias exibido ao responsável ao abrir
-    o boletim ou relatório. Não aparece na impressão (.no-print)."""
+    """Pop-up animado de São João / boas férias exibido ao responsável ao abrir
+    o boletim ou relatório. O pai fecha antes de visualizar o documento.
+    Aparece já visível (não depende de JS para abrir) e some ao fechar.
+    Não aparece na impressão (.no-print)."""
     return """
-<div class="no-print" style="max-width:750px;margin:0 auto 18px;padding:0 16px;position:relative;z-index:1;">
-  <div style="position:relative;overflow:hidden;border-radius:18px;
-              background:linear-gradient(135deg,#2b3990 0%,#3b49b8 55%,#1a5fa8 100%);
-              box-shadow:0 12px 34px rgba(26,37,112,.28);">
-    <div style="height:8px;width:100%;
-                background:repeating-linear-gradient(45deg,#f7d800 0 18px,#ff5a5f 18px 36px,#19c7b4 36px 54px,#ff9f1c 54px 72px);
-                opacity:.95;"></div>
-    <div style="padding:20px 22px 22px;text-align:center;color:#fff;">
-      <div style="font-size:30px;line-height:1;margin-bottom:8px;">🎉 🌽 🔥 🎈</div>
-      <div style="font-family:'Fredoka One',cursive;font-size:20px;letter-spacing:.3px;margin-bottom:8px;">
+<div id="festa-pop" class="no-print" onclick="if(event.target===this)this.style.display='none'"
+     style="position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;
+            padding:18px;background:rgba(18,24,70,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);">
+  <style>
+    @keyframes fpPop{0%{transform:scale(.55) translateY(40px);opacity:0;}
+      60%{transform:scale(1.05) translateY(-6px);opacity:1;}100%{transform:scale(1) translateY(0);}}
+    @keyframes fpFloat{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-9px) rotate(4deg);}}
+    @keyframes fpFlags{0%{background-position:0 0;}100%{background-position:72px 0;}}
+    #festa-pop .fp-card{animation:fpPop .6s cubic-bezier(.2,.9,.3,1.35) both;}
+    #festa-pop .fp-flags{animation:fpFlags 3s linear infinite;}
+    #festa-pop .fp-emoji{display:inline-block;animation:fpFloat 3s ease-in-out infinite;}
+    @media(prefers-reduced-motion:reduce){#festa-pop .fp-card,#festa-pop .fp-flags,#festa-pop .fp-emoji{animation:none!important;}}
+  </style>
+  <div class="fp-card" style="position:relative;max-width:430px;width:100%;background:#fff;border-radius:24px;
+       overflow:hidden;box-shadow:0 26px 72px rgba(10,15,50,.5);">
+    <div class="fp-flags" style="height:12px;
+         background:repeating-linear-gradient(45deg,#f7d800 0 18px,#ff5a5f 18px 36px,#19c7b4 36px 54px,#ff9f1c 54px 72px);"></div>
+    <button onclick="document.getElementById('festa-pop').style.display='none'" aria-label="Fechar"
+      style="position:absolute;top:16px;right:16px;width:34px;height:34px;border:none;border-radius:50%;
+             background:rgba(43,57,144,.10);color:#2b3990;font-size:16px;font-weight:900;cursor:pointer;line-height:1;">✕</button>
+    <div style="padding:28px 28px 26px;text-align:center;">
+      <div style="font-size:40px;line-height:1;margin-bottom:10px;">
+        <span class="fp-emoji">🎉</span>
+        <span class="fp-emoji" style="animation-delay:.3s;">🌽</span>
+        <span class="fp-emoji" style="animation-delay:.6s;">🔥</span>
+        <span class="fp-emoji" style="animation-delay:.9s;">🎈</span>
+      </div>
+      <div style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;margin-bottom:10px;line-height:1.25;">
         Feliz São João e boas férias! 💛
       </div>
-      <p style="font-size:13.5px;line-height:1.7;color:#eef0ff;max-width:560px;margin:0 auto;font-weight:600;">
+      <p style="font-size:13.5px;line-height:1.7;color:#41476b;font-weight:600;max-width:340px;margin:0 auto;">
         Chegamos ao fim de mais um semestre cheio de descobertas, sorrisos e conquistas.
         Obrigado, família, por caminhar lado a lado com a gente em cada passo do seu pequeno.
         Que estas férias sejam de muito descanso, brincadeiras ao pé da fogueira e momentos
         especiais juntos — e que voltem com o coração quentinho para a próxima etapa! 🌻
       </p>
-      <div style="margin-top:12px;font-size:12px;color:#c7cdf5;font-weight:700;">
+      <div style="margin-top:14px;font-size:12px;color:#8a8fb0;font-weight:700;">
         Com carinho, Equipe Escola Espaço Alegre
       </div>
+      <button onclick="document.getElementById('festa-pop').style.display='none'"
+        style="margin-top:20px;background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;border:none;
+               border-radius:999px;padding:13px 34px;font-family:'Plus Jakarta Sans','Nunito',sans-serif;
+               font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 8px 22px rgba(26,37,112,.4);">
+        Continuar →
+      </button>
     </div>
   </div>
 </div>"""
