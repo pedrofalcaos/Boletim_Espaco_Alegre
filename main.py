@@ -1,4 +1,4 @@
-import os, re
+import os, re, unicodedata
 from urllib.parse import quote
 from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
@@ -40,6 +40,7 @@ from templates_relatorio import relatorio_form_page
 from relatorio_print import (
     gerar_relatorio_print_html, gerar_relatorios_print_html_multiplos,
     gerar_relatorios_aluno_print_html,
+    gerar_escolha_semestre_html, gerar_relatorio_indisponivel_html,
 )
 from music_player import inject_player
 
@@ -440,44 +441,71 @@ async def ver_boletim(request: Request, matricula: str, ref: str = ""):
     aluno_completo['matricula'] = mat_clean
     back_url = "/admin" if ref == "admin" else "/"
     _registrar_acesso_pai(request, aluno, mat_clean, "boletim", ref=ref)
-    card = card_avaliacao_pais(mat_clean) if dav.get_avaliacao(mat_clean) else ""
+    sems = dav.semestres_disponiveis(mat_clean)
+    card = card_avaliacao_pais(mat_clean, sems) if sems else ""
     extra = banner_festas_pais() + card
     return HTMLResponse(inject_player(gerar_boletim_html(aluno_completo, back_url=back_url, extra_html=extra)))
 
 
-@app.get("/relatorio/{matricula}", response_class=HTMLResponse)
-async def ver_relatorio_responsavel(request: Request, matricula: str):
-    """Área pública do responsável para alunos da Ed. Infantil: mostra os
-    relatórios semestrais já confirmados pela professora/coordenação/admin,
-    prontos para impressão/PDF (1 ou 2 páginas no mesmo arquivo, conforme os
-    semestres já concluídos)."""
-    if _pais_bloqueado(request):
-        return HTMLResponse(MANUTENCAO_HTML)
+def _aluno_infantil_responsavel(matricula: str):
+    """Resolve o aluno infantil para a área do responsável.
+    Retorna (aluno, mat_clean) ou (None, RedirectResponse)."""
     mat_clean = re.sub(r'\D', '', matricula)
     if not mat_clean:
-        return RedirectResponse("/?erro=1")
-
+        return None, RedirectResponse("/?erro=1")
     aluno = get_aluno(mat_clean)
     if not aluno:
-        return RedirectResponse("/?erro=1")
+        return None, RedirectResponse("/?erro=1")
+    if not is_infantil(aluno.get("turma", "")):
+        return None, RedirectResponse(f"/boletim/{mat_clean}")
+    return (aluno, mat_clean), None
 
-    turma = aluno.get("turma", "")
-    if not is_infantil(turma):
-        return RedirectResponse(f"/boletim/{mat_clean}")
+
+@app.get("/relatorio/{matricula}", response_class=HTMLResponse)
+async def ver_relatorio_responsavel(request: Request, matricula: str):
+    """Tela onde o responsável escolhe qual semestre do relatório deseja ver."""
+    if _pais_bloqueado(request):
+        return HTMLResponse(MANUTENCAO_HTML)
+    dados, redir = _aluno_infantil_responsavel(matricula)
+    if redir:
+        return redir
+    aluno, mat_clean = dados
 
     ano = aluno.get("ano_letivo", "2026")
-    temas = get_temas_para_turma(turma)
-    itens = []
+    disponivel = {}
     for semestre in (1, 2):
-        relatorio = get_relatorio(mat_clean, semestre, ano)
-        if relatorio and relatorio.get("status") == "concluido":
-            respostas = get_respostas(relatorio["id"])
-            itens.append((semestre, relatorio, temas, respostas))
+        rel = get_relatorio(mat_clean, semestre, ano)
+        disponivel[semestre] = bool(rel and rel.get("status") == "concluido")
 
     _registrar_acesso_pai(request, aluno, mat_clean, "relatorio")
-    card = card_avaliacao_pais(mat_clean) if dav.get_avaliacao(mat_clean) else ""
+    sems = dav.semestres_disponiveis(mat_clean)
+    card = card_avaliacao_pais(mat_clean, sems) if sems else ""
     extra = banner_festas_pais() + card
-    return HTMLResponse(inject_player(gerar_relatorios_aluno_print_html(aluno, mat_clean, itens, extra_html=extra)))
+    return HTMLResponse(inject_player(gerar_escolha_semestre_html(aluno, mat_clean, disponivel, extra_html=extra)))
+
+
+@app.get("/relatorio/{matricula}/{semestre}", response_class=HTMLResponse)
+async def ver_relatorio_semestre(request: Request, matricula: str, semestre: int):
+    """Mostra o relatório do semestre escolhido (se concluído e liberado);
+    caso contrário, exibe a mensagem amigável de indisponível."""
+    if _pais_bloqueado(request):
+        return HTMLResponse(MANUTENCAO_HTML)
+    dados, redir = _aluno_infantil_responsavel(matricula)
+    if redir:
+        return redir
+    aluno, mat_clean = dados
+    if semestre not in (1, 2):
+        return RedirectResponse(f"/relatorio/{mat_clean}")
+
+    ano = aluno.get("ano_letivo", "2026")
+    relatorio = get_relatorio(mat_clean, semestre, ano)
+    if not (relatorio and relatorio.get("status") == "concluido"):
+        return HTMLResponse(inject_player(gerar_relatorio_indisponivel_html(aluno, mat_clean, semestre)))
+
+    temas = get_temas_para_turma(aluno.get("turma", ""))
+    respostas = get_respostas(relatorio["id"])
+    itens = [(semestre, relatorio, temas, respostas)]
+    return HTMLResponse(inject_player(gerar_relatorios_aluno_print_html(aluno, mat_clean, itens)))
 
 @app.get("/admin/imprimir", response_class=HTMLResponse)
 async def imprimir_boletins(request: Request, turma: str = "todos"):
@@ -1401,134 +1429,156 @@ async def admin_visibilidade(request: Request, liberar: str = Form("")):
 #  AVALIAÇÕES EM PDF (ex.: Avaliação de Inglês) — admin/coordenação + pais
 # ════════════════════════════════════════════════════════════════════════════
 
-def _redir_avaliacoes(msg: str = "", erro: str = ""):
-    qs = []
+def _sem_aval(valor) -> int:
+    """Normaliza o semestre vindo da requisição (1 ou 2; padrão 1)."""
+    return int(valor) if dav.semestre_valido(valor) else dav.SEMESTRE_PADRAO
+
+
+def _redir_avaliacoes(msg: str = "", erro: str = "", semestre: int = 1):
+    qs = [f"semestre={semestre}"]
     if msg:
         qs.append(f"ok={quote(msg)}")
     if erro:
         qs.append(f"erro={quote(erro)}")
-    sufixo = ("?" + "&".join(qs)) if qs else ""
-    return RedirectResponse(f"/admin/avaliacoes{sufixo}", status_code=302)
+    return RedirectResponse(f"/admin/avaliacoes?{'&'.join(qs)}", status_code=302)
 
 
 @app.get("/admin/avaliacoes", response_class=HTMLResponse)
-async def admin_avaliacoes(request: Request, ok: str = "", erro: str = ""):
+async def admin_avaliacoes(request: Request, semestre: str = "1", ok: str = "", erro: str = ""):
     if not check_staff(request):
         return _redir_login()
+    sem = _sem_aval(semestre)
     alunos = get_all_alunos()
-    vinculos = dav.get_avaliacoes_map()
+    vinculos = dav.get_avaliacoes_map(semestre=sem)
     arquivos = dav.listar_arquivos()
-    sugestoes = dav.sugerir_vinculos(alunos)
-    return admin_avaliacoes_page(alunos, vinculos, arquivos, sugestoes, msg=ok, erro=erro,
-                                 staff_only=not check_admin(request))
+    # Sugestão automática só faz sentido p/ o 1º semestre (arquivos atuais).
+    sugestoes = dav.sugerir_vinculos(alunos) if sem == 1 else {}
+    return admin_avaliacoes_page(alunos, vinculos, arquivos, sugestoes, semestre=sem,
+                                 msg=ok, erro=erro, staff_only=not check_admin(request))
 
 
 @app.post("/admin/avaliacoes/associar")
 async def admin_avaliacoes_associar(
     request: Request, matricula: str = Form(...), arquivo: str = Form(...),
+    semestre: str = Form("1"),
 ):
     if not check_staff(request):
         return _redir_login()
+    sem = _sem_aval(semestre)
     if not get_aluno(matricula):
-        return _redir_avaliacoes(erro="Aluno não encontrado.")
+        return _redir_avaliacoes(erro="Aluno não encontrado.", semestre=sem)
     if dav.resolver_caminho(dav.DISCIPLINA_PADRAO, arquivo) is None:
-        return _redir_avaliacoes(erro="Arquivo selecionado é inválido ou não foi encontrado.")
+        return _redir_avaliacoes(erro="Arquivo selecionado é inválido ou não foi encontrado.", semestre=sem)
     user = get_session_user(request) or {}
-    dav.set_avaliacao(matricula, arquivo, arquivo, user.get("nome", ""))
-    return _redir_avaliacoes(msg="Avaliação vinculada com sucesso.")
+    dav.set_avaliacao(matricula, arquivo, arquivo, user.get("nome", ""), semestre=sem)
+    return _redir_avaliacoes(msg="Avaliação vinculada com sucesso.", semestre=sem)
 
 
 @app.post("/admin/avaliacoes/auto")
-async def admin_avaliacoes_auto(request: Request):
+async def admin_avaliacoes_auto(request: Request, semestre: str = Form("1")):
     """Vincula automaticamente todas as sugestões de alto grau de certeza
     (nome do arquivo == nome do aluno) que ainda não possuem vínculo."""
     if not check_staff(request):
         return _redir_login()
+    sem = _sem_aval(semestre)
     alunos = get_all_alunos()
-    vinculos = dav.get_avaliacoes_map()
+    vinculos = dav.get_avaliacoes_map(semestre=sem)
     sugestoes = dav.sugerir_vinculos(alunos)
     user = get_session_user(request) or {}
     n = 0
     for mat, arq in sugestoes.items():
         if mat not in vinculos:
-            dav.set_avaliacao(mat, arq, arq, user.get("nome", ""))
+            dav.set_avaliacao(mat, arq, arq, user.get("nome", ""), semestre=sem)
             n += 1
     if n:
-        return _redir_avaliacoes(msg=f"{n} avaliação(ões) vinculada(s) automaticamente.")
-    return _redir_avaliacoes(msg="Nenhuma sugestão nova para vincular.")
+        return _redir_avaliacoes(msg=f"{n} avaliação(ões) vinculada(s) automaticamente.", semestre=sem)
+    return _redir_avaliacoes(msg="Nenhuma sugestão nova para vincular.", semestre=sem)
 
 
 @app.post("/admin/avaliacoes/upload")
 async def admin_avaliacoes_upload(
     request: Request, matricula: str = Form(...), pdf: UploadFile = File(...),
+    semestre: str = Form("1"),
 ):
     if not check_staff(request):
         return _redir_login()
+    sem = _sem_aval(semestre)
     if not get_aluno(matricula):
-        return _redir_avaliacoes(erro="Aluno não encontrado.")
+        return _redir_avaliacoes(erro="Aluno não encontrado.", semestre=sem)
 
     nome = pdf.filename or ""
     if not nome.lower().endswith(".pdf"):
-        return _redir_avaliacoes(erro="Envie um arquivo no formato PDF.")
+        return _redir_avaliacoes(erro="Envie um arquivo no formato PDF.", semestre=sem)
     conteudo = await pdf.read()
     if not conteudo:
-        return _redir_avaliacoes(erro="O arquivo está vazio ou corrompido.")
+        return _redir_avaliacoes(erro="O arquivo está vazio ou corrompido.", semestre=sem)
     if len(conteudo) > dav.MAX_UPLOAD_BYTES:
-        return _redir_avaliacoes(erro="Arquivo muito grande (máximo 15 MB).")
+        return _redir_avaliacoes(erro="Arquivo muito grande (máximo 15 MB).", semestre=sem)
     if not conteudo[:5].startswith(b"%PDF-"):
-        return _redir_avaliacoes(erro="Arquivo inválido: não é um PDF válido.")
+        return _redir_avaliacoes(erro="Arquivo inválido: não é um PDF válido.", semestre=sem)
 
     try:
         arquivo = dav.salvar_upload(dav.DISCIPLINA_PADRAO, conteudo, nome)
     except OSError:
-        return _redir_avaliacoes(erro="Falha ao salvar o arquivo. Tente novamente.")
+        return _redir_avaliacoes(erro="Falha ao salvar o arquivo. Tente novamente.", semestre=sem)
     user = get_session_user(request) or {}
-    dav.set_avaliacao(matricula, arquivo, nome, user.get("nome", ""))
-    return _redir_avaliacoes(msg="PDF enviado e vinculado com sucesso.")
+    dav.set_avaliacao(matricula, arquivo, nome, user.get("nome", ""), semestre=sem)
+    return _redir_avaliacoes(msg="PDF enviado e vinculado com sucesso.", semestre=sem)
 
 
 @app.post("/admin/avaliacoes/remover")
-async def admin_avaliacoes_remover(request: Request, matricula: str = Form(...)):
+async def admin_avaliacoes_remover(request: Request, matricula: str = Form(...),
+                                   semestre: str = Form("1")):
     if not check_staff(request):
         return _redir_login()
-    dav.remover_avaliacao(matricula)
-    return _redir_avaliacoes(msg="Vínculo removido. (O arquivo PDF foi mantido na pasta.)")
+    sem = _sem_aval(semestre)
+    dav.remover_avaliacao(matricula, semestre=sem)
+    return _redir_avaliacoes(msg="Vínculo removido. (O arquivo PDF foi mantido na pasta.)", semestre=sem)
 
 
-@app.get("/admin/avaliacao/{matricula}/ver")
-async def admin_ver_avaliacao(request: Request, matricula: str):
+@app.get("/admin/avaliacao/{matricula}/{semestre}/ver")
+async def admin_ver_avaliacao(request: Request, matricula: str, semestre: int):
     """Visualização da avaliação pelo admin/coordenação (qualquer aluno)."""
     if not check_staff(request):
         return _redir_login()
-    return _entregar_avaliacao_pdf(matricula)
+    return _entregar_avaliacao_pdf(matricula, _sem_aval(semestre))
 
 
 @app.get("/avaliacao-ingles/{matricula}")
-async def ver_avaliacao_responsavel(request: Request, matricula: str):
+async def ver_avaliacao_responsavel_compat(request: Request, matricula: str):
+    """Compatibilidade: link antigo sem semestre -> 1º semestre."""
+    return await ver_avaliacao_responsavel(request, matricula, 1)
+
+
+@app.get("/avaliacao-ingles/{matricula}/{semestre}")
+async def ver_avaliacao_responsavel(request: Request, matricula: str, semestre: int):
     """Visualização pelo responsável — apenas a avaliação do próprio filho,
     identificado pela matrícula. Respeita o controle de visibilidade dos pais."""
     if _pais_bloqueado(request):
         return HTMLResponse(MANUTENCAO_HTML)
+    sem = _sem_aval(semestre)
     mat_clean = re.sub(r'\D', '', matricula)
     aluno = get_aluno(mat_clean) if mat_clean else None
-    if aluno and dav.get_avaliacao(mat_clean):
+    if aluno and dav.get_avaliacao(mat_clean, semestre=sem):
         _registrar_acesso_pai(request, aluno, mat_clean, "avaliacao_ingles")
-    return _entregar_avaliacao_pdf(matricula)
+    return _entregar_avaliacao_pdf(matricula, sem)
 
 
-def _entregar_avaliacao_pdf(matricula: str):
+def _entregar_avaliacao_pdf(matricula: str, semestre: int = 1):
     """Resolve e entrega o PDF vinculado ao aluno, aberto no navegador (inline).
     Retorna 404 amigável quando não há vínculo ou o arquivo sumiu do disco."""
     mat_clean = re.sub(r'\D', '', matricula)
-    aval = dav.get_avaliacao(mat_clean) if mat_clean else None
+    aval = dav.get_avaliacao(mat_clean, semestre=semestre) if mat_clean else None
     if not aval:
         return HTMLResponse(_PDF_NAO_ENCONTRADO, status_code=404)
     caminho = dav.resolver_caminho(aval.get("disciplina", dav.DISCIPLINA_PADRAO), aval["arquivo"])
     if not caminho:
         return HTMLResponse(_PDF_NAO_ENCONTRADO, status_code=404)
     aluno = get_aluno(mat_clean) or {}
-    nome_aluno = re.sub(r'[^\w\- ]', '', aluno.get("nome", "avaliacao")).strip() or "avaliacao"
-    download_nome = f"Avaliacao de Ingles - {nome_aluno}.pdf"
+    # Nome ASCII-safe: o header Content-Disposition não aceita acentos/UTF-8.
+    nome_ascii = unicodedata.normalize("NFKD", aluno.get("nome", "avaliacao")).encode("ascii", "ignore").decode()
+    nome_aluno = re.sub(r'[^A-Za-z0-9\- ]', '', nome_ascii).strip() or "avaliacao"
+    download_nome = f"Avaliacao de Ingles {semestre}o sem - {nome_aluno}.pdf"
     return FileResponse(
         caminho, media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="{download_nome}"'},

@@ -1,6 +1,10 @@
 """Páginas extras do painel admin: professoras e temas avaliativos."""
 from urllib.parse import quote
+from datetime import date
 from templates import page_shell, admin_nav
+
+# O pop-up de festas (São João / férias) some sozinho após esta data.
+FESTAS_ATE = date(2026, 7, 31)
 from icons import (ICON_EDIT, ICON_CLIPBOARD, ICON_PRINTER, ICON_LOCK, ICON_UNLOCK,
                     ICON_REFRESH, ICON_KEY, ICON_PLUS, ICON_TRASH, dot)
 
@@ -1133,7 +1137,9 @@ def banner_festas_pais() -> str:
     """Pop-up animado de São João / boas férias exibido ao responsável ao abrir
     o boletim ou relatório. O pai fecha antes de visualizar o documento.
     Aparece já visível (não depende de JS para abrir) e some ao fechar.
-    Não aparece na impressão (.no-print)."""
+    Expira automaticamente após FESTAS_ATE. Não aparece na impressão (.no-print)."""
+    if date.today() > FESTAS_ATE:
+        return ""
     return """
 <div id="festa-pop" class="no-print" onclick="if(event.target===this)this.style.display='none'"
      style="position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;
@@ -1185,28 +1191,36 @@ def banner_festas_pais() -> str:
 </div>"""
 
 
-def card_avaliacao_pais(matricula: str, label: str = "Avaliação de Inglês") -> str:
+def card_avaliacao_pais(matricula: str, semestres: list) -> str:
     """Card discreto exibido na área do responsável quando há PDF vinculado.
-    Abre o PDF em nova aba. Some por completo na impressão (.no-print)."""
+    Mostra um botão por semestre disponível. Abre o PDF em nova aba.
+    Some por completo na impressão (.no-print)."""
+    if not semestres:
+        return ""
+    botoes = ""
+    for sem in semestres:
+        botoes += f"""
+    <a href="/avaliacao-ingles/{quote(matricula)}/{sem}" target="_blank" rel="noopener"
+       style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;
+              background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;font-weight:800;
+              font-size:13px;padding:10px 20px;border-radius:999px;white-space:nowrap;
+              box-shadow:0 6px 16px rgba(26,37,112,.3);">{sem}º Semestre →</a>"""
     return f"""
 <div class="no-print" style="max-width:750px;margin:0 auto 18px;padding:0 16px;position:relative;z-index:1;">
-  <a href="/avaliacao-ingles/{quote(matricula)}" target="_blank" rel="noopener"
-     style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;text-decoration:none;
-            background:rgba(255,255,255,.66);backdrop-filter:blur(20px) saturate(180%);
-            -webkit-backdrop-filter:blur(20px) saturate(180%);
-            border:1px solid rgba(255,255,255,.55);border-radius:16px;padding:15px 20px;
-            box-shadow:0 10px 30px rgba(43,57,144,.16);">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+              background:rgba(255,255,255,.66);backdrop-filter:blur(20px) saturate(180%);
+              -webkit-backdrop-filter:blur(20px) saturate(180%);
+              border:1px solid rgba(255,255,255,.55);border-radius:16px;padding:15px 20px;
+              box-shadow:0 10px 30px rgba(43,57,144,.16);">
     <span style="font-size:28px;line-height:1;">📄</span>
     <span style="flex:1;min-width:160px;">
-      <span style="display:block;font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;">{label}</span>
+      <span style="display:block;font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;">Avaliação de Inglês</span>
       <span style="display:block;font-size:12px;color:#5a6079;margin-top:2px;">
-        Clique para visualizar ou baixar o PDF da avaliação.
+        Clique no semestre para visualizar ou baixar o PDF.
       </span>
     </span>
-    <span style="background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;font-weight:800;
-                 font-size:13px;padding:10px 22px;border-radius:999px;white-space:nowrap;
-                 box-shadow:0 6px 16px rgba(26,37,112,.3);">Visualizar →</span>
-  </a>
+    <span style="display:flex;gap:8px;flex-wrap:wrap;">{botoes}</span>
+  </div>
 </div>"""
 
 
@@ -1215,12 +1229,24 @@ def admin_avaliacoes_page(
     vinculos: dict,      # {matricula: {arquivo, nome_original, atualizado_em, ...}}
     arquivos: list,      # nomes de PDFs disponíveis na pasta
     sugestoes: dict,     # {matricula: arquivo_sugerido}
+    semestre: int = 1,   # semestre que está sendo gerenciado (1 ou 2)
     msg: str = "",
     erro: str = "",
     staff_only: bool = False,
 ) -> str:
     nav   = admin_nav("avaliacoes", staff_only=staff_only)
     aviso = _msg_ok(msg) if msg else (_msg_erro(erro) if erro else "")
+
+    # ── Abas de semestre ──
+    def _aba(sem: int, label: str) -> str:
+        ativa = sem == semestre
+        estilo = ("background:#2b3990;color:#fff;" if ativa
+                  else "background:#fff;color:#2b3990;border:1.5px solid #b0b8e8;")
+        return (f'<a href="/admin/avaliacoes?semestre={sem}" '
+                f'style="{estilo}font-family:\'Nunito\',sans-serif;font-weight:900;font-size:13px;'
+                f'padding:9px 22px;border-radius:10px;text-decoration:none;white-space:nowrap;">{label}</a>')
+    abas = (f'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">'
+            f'{_aba(1, "1º Semestre")}{_aba(2, "2º Semestre")}</div>')
 
     # ordena alunos por turma e nome (mesmo critério das demais telas)
     ordenados = sorted(alunos.items(), key=lambda kv: (kv[1].get("turma", ""), kv[1].get("nome", "")))
@@ -1241,6 +1267,7 @@ def admin_avaliacoes_page(
         auto_btn = f"""
 <form method="POST" action="/admin/avaliacoes/auto" style="display:inline;"
       onsubmit="return confirm('Vincular automaticamente {sugest_novas} avaliação(ões) sugerida(s) pelo nome do arquivo?');">
+  <input type="hidden" name="semestre" value="{semestre}">
   <button type="submit" style="{_BTN_AZ}">✨ Vincular sugestões automáticas ({sugest_novas})</button>
 </form>"""
 
@@ -1275,17 +1302,18 @@ def admin_avaliacoes_page(
 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
   <span style="background:#e3f5ec;border:1px solid #a8ddc0;color:#0a7c3e;font-size:11px;font-weight:800;
                padding:3px 10px;border-radius:20px;">📄 Vinculado</span>
-  <a href="/admin/avaliacao/{quote(mat)}/ver" target="_blank" rel="noopener"
+  <a href="/admin/avaliacao/{quote(mat)}/{semestre}/ver" target="_blank" rel="noopener"
      style="color:#2b3990;font-weight:800;font-size:12px;text-decoration:underline;word-break:break-all;">{v.get('arquivo','')}</a>
 </div>
 <div style="font-size:10px;color:#aaa;margin-top:3px;">Atualizado em {data}</div>"""
             acao_links = f"""
-<a href="/admin/avaliacao/{quote(mat)}/ver" target="_blank" rel="noopener"
+<a href="/admin/avaliacao/{quote(mat)}/{semestre}/ver" target="_blank" rel="noopener"
    style="font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;background:#e8eaf8;color:#2b3990;
           border:1px solid #b0b8e8;border-radius:7px;padding:5px 12px;text-decoration:none;white-space:nowrap;">👁 Visualizar</a>
 <form method="POST" action="/admin/avaliacoes/remover" style="display:inline;"
       onsubmit="return confirm('Remover o vínculo da avaliação de {nome}? O arquivo PDF será mantido na pasta.');">
   <input type="hidden" name="matricula" value="{mat}">
+  <input type="hidden" name="semestre" value="{semestre}">
   <button type="submit" style="{_BTN_VM}">🗑 Remover vínculo</button>
 </form>"""
             label_associar = "🔁 Trocar arquivo"
@@ -1310,12 +1338,14 @@ def admin_avaliacoes_page(
   <td style="padding:11px 12px;min-width:260px;">
     <form method="POST" action="/admin/avaliacoes/associar" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
       <input type="hidden" name="matricula" value="{mat}">
+      <input type="hidden" name="semestre" value="{semestre}">
       <select name="arquivo" required style="{_INP}background:#fff;max-width:230px;">{_options(preselect)}</select>
       <button type="submit" style="{_BTN_AZ}padding:8px 16px;font-size:12px;">{label_associar}</button>
     </form>
     <form method="POST" action="/admin/avaliacoes/upload" enctype="multipart/form-data"
           style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
       <input type="hidden" name="matricula" value="{mat}">
+      <input type="hidden" name="semestre" value="{semestre}">
       <input type="file" name="pdf" accept="application/pdf,.pdf" required
              style="font-family:'Nunito',sans-serif;font-size:11px;color:#555;max-width:200px;">
       <button type="submit" style="{_BTN_CINZA}padding:8px 16px;font-size:12px;">⬆ Enviar novo PDF</button>
@@ -1406,12 +1436,13 @@ document.addEventListener('DOMContentLoaded',filtrarAval);
     <img src="/static/logo.png" style="height:44px;object-fit:contain;">
     <div style="flex:1;">
       <h1 style="font-family:'Fredoka One',cursive;font-size:22px;color:#2b3990;">Avaliação de Inglês</h1>
-      <p style="font-size:12px;color:#888;">Vincule o PDF da avaliação a cada aluno — os responsáveis verão o botão na área deles.</p>
+      <p style="font-size:12px;color:#888;">Gerenciando o <strong style="color:#2b3990;">{semestre}º semestre</strong> — vincule o PDF a cada aluno; os responsáveis verão o botão na área deles.</p>
     </div>
     <a href="/admin/logout" style="background:#f7f7f5;color:#888;font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;padding:9px 16px;border-radius:10px;border:1px solid #dcdcd8;">Sair</a>
   </div>
 
   {nav}
+  {abas}
   {aviso}
   {resumo_card}
   {filtro_card}

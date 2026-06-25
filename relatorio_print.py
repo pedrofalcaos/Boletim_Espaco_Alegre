@@ -351,3 +351,106 @@ def gerar_relatorios_print_html_multiplos(itens: list, semestre: int) -> str:
         paginas=paginas,
         extra_top="",
     )
+
+
+# ════════════════════════════════════════════════════════════════════════
+#  ÁREA DO RESPONSÁVEL — escolha de semestre e mensagem de indisponível
+# ════════════════════════════════════════════════════════════════════════
+# CSS importado tem chaves literais; por isso montamos por concatenação (sem
+# f-string) ao redor das constantes de design.
+def _shell_responsavel(titulo: str, corpo: str, extra_html: str = "") -> str:
+    cabeca = (
+        '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1.0">'
+        f'<title>{titulo}</title>'
+    )
+    estilo = (
+        "<style>*{box-sizing:border-box;margin:0;padding:0}"
+        "body{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing:antialiased;"
+        "background:linear-gradient(160deg,#e9ecfb 0%,#d8dcf2 45%,#cfe7f0 100%);color:#333;"
+        "min-height:100vh;padding:26px 16px;position:relative;overflow-x:hidden;}"
+        "</style>"
+    )
+    return (cabeca + FONTS_LINK + estilo + "</head><body>"
+            + GLASS_BG_BLOBS + extra_html + corpo + "</body></html>")
+
+
+def gerar_escolha_semestre_html(aluno: dict, matricula: str, disponivel: dict, extra_html: str = "") -> str:
+    """Tela onde o responsável escolhe o semestre do relatório.
+    disponivel: {1: bool, 2: bool} — se o relatório do semestre já está concluído."""
+    nome  = aluno.get("nome", "")
+    turma = aluno.get("turma", "")
+
+    def _cartao(sem: int) -> str:
+        ok = bool(disponivel.get(sem))
+        if ok:
+            badge = ('<span style="background:#e3f5ec;border:1px solid #a8ddc0;color:#0a7c3e;'
+                     'font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;">✓ Disponível</span>')
+            sub = "Toque para ver o relatório"
+            seta = "Ver relatório →"
+        else:
+            badge = ('<span style="background:#fef0e4;border:1px solid #f8d4a8;color:#c25b0d;'
+                     'font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;">⏳ Em breve</span>')
+            sub = "Ainda não disponível"
+            seta = "Saiba mais →"
+        return (
+            f'<a href="/relatorio/{matricula}/{sem}" '
+            'style="flex:1;min-width:200px;text-decoration:none;display:block;'
+            'background:rgba(255,255,255,.72);backdrop-filter:blur(20px) saturate(180%);'
+            '-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.6);'
+            'border-radius:20px;padding:24px 22px;box-shadow:0 12px 34px rgba(43,57,144,.16);'
+            'transition:transform .15s,box-shadow .2s;">'
+            '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;">'
+            f'<span style="font-family:\'Fredoka One\',cursive;font-size:19px;color:#2b3990;">{sem}º Semestre</span>'
+            f'{badge}</div>'
+            f'<div style="font-size:13px;color:#5a6079;font-weight:600;margin-bottom:18px;">{sub}</div>'
+            '<div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#3b49b8,#1a2570);'
+            'color:#fff;font-weight:800;font-size:13px;padding:10px 20px;border-radius:999px;'
+            f'box-shadow:0 6px 16px rgba(26,37,112,.3);">{seta}</div>'
+            '</a>'
+        )
+
+    corpo = (
+        '<div style="max-width:680px;margin:0 auto;position:relative;z-index:1;">'
+        '<div style="text-align:center;margin-bottom:24px;">'
+        '<img src="/static/logo.png" alt="Escola Espaço Alegre" '
+        'style="height:58px;object-fit:contain;background:#fff;padding:10px 18px;border-radius:18px;'
+        'box-shadow:0 8px 22px rgba(26,37,112,.18);margin-bottom:16px;">'
+        '<h1 style="font-family:\'Fredoka One\',cursive;font-size:23px;color:#2b3990;line-height:1.3;">'
+        'Relatório Semestral</h1>'
+        f'<p style="font-size:14px;color:#5a6079;font-weight:600;margin-top:6px;">{nome} &nbsp;·&nbsp; {turma}</p>'
+        '<p style="font-size:13px;color:#7d83a3;margin-top:4px;">Escolha o semestre que deseja visualizar:</p>'
+        '</div>'
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;">'
+        f'{_cartao(1)}{_cartao(2)}'
+        '</div>'
+        '<div style="text-align:center;margin-top:26px;">'
+        '<a href="/" style="text-decoration:none;color:#2b3990;font-weight:700;font-size:13px;">← Voltar ao início</a>'
+        '</div>'
+        '</div>'
+    )
+    return _shell_responsavel(f"Relatório — {nome}", corpo, extra_html)
+
+
+def gerar_relatorio_indisponivel_html(aluno: dict, matricula: str, semestre: int) -> str:
+    """Mensagem amigável quando o relatório do semestre escolhido ainda não está
+    disponível (não concluído pela coordenação)."""
+    nome = aluno.get("nome", "")
+    sem_label = f"{semestre}º semestre"
+    corpo = (
+        '<div style="max-width:460px;margin:0 auto;position:relative;z-index:1;text-align:center;">'
+        '<div style="background:rgba(255,255,255,.72);backdrop-filter:blur(22px) saturate(180%);'
+        '-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.6);'
+        'border-radius:24px;padding:36px 30px;box-shadow:0 16px 44px rgba(43,57,144,.18);">'
+        '<div style="font-size:46px;margin-bottom:10px;">⏳</div>'
+        '<h1 style="font-family:\'Fredoka One\',cursive;font-size:21px;color:#2b3990;line-height:1.3;margin-bottom:12px;">'
+        f'Relatório do {sem_label} ainda não disponível</h1>'
+        '<p style="font-size:14px;color:#41476b;font-weight:600;line-height:1.7;">'
+        f'O relatório do <strong>{sem_label}</strong> de {nome} ainda não foi finalizado pela coordenação. '
+        'Assim que estiver pronto, ele aparecerá aqui para você. Volte um pouco mais tarde. 💛</p>'
+        f'<a href="/relatorio/{matricula}" '
+        'style="display:inline-block;margin-top:22px;text-decoration:none;background:#2b3990;color:#fff;'
+        'font-weight:800;padding:12px 26px;border-radius:999px;font-size:14px;">← Escolher outro semestre</a>'
+        '</div></div>'
+    )
+    return _shell_responsavel(f"Relatório indisponível — {nome}", corpo)

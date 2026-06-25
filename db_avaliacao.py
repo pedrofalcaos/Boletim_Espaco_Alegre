@@ -22,6 +22,16 @@ DISCIPLINAS_PDF = {
 }
 DISCIPLINA_PADRAO = "ingles"
 
+# Semestres suportados. Avaliações existentes (sem a coluna) são tratadas como 1º.
+SEMESTRES = (1, 2)
+SEMESTRE_PADRAO = 1
+
+def semestre_valido(semestre) -> bool:
+    try:
+        return int(semestre) in SEMESTRES
+    except (TypeError, ValueError):
+        return False
+
 # Limite de tamanho de upload (bytes)
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024  # 15 MB
 
@@ -134,12 +144,12 @@ if DATABASE_URL:
             id            SERIAL PRIMARY KEY,
             matricula     VARCHAR(20)  NOT NULL,
             disciplina    VARCHAR(40)  NOT NULL DEFAULT 'ingles',
+            semestre      INTEGER      NOT NULL DEFAULT 1,
             arquivo       VARCHAR(300) NOT NULL,
             nome_original VARCHAR(300) NOT NULL DEFAULT '',
             enviado_por   VARCHAR(120) NOT NULL DEFAULT '',
             criado_em     TIMESTAMP DEFAULT NOW(),
-            atualizado_em TIMESTAMP DEFAULT NOW(),
-            UNIQUE (matricula, disciplina)
+            atualizado_em TIMESTAMP DEFAULT NOW()
         );
     """
 
@@ -157,6 +167,11 @@ if DATABASE_URL:
             try:
                 with conn.cursor() as cur:
                     cur.execute(_SCHEMA)
+                    # Migração para instalações já existentes (antes do semestre)
+                    cur.execute("ALTER TABLE avaliacoes_pdf ADD COLUMN IF NOT EXISTS semestre INTEGER NOT NULL DEFAULT 1")
+                    cur.execute("ALTER TABLE avaliacoes_pdf DROP CONSTRAINT IF EXISTS avaliacoes_pdf_matricula_disciplina_key")
+                    cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS avaliacoes_pdf_unq "
+                                "ON avaliacoes_pdf (matricula, disciplina, semestre)")
                 conn.commit()
             finally:
                 conn.close()
@@ -169,61 +184,66 @@ if DATABASE_URL:
                 d[k] = str(d[k])[:19]
         return d
 
-    def get_avaliacao(matricula: str, disciplina: str = DISCIPLINA_PADRAO) -> dict | None:
+    def get_avaliacao(matricula: str, disciplina: str = DISCIPLINA_PADRAO,
+                      semestre: int = SEMESTRE_PADRAO) -> dict | None:
         _init()
         conn = _connect()
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(
-                    "SELECT * FROM avaliacoes_pdf WHERE matricula=%s AND disciplina=%s",
-                    (matricula, disciplina),
+                    "SELECT * FROM avaliacoes_pdf WHERE matricula=%s AND disciplina=%s AND semestre=%s",
+                    (matricula, disciplina, int(semestre)),
                 )
                 r = cur.fetchone()
             return _row(r) if r else None
         finally:
             conn.close()
 
-    def get_avaliacoes_map(disciplina: str = DISCIPLINA_PADRAO) -> dict:
+    def get_avaliacoes_map(disciplina: str = DISCIPLINA_PADRAO,
+                           semestre: int = SEMESTRE_PADRAO) -> dict:
         _init()
         conn = _connect()
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(
-                    "SELECT * FROM avaliacoes_pdf WHERE disciplina=%s", (disciplina,)
+                    "SELECT * FROM avaliacoes_pdf WHERE disciplina=%s AND semestre=%s",
+                    (disciplina, int(semestre)),
                 )
                 return {r["matricula"]: _row(r) for r in cur.fetchall()}
         finally:
             conn.close()
 
     def set_avaliacao(matricula: str, arquivo: str, nome_original: str,
-                      enviado_por: str, disciplina: str = DISCIPLINA_PADRAO) -> None:
+                      enviado_por: str, disciplina: str = DISCIPLINA_PADRAO,
+                      semestre: int = SEMESTRE_PADRAO) -> None:
         _init()
         conn = _connect()
         try:
             with conn.cursor() as cur:
                 cur.execute(
                     """INSERT INTO avaliacoes_pdf
-                           (matricula, disciplina, arquivo, nome_original, enviado_por)
-                       VALUES (%s,%s,%s,%s,%s)
-                       ON CONFLICT (matricula, disciplina) DO UPDATE SET
+                           (matricula, disciplina, semestre, arquivo, nome_original, enviado_por)
+                       VALUES (%s,%s,%s,%s,%s,%s)
+                       ON CONFLICT (matricula, disciplina, semestre) DO UPDATE SET
                            arquivo=EXCLUDED.arquivo,
                            nome_original=EXCLUDED.nome_original,
                            enviado_por=EXCLUDED.enviado_por,
                            atualizado_em=NOW()""",
-                    (matricula, disciplina, arquivo, nome_original, enviado_por),
+                    (matricula, disciplina, int(semestre), arquivo, nome_original, enviado_por),
                 )
             conn.commit()
         finally:
             conn.close()
 
-    def remover_avaliacao(matricula: str, disciplina: str = DISCIPLINA_PADRAO) -> bool:
+    def remover_avaliacao(matricula: str, disciplina: str = DISCIPLINA_PADRAO,
+                          semestre: int = SEMESTRE_PADRAO) -> bool:
         _init()
         conn = _connect()
         try:
             with conn.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM avaliacoes_pdf WHERE matricula=%s AND disciplina=%s",
-                    (matricula, disciplina),
+                    "DELETE FROM avaliacoes_pdf WHERE matricula=%s AND disciplina=%s AND semestre=%s",
+                    (matricula, disciplina, int(semestre)),
                 )
                 ok = cur.rowcount > 0
             conn.commit()
@@ -248,27 +268,34 @@ else:
         with open(DB_FILE, "w", encoding="utf-8") as f:
             json.dump(db, f, ensure_ascii=False, indent=2)
 
-    def get_avaliacao(matricula: str, disciplina: str = DISCIPLINA_PADRAO) -> dict | None:
+    def _item_match(it, matricula, disciplina, semestre) -> bool:
+        return (it["matricula"] == matricula and it["disciplina"] == disciplina
+                and int(it.get("semestre", 1)) == int(semestre))
+
+    def get_avaliacao(matricula: str, disciplina: str = DISCIPLINA_PADRAO,
+                      semestre: int = SEMESTRE_PADRAO) -> dict | None:
         with _lock:
             db = _load()
             for it in db["itens"]:
-                if it["matricula"] == matricula and it["disciplina"] == disciplina:
+                if _item_match(it, matricula, disciplina, semestre):
                     return dict(it)
             return None
 
-    def get_avaliacoes_map(disciplina: str = DISCIPLINA_PADRAO) -> dict:
+    def get_avaliacoes_map(disciplina: str = DISCIPLINA_PADRAO,
+                           semestre: int = SEMESTRE_PADRAO) -> dict:
         with _lock:
             db = _load()
-            return {it["matricula"]: dict(it)
-                    for it in db["itens"] if it["disciplina"] == disciplina}
+            return {it["matricula"]: dict(it) for it in db["itens"]
+                    if it["disciplina"] == disciplina and int(it.get("semestre", 1)) == int(semestre)}
 
     def set_avaliacao(matricula: str, arquivo: str, nome_original: str,
-                      enviado_por: str, disciplina: str = DISCIPLINA_PADRAO) -> None:
+                      enviado_por: str, disciplina: str = DISCIPLINA_PADRAO,
+                      semestre: int = SEMESTRE_PADRAO) -> None:
         with _lock:
             db = _load()
             agora = datetime.now().isoformat()[:19]
             for it in db["itens"]:
-                if it["matricula"] == matricula and it["disciplina"] == disciplina:
+                if _item_match(it, matricula, disciplina, semestre):
                     it.update(arquivo=arquivo, nome_original=nome_original,
                               enviado_por=enviado_por, atualizado_em=agora)
                     _save(db)
@@ -277,6 +304,7 @@ else:
                 "id": db.get("_seq", 1),
                 "matricula": matricula,
                 "disciplina": disciplina,
+                "semestre": int(semestre),
                 "arquivo": arquivo,
                 "nome_original": nome_original,
                 "enviado_por": enviado_por,
@@ -286,13 +314,20 @@ else:
             db["_seq"] = db.get("_seq", 1) + 1
             _save(db)
 
-    def remover_avaliacao(matricula: str, disciplina: str = DISCIPLINA_PADRAO) -> bool:
+    def remover_avaliacao(matricula: str, disciplina: str = DISCIPLINA_PADRAO,
+                          semestre: int = SEMESTRE_PADRAO) -> bool:
         with _lock:
             db = _load()
             antes = len(db["itens"])
             db["itens"] = [it for it in db["itens"]
-                           if not (it["matricula"] == matricula and it["disciplina"] == disciplina)]
+                           if not _item_match(it, matricula, disciplina, semestre)]
             if len(db["itens"]) != antes:
                 _save(db)
                 return True
             return False
+
+
+# ── Helper de alto nível (válido para ambos os backends) ─────────────────────
+def semestres_disponiveis(matricula: str, disciplina: str = DISCIPLINA_PADRAO) -> list:
+    """Lista (ordenada) dos semestres que possuem avaliação vinculada ao aluno."""
+    return [s for s in SEMESTRES if get_avaliacao(matricula, disciplina, s)]
