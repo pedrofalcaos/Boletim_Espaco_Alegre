@@ -2,7 +2,7 @@
 from urllib.parse import quote
 from datetime import datetime
 from music_player import PLAYER_MUSICA_HTML
-from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS, TEMA_TOGGLE, avatar_iniciais
+from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS, TEMA_TOGGLE, avatar_iniciais, avatar
 
 _ANO_ATUAL = datetime.now().year
 
@@ -251,7 +251,7 @@ def admin_dashboard(alunos: dict, resetado: bool = False, rel_status: dict = Non
 <tr>
   <td style="text-align:center;font-size:11px;color:#aaa;font-weight:700;width:32px;">{i}</td>
   <td style="font-weight:700;color:var(--azul);">{mat}</td>
-  <td><div style="display:flex;align-items:center;gap:9px;">{avatar_iniciais(nome, size=30)}<span>{nome}</span></div></td>
+  <td><div style="display:flex;align-items:center;gap:9px;">{avatar(nome, al.get('foto_url'), size=30)}<span>{nome}</span></div></td>
   <td style="font-size:12px;color:#888;">{prof}</td>
   <td style="text-align:center;">{badge_html}</td>
   <td style="text-align:center;white-space:nowrap;">
@@ -565,6 +565,27 @@ def aluno_form(matricula: str, aluno: dict, novo: bool, msg: str = "") -> str:
     titulo = "Novo Aluno" if novo else aluno.get('nome','Aluno')
     init_js = '\n  '.join(init_calls)
 
+    foto_card = ""
+    if not novo:
+        _foto = aluno.get("foto_url")
+        _remover = (f'<form method="POST" action="/admin/aluno/{matricula}/foto/remover" '
+                    f'onsubmit="return confirm(\'Remover a foto?\');"><button type="submit" '
+                    f'style="background:var(--vermelho-lt);color:var(--vermelho);border:1px solid #fecaca;border-radius:8px;'
+                    f'padding:8px 14px;font-weight:800;font-size:12px;cursor:pointer;">Remover</button></form>') if _foto else ""
+        foto_card = f'''
+  <div style="background:#fff;border-radius:14px;padding:16px 24px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.07);display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+    {avatar(aluno.get("nome",""), _foto, size=64)}
+    <div style="flex:1;min-width:200px;">
+      <div style="font-family:'Fredoka One',cursive;font-size:15px;color:var(--azul);">📷 Foto do aluno</div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">JPG, PNG ou WEBP · até 8 MB · recortada em quadrado automaticamente.</div>
+    </div>
+    <form method="POST" action="/admin/aluno/{matricula}/foto" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required style="font-size:12px;color:#555;max-width:220px;">
+      <button type="submit" style="background:var(--azul);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:800;font-size:12px;cursor:pointer;">⬆ Enviar</button>
+    </form>
+    {_remover}
+  </div>'''
+
     body = f"""
 <div style="max-width:1100px;margin:0 auto;padding:24px 16px;">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
@@ -575,6 +596,7 @@ def aluno_form(matricula: str, aluno: dict, novo: bool, msg: str = "") -> str:
   </div>
 
   {msg_html}
+  {foto_card}
 
   <form method="POST" action="/admin/aluno/{matricula if not novo else 'novo'}/salvar">
 

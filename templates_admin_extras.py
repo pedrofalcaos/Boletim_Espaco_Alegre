@@ -2,7 +2,7 @@
 from urllib.parse import quote
 from datetime import date
 from templates import page_shell, admin_nav
-from design_system import avatar_iniciais
+from design_system import avatar_iniciais, avatar
 
 # O pop-up de festas (São João / férias) some sozinho após esta data.
 FESTAS_ATE = date(2026, 7, 31)
@@ -106,6 +106,20 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
         html += '</div>'
         return html
 
+    def _foto_box(uid, foto_url):
+        remover = (f'<form method="POST" action="/admin/usuario/{uid}/foto/remover" style="display:inline;" '
+                   f'onsubmit="return confirm(\'Remover a foto?\');">'
+                   f'<button type="submit" style="{_BTN_VM}">Remover foto</button></form>') if foto_url else ""
+        return f"""
+  <div id="foto-form-{uid}" style="display:none;margin-top:11px;border-top:1px solid #f0f0ee;padding-top:11px;">
+    <form method="POST" action="/admin/usuario/{uid}/foto" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required style="font-size:11px;color:#555;max-width:220px;">
+      <button type="submit" style="{_BTN_AZ}padding:7px 16px;font-size:12px;">⬆ Enviar foto</button>
+      {remover}
+    </form>
+    <div style="font-size:10px;color:#aaa;margin-top:5px;">JPG, PNG ou WEBP · até 8 MB · recortada em quadrado automaticamente.</div>
+  </div>"""
+
     if professoras:
         cards = ""
         for p in professoras:
@@ -125,11 +139,12 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
 <div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;
             box-shadow:0 2px 8px rgba(0,0,0,.06);">
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-    {avatar_iniciais(p["nome"], size=40)}
+    {avatar(p["nome"], p.get("foto_url"), size=44)}
     <div style="flex:1;">
       <div style="font-weight:800;color:#2b3990;font-size:14px;">{p["nome"]}{pendente_badge}</div>
       <div style="font-size:11px;color:#aaa;margin-top:2px;">{p["username"]}</div>
     </div>
+    <button type="button" onclick="toggleFoto({pid})" style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">📷 Foto</button>
     <button type="button" onclick="toggleTurmas({pid})"
       style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">
       {ICON_EDIT}Editar turmas
@@ -144,6 +159,7 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
     </form>
   </div>
   <div style="margin-top:10px;">{chips}</div>
+  {_foto_box(pid, p.get("foto_url"))}
   <div id="turmas-form-{pid}" style="display:none;margin-top:12px;border-top:1px solid #f0f0ee;padding-top:12px;">
     <form method="POST" action="/admin/professoras/{pid}/turmas">
       <div style="font-size:11px;font-weight:800;color:#aaa;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">
@@ -240,11 +256,12 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
 <div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;
             box-shadow:0 2px 8px rgba(0,0,0,.06);">
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-    {avatar_iniciais(c["nome"], size=40)}
+    {avatar(c["nome"], c.get("foto_url"), size=44)}
     <div style="flex:1;">
       <div style="font-weight:800;color:#2b3990;font-size:14px;">{c["nome"]}{pendente_badge}</div>
       <div style="font-size:11px;color:#aaa;margin-top:2px;">{c["username"]} · coordenação</div>
     </div>
+    <button type="button" onclick="toggleFoto({cid})" style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">📷 Foto</button>
     <form method="POST" action="/admin/professoras/{cid}/resetar-senha"
           onsubmit="return confirm('Gerar uma nova senha temporária para {c["nome"]}?\\n\\nA senha atual deixará de funcionar e ela precisará trocá-la no próximo acesso.');">
       <button type="submit" style="{_BTN_CINZA}font-size:11px;padding:5px 12px;">{ICON_KEY}Resetar senha</button>
@@ -254,6 +271,7 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
       <button type="submit" style="{_BTN_VM}">{ICON_TRASH}</button>
     </form>
   </div>
+  {_foto_box(cid, c.get("foto_url"))}
 </div>"""
         coord_lista = coord_cards
     else:
@@ -291,6 +309,10 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
 <script>
 function toggleTurmas(id) {
   var el = document.getElementById('turmas-form-' + id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function toggleFoto(id) {
+  var el = document.getElementById('foto-form-' + id);
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 </script>"""
@@ -1149,6 +1171,24 @@ def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "")
     onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#dcdcd8'">{obs}</textarea>
 </div>"""
 
+    _foto = aluno.get("foto_url")
+    _rem_foto = (f'<form method="POST" action="/admin/aluno/{matricula}/foto/remover" '
+                 f'onsubmit="return confirm(\'Remover a foto?\');"><button type="submit" '
+                 f'style="{_BTN_VM}">Remover</button></form>') if _foto else ""
+    foto_card = f"""
+<div style="background:#fff;border-radius:12px;padding:16px 22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+  {avatar(nome, _foto, size=60)}
+  <div style="flex:1;min-width:200px;">
+    <div style="font-family:'Fredoka One',cursive;font-size:14px;color:#2b3990;">📷 Foto do aluno</div>
+    <div style="font-size:11px;color:#888;margin-top:2px;">JPG, PNG ou WEBP · até 8 MB · recortada em quadrado automaticamente.</div>
+  </div>
+  <form method="POST" action="/admin/aluno/{matricula}/foto" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required style="font-size:12px;color:#555;max-width:210px;">
+    <button type="submit" style="{_BTN_AZ}padding:8px 16px;font-size:12px;">⬆ Enviar</button>
+  </form>
+  {_rem_foto}
+</div>"""
+
     body = f"""
 <div style="max-width:820px;margin:0 auto;padding:24px 16px;">
 
@@ -1158,6 +1198,7 @@ def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "")
        font-weight:800;font-size:12px;padding:8px 14px;border-radius:8px;margin-top:2px;">
       ← Painel
     </a>
+    {avatar(nome, aluno.get("foto_url"), size=48)}
     <div style="flex:1;">
       <h1 style="font-family:'Fredoka One',cursive;font-size:20px;color:#2b3990;">{nome}</h1>
       <div style="font-size:12px;color:#aaa;margin-top:3px;">
@@ -1179,6 +1220,7 @@ def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "")
   </div>
 
   {msg_html}
+  {foto_card}
 
   <!-- Subtemas -->
   <div style="font-family:'Fredoka One',cursive;font-size:15px;color:#2b3990;

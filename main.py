@@ -30,6 +30,8 @@ from db_relatorio import (
 import db_avaliacao as dav
 import db_acesso as dac
 import db_auditoria as daud
+import db_foto as dfoto
+import fotos_cloud
 from sanitize import sanitizar_html
 from templates import login_page, admin_dashboard, aluno_form, trocar_senha_staff_page
 from templates_admin_extras import (
@@ -48,7 +50,7 @@ from relatorio_print import (
     gerar_escolha_semestre_html, gerar_relatorio_indisponivel_html,
 )
 from music_player import inject_player
-from design_system import avatar_iniciais
+from design_system import avatar
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -85,11 +87,12 @@ def _user_chip_html(user: dict) -> str:
     Fica do lado oposto ao botão de tema para não conflitar. Some na impressão."""
     nome = (user.get("nome") or user.get("username") or "").strip()
     primeiro = nome.split()[0] if nome else "você"
+    foto = dfoto.get_foto(dfoto.chave_usuario(user.get("user_id"))) if user.get("user_id") else None
     return ('<div id="user-chip" class="no-print" style="position:fixed;bottom:80px;right:16px;z-index:9998;'
             'background:#1a2570;color:#fff;border:2px solid rgba(255,255,255,.22);border-radius:999px;'
             "padding:6px 16px 6px 6px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;"
             'box-shadow:0 6px 18px rgba(0,0,0,.3);display:inline-flex;align-items:center;gap:8px;max-width:240px;">'
-            + avatar_iniciais(nome, size=28) +
+            + avatar(nome, foto, size=28) +
             f'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{_saudacao()}, {primeiro}! 👋</span>'
             '</div>')
 
@@ -599,6 +602,7 @@ async def ver_relatorio_responsavel(request: Request, matricula: str):
         disponivel[semestre] = bool(rel and rel.get("status") == "concluido")
 
     _registrar_acesso_pai(request, aluno, mat_clean, "relatorio")
+    aluno = dict(aluno); aluno["foto_url"] = dfoto.get_foto(dfoto.chave_aluno(mat_clean))
     sems = dav.semestres_disponiveis(mat_clean)
     card = card_avaliacao_pais(mat_clean, sems) if sems else ""
     extra = banner_festas_pais() + card
@@ -723,6 +727,7 @@ async def painel(request: Request, resetado: str = ""):
     if not check_admin(request):
         return RedirectResponse("/admin/relatorios", status_code=302)
     alunos = get_all_alunos()
+    _anexar_fotos_alunos(alunos)
     # Busca status dos relatórios dos alunos do Infantil em uma única query
     matriculas_inf = [m for m, a in alunos.items() if is_infantil(a.get("turma", ""))]
     rel_status = get_status_relatorios(matriculas_inf) if matriculas_inf else {}
@@ -742,13 +747,14 @@ async def novo_aluno_form(request: Request):
     return aluno_form("", vazio, novo=True)
 
 @app.get("/admin/aluno/{matricula}", response_class=HTMLResponse)
-async def editar_aluno_form(request: Request, matricula: str, ok: str = ""):
+async def editar_aluno_form(request: Request, matricula: str, ok: str = "", erro: str = ""):
     if not check_admin(request):
         return _redir_login()
     al = get_aluno(matricula)
     if not al:
         return RedirectResponse("/admin", status_code=302)
-    msg = "Dados salvos com sucesso!" if ok else ""
+    al["foto_url"] = dfoto.get_foto(dfoto.chave_aluno(matricula))
+    msg = erro if erro else ("Dados salvos com sucesso!" if ok else "")
     return aluno_form(matricula, al, novo=False, msg=msg)
 
 def _disc_sid(d: str) -> str:
@@ -818,16 +824,94 @@ async def excluir_aluno(request: Request, matricula: str):
     _auditar(request, "Excluir aluno", alvo=matricula, detalhe=alvo)
     return RedirectResponse("/admin", status_code=302)
 
+
+# ── Fotos (Cloudinary) ───────────────────────────────────────────────────────
+def _anexar_fotos_alunos(alunos: dict) -> None:
+    """Anexa foto_url a cada aluno (em uma única consulta), para os avatares."""
+    fotos = dfoto.get_fotos_map("aluno:")
+    for mat, al in alunos.items():
+        url = fotos.get(dfoto.chave_aluno(mat))
+        if url:
+            al["foto_url"] = url
+
+
+def _anexar_fotos_usuarios(usuarios: list) -> None:
+    fotos = dfoto.get_fotos_map("usuario:")
+    for u in usuarios:
+        url = fotos.get(dfoto.chave_usuario(u.get("id")))
+        if url:
+            u["foto_url"] = url
+
+
+async def _processar_upload_foto(request: Request, foto: UploadFile, chave: str, public_id: str):
+    """Lê o arquivo, envia ao Cloudinary e grava a URL. Retorna (ok, msg)."""
+    conteudo = await foto.read()
+    url, erro = fotos_cloud.upload_foto(conteudo, public_id)
+    if erro:
+        return False, erro
+    dfoto.set_foto(chave, url)
+    return True, "Foto atualizada com sucesso."
+
+
+@app.post("/admin/aluno/{matricula}/foto")
+async def upload_foto_aluno(request: Request, matricula: str, foto: UploadFile = File(...)):
+    if not check_admin(request):
+        return _redir_login()
+    aluno = get_aluno(matricula)
+    if not aluno:
+        return RedirectResponse("/admin", status_code=302)
+    ok, msg = await _processar_upload_foto(request, foto, dfoto.chave_aluno(matricula), f"aluno_{matricula}")
+    destino = "/editar-infantil" if is_infantil(aluno.get("turma", "")) else ""
+    if ok:
+        _auditar(request, "Atualizar foto do aluno", alvo=matricula, detalhe=aluno.get("nome", ""))
+        return RedirectResponse(f"/admin/aluno/{matricula}{destino}?ok=1", status_code=302)
+    return RedirectResponse(f"/admin/aluno/{matricula}{destino}?erro={quote(msg)}", status_code=302)
+
+
+@app.post("/admin/aluno/{matricula}/foto/remover")
+async def remover_foto_aluno(request: Request, matricula: str):
+    if not check_admin(request):
+        return _redir_login()
+    aluno = get_aluno(matricula) or {}
+    dfoto.remover_foto(dfoto.chave_aluno(matricula))
+    _auditar(request, "Remover foto do aluno", alvo=matricula, detalhe=aluno.get("nome", ""))
+    destino = "/editar-infantil" if is_infantil(aluno.get("turma", "")) else ""
+    return RedirectResponse(f"/admin/aluno/{matricula}{destino}?ok=1", status_code=302)
+
+
+@app.post("/admin/usuario/{user_id}/foto")
+async def upload_foto_usuario(request: Request, user_id: int, foto: UploadFile = File(...)):
+    if not check_admin(request):
+        return _redir_login()
+    u = get_usuario_by_id(user_id)
+    if not u:
+        return RedirectResponse("/admin/professoras", status_code=302)
+    ok, msg = await _processar_upload_foto(request, foto, dfoto.chave_usuario(user_id), f"usuario_{user_id}")
+    if ok:
+        _auditar(request, "Atualizar foto da colaboradora", alvo=u.get("nome", str(user_id)))
+        return RedirectResponse("/admin/professoras?ok=Foto+atualizada", status_code=302)
+    return RedirectResponse(f"/admin/professoras?erro={quote(msg)}", status_code=302)
+
+
+@app.post("/admin/usuario/{user_id}/foto/remover")
+async def remover_foto_usuario(request: Request, user_id: int):
+    if not check_admin(request):
+        return _redir_login()
+    dfoto.remover_foto(dfoto.chave_usuario(user_id))
+    _auditar(request, "Remover foto da colaboradora", alvo=str(user_id))
+    return RedirectResponse("/admin/professoras?ok=Foto+removida", status_code=302)
+
 @app.get("/admin/aluno/{matricula}/editar-infantil", response_class=HTMLResponse)
-async def editar_aluno_infantil(request: Request, matricula: str, ok: str = ""):
+async def editar_aluno_infantil(request: Request, matricula: str, ok: str = "", erro: str = ""):
     if not check_admin(request):
         return _redir_login()
     al = get_aluno(matricula)
     if not al:
         return RedirectResponse("/admin", status_code=302)
+    al["foto_url"] = dfoto.get_foto(dfoto.chave_aluno(matricula))
     turma = al.get("turma", "")
     temas = get_temas_para_turma(turma)
-    msg = "Observações salvas com sucesso!" if ok else ""
+    msg = erro if erro else ("Observações salvas com sucesso!" if ok else "")
     return aluno_infantil_form(matricula, al, temas, msg=msg)
 
 @app.post("/admin/aluno/{matricula}/editar-infantil/salvar")
@@ -929,6 +1013,7 @@ async def listar_professoras(request: Request, ok: str = "", erro: str = "", sen
     if not check_admin(request):
         return _redir_login()
     todos = get_all_usuarios()
+    _anexar_fotos_usuarios(todos)
     professoras = [u for u in todos if u["role"] == "professora"]
     coordenadoras = [u for u in todos if u["role"] == "coordenacao"]
     alunos_map = _alunos_por_professora()
