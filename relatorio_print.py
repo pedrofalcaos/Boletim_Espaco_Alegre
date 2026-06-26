@@ -446,11 +446,59 @@ def gerar_escolha_semestre_html(aluno: dict, matricula: str, disponivel: dict, e
         f'{_cartao(1)}{_cartao(2)}'
         '</div>'
         '<div style="text-align:center;margin-top:26px;">'
-        '<a href="/" style="text-decoration:none;color:#2b3990;font-weight:700;font-size:13px;">← Voltar ao início</a>'
+        f'<a href="/aluno/{matricula}" style="text-decoration:none;color:#2b3990;font-weight:700;font-size:13px;">← Voltar ao portal do aluno</a>'
         '</div>'
         '</div>'
     )
     return _shell_responsavel(f"Relatório — {nome}", corpo, extra_html)
+
+
+def gerar_hub_aluno_html(aluno: dict, matricula: str, opcoes: list, extra_html: str = "") -> str:
+    """Portal do aluno: menu com a foto/nome e atalhos para os documentos
+    disponíveis (boletim ou relatório, avaliação de inglês). opcoes: lista de
+    dicts {icone, titulo, sub, href}."""
+    nome  = aluno.get("nome", "")
+    turma = aluno.get("turma", "")
+
+    cards = ""
+    for o in opcoes:
+        cards += (
+            f'<a href="{o["href"]}"{" target=\"_blank\" rel=\"noopener\"" if o.get("nova_aba") else ""} '
+            'style="display:flex;align-items:center;gap:14px;text-decoration:none;'
+            'background:rgba(255,255,255,.72);backdrop-filter:blur(20px) saturate(180%);'
+            '-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.6);'
+            'border-radius:18px;padding:18px 20px;box-shadow:0 12px 30px rgba(43,57,144,.15);">'
+            f'<span style="font-size:30px;line-height:1;">{o["icone"]}</span>'
+            '<span style="flex:1;min-width:0;">'
+            f'<span style="display:block;font-family:\'Fredoka One\',cursive;font-size:16px;color:#2b3990;">{o["titulo"]}</span>'
+            f'<span style="display:block;font-size:12.5px;color:#5a6079;font-weight:600;margin-top:2px;">{o.get("sub","")}</span>'
+            '</span>'
+            '<span style="background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;font-weight:800;'
+            'font-size:13px;padding:9px 16px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 16px rgba(26,37,112,.3);">Abrir →</span>'
+            '</a>'
+        )
+
+    corpo = (
+        '<div style="max-width:560px;margin:0 auto;position:relative;z-index:1;">'
+        '<div style="text-align:center;margin-bottom:22px;">'
+        '<img src="/static/logo.png" alt="Escola Espaço Alegre" '
+        'style="height:54px;object-fit:contain;background:#fff;padding:9px 16px;border-radius:16px;'
+        'box-shadow:0 8px 22px rgba(26,37,112,.18);margin-bottom:14px;">'
+        '<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:4px;">'
+        + avatar(nome, aluno.get("foto_url"), size=54) +
+        '<div style="text-align:left;">'
+        f'<div style="font-family:\'Fredoka One\',cursive;font-size:20px;color:#2b3990;line-height:1.2;">{nome}</div>'
+        f'<div style="font-size:13px;color:#5a6079;font-weight:600;">{turma}</div>'
+        '</div></div>'
+        '<p style="font-size:13px;color:#7d83a3;margin-top:12px;">O que você gostaria de ver?</p>'
+        '</div>'
+        f'<div style="display:flex;flex-direction:column;gap:12px;">{cards}</div>'
+        '<div style="text-align:center;margin-top:24px;">'
+        '<a href="/" style="text-decoration:none;color:#2b3990;font-weight:700;font-size:13px;">← Voltar ao início</a>'
+        '</div>'
+        '</div>'
+    )
+    return _shell_responsavel(f"Portal — {nome}", corpo, extra_html)
 
 
 def gerar_relatorio_indisponivel_html(aluno: dict, matricula: str, semestre: int) -> str:

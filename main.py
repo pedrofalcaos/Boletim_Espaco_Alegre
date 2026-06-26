@@ -47,7 +47,7 @@ from templates_relatorio import relatorio_form_page
 from relatorio_print import (
     gerar_relatorio_print_html, gerar_relatorios_print_html_multiplos,
     gerar_relatorios_aluno_print_html,
-    gerar_escolha_semestre_html, gerar_relatorio_indisponivel_html,
+    gerar_escolha_semestre_html, gerar_relatorio_indisponivel_html, gerar_hub_aluno_html,
 )
 from music_player import inject_player
 from design_system import avatar
@@ -287,6 +287,9 @@ input:not(:placeholder-shown)~.clr{display:block;}
                oninput="limpaErro()">
         <button type="button" class="clr" onclick="limpar()" aria-label="Limpar campo">✕</button>
       </div>
+      <p style="font-size:11.5px;color:#7d83a3;margin:-6px 0 16px;line-height:1.5;">
+        💡 A matrícula está no <strong>cartão / QR Code</strong> que a escola enviou aos responsáveis.
+      </p>
       <button type="submit" class="btn">Acessar plataforma →</button>
     </form>
     <div class="loading" id="loading"><div class="spinner"></div><p style="font-size:12px;color:#7d83a3;">Buscando...</p></div>
@@ -309,7 +312,7 @@ function buscar(e){
   if(!m)return;
   document.getElementById('loading').classList.add('show');
   document.getElementById('erro').classList.remove('show');
-  setTimeout(()=>{ window.location.href='/boletim/'+encodeURIComponent(m); },350);
+  setTimeout(()=>{ window.location.href='/aluno/'+encodeURIComponent(m); },350);
 }
 function limpaErro(){
   document.getElementById('erro').classList.remove('show');
@@ -546,6 +549,40 @@ ul{margin:6px 0 6px 20px;}
 async def privacidade():
     return HTMLResponse(PRIVACIDADE_HTML)
 
+
+@app.get("/aluno/{matricula}", response_class=HTMLResponse)
+async def hub_aluno(request: Request, matricula: str):
+    """Portal do aluno: menu com atalhos para os documentos disponíveis."""
+    if _pais_bloqueado(request):
+        return HTMLResponse(MANUTENCAO_HTML)
+    mat_clean = re.sub(r'\D', '', matricula)
+    if not mat_clean:
+        return RedirectResponse("/?erro=1")
+    bloq = _consulta_bloqueada_resp(request, mat_clean)
+    if bloq:
+        return bloq
+    aluno = get_aluno(mat_clean)
+    if not aluno:
+        return RedirectResponse("/?erro=1")
+    aluno = dict(aluno)
+    aluno["foto_url"] = dfoto.get_foto(dfoto.chave_aluno(mat_clean))
+
+    opcoes = []
+    if is_infantil(aluno.get("turma", "")):
+        opcoes.append({"icone": "📋", "titulo": "Relatório Semestral",
+                       "sub": "1º e 2º semestre", "href": f"/relatorio/{mat_clean}"})
+    else:
+        opcoes.append({"icone": "📄", "titulo": "Boletim Escolar",
+                       "sub": "Notas e frequência", "href": f"/boletim/{mat_clean}"})
+    for sem in dav.semestres_disponiveis(mat_clean):
+        opcoes.append({"icone": "🇬🇧", "titulo": "Avaliação de Inglês",
+                       "sub": f"{sem}º semestre", "href": f"/avaliacao-ingles/{mat_clean}/{sem}",
+                       "nova_aba": True})
+
+    return HTMLResponse(inject_player(
+        gerar_hub_aluno_html(aluno, mat_clean, opcoes, extra_html=banner_festas_pais())
+    ))
+
 @app.get("/boletim/{matricula}", response_class=HTMLResponse)
 async def ver_boletim(request: Request, matricula: str, ref: str = ""):
     if _pais_bloqueado(request, ref):
@@ -568,7 +605,7 @@ async def ver_boletim(request: Request, matricula: str, ref: str = ""):
     aluno_completo = dict(aluno)
     aluno_completo['matricula'] = mat_clean
     aluno_completo['foto_url'] = dfoto.get_foto(dfoto.chave_aluno(mat_clean))
-    back_url = "/admin" if ref == "admin" else "/"
+    back_url = "/admin" if ref == "admin" else f"/aluno/{mat_clean}"
     _registrar_acesso_pai(request, aluno, mat_clean, "boletim", ref=ref)
     sems = dav.semestres_disponiveis(mat_clean)
     card = card_avaliacao_pais(mat_clean, sems) if sems else ""
