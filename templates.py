@@ -178,16 +178,60 @@ def admin_nav(current: str = "alunos", staff_only: bool = False) -> str:
         items = [item for item in items if item[0] in ("relatorios", "avaliacoes", "acessos")]
     links = ""
     for key, href, label in items:
-        if key == current:
-            style = ("background:var(--azul);color:#fff;font-size:12px;font-weight:900;"
-                     "padding:7px 16px;border-radius:8px;white-space:nowrap;")
-        else:
-            style = ("background:transparent;color:var(--azul);font-size:12px;font-weight:700;"
-                     "padding:7px 16px;border-radius:8px;white-space:nowrap;"
-                     "border:1.5px solid transparent;")
-            style += "opacity:.7;"
-        links += f'<a href="{href}" style="{style}">{label}</a>\n'
-    return f'<div style="background:#fff;border-radius:10px;padding:6px 8px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;gap:4px;flex-wrap:wrap;">{links}</div>'
+        cls = "sb-link sb-active" if key == current else "sb-link"
+        links += f'<a href="{href}" class="{cls}">{label}</a>\n'
+
+    sidebar = f"""
+<button class="sb-burger no-print" onclick="document.body.classList.toggle('sb-open')" aria-label="Abrir menu">☰</button>
+<div class="sb-backdrop no-print" onclick="document.body.classList.remove('sb-open')"></div>
+<aside class="sb-side no-print">
+  <div class="sb-head"><img src="/static/logo.png" alt="Escola Espaço Alegre" class="sb-logo"></div>
+  <nav class="sb-nav">{links}</nav>
+  <div class="sb-foot">
+    <button type="button" class="sb-tema" onclick="toggleTema()"><span class="tema-ico">\U0001F319</span><span class="tema-txt">Modo escuro</span></button>
+    <a href="/admin/logout" class="sb-sair">↩ Sair</a>
+  </div>
+</aside>"""
+    return sidebar + _SIDEBAR_CSS
+
+
+_SIDEBAR_CSS = """
+<style>
+.sb-side{position:fixed;top:0;left:0;height:100vh;width:248px;z-index:1500;box-sizing:border-box;
+  background:rgba(255,255,255,.74);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+  border-right:1px solid rgba(255,255,255,.55);box-shadow:6px 0 30px rgba(26,37,112,.12);
+  display:flex;flex-direction:column;padding:18px 14px;transition:transform .28s ease;}
+.sb-head{text-align:center;padding:4px 6px 16px;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:12px;}
+.sb-logo{height:52px;object-fit:contain;background:#fff;padding:8px 14px;border-radius:14px;box-shadow:0 5px 14px rgba(26,37,112,.15);}
+.sb-nav{display:flex;flex-direction:column;gap:6px;flex:1;overflow-y:auto;}
+.sb-link{display:block;padding:11px 15px;border-radius:12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;color:#2b3990;text-decoration:none;transition:background .15s,transform .15s;}
+.sb-link:hover{background:rgba(43,57,144,.09);transform:translateX(2px);}
+.sb-active{background:linear-gradient(135deg,#3b49b8,#1a2570);color:#fff;box-shadow:0 6px 16px rgba(26,37,112,.3);}
+.sb-foot{border-top:1px solid rgba(0,0,0,.06);padding-top:12px;margin-top:8px;display:flex;flex-direction:column;gap:8px;}
+.sb-tema{background:rgba(43,57,144,.09);color:#2b3990;border:none;border-radius:11px;padding:10px;font-family:'Nunito',sans-serif;font-weight:800;font-size:12.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+.sb-sair{text-align:center;background:#fff;color:#888;border:1px solid #e0e0dc;border-radius:11px;padding:9px;font-family:'Nunito',sans-serif;font-weight:700;font-size:12.5px;text-decoration:none;}
+.sb-burger{display:none;position:fixed;top:14px;left:14px;z-index:1600;width:44px;height:44px;border:none;border-radius:12px;background:#2b3990;color:#fff;font-size:20px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.25);align-items:center;justify-content:center;}
+.sb-backdrop{display:none;position:fixed;inset:0;z-index:1490;background:rgba(15,20,45,.45);}
+.tema-btn{display:none!important;}
+/* remove redundancia: o logo e o "Sair" do cabecalho das paginas (o sidebar ja tem) */
+img[src="/static/logo.png"]:not(.sb-logo){display:none!important;}
+a[href="/admin/logout"]:not(.sb-sair){display:none!important;}
+@media(min-width:1000px){ body{padding-left:248px;} }
+@media(max-width:999px){
+  .sb-side{transform:translateX(-100%);}
+  .sb-burger{display:flex;}
+  body.sb-open .sb-side{transform:translateX(0);}
+  body.sb-open .sb-backdrop{display:block;}
+}
+@media print{ .sb-side,.sb-burger,.sb-backdrop{display:none!important;} body{padding-left:0!important;} }
+@media screen{
+  html[data-tema="dark"] .sb-side{background:rgba(24,30,56,.9)!important;border-right-color:#2e3760!important;}
+  html[data-tema="dark"] .sb-link{color:#aab8ff!important;}
+  html[data-tema="dark"] .sb-tema{background:rgba(160,180,255,.12)!important;color:#aab8ff!important;}
+  html[data-tema="dark"] .sb-sair{background:#232c4f!important;color:#a3abce!important;border-color:#3a4568!important;}
+  html[data-tema="dark"] .sb-head,html[data-tema="dark"] .sb-foot{border-color:#2e3760!important;}
+}
+</style>"""
 
 
 # ── Dashboard admin ──────────────────────────────────────────────────────────
