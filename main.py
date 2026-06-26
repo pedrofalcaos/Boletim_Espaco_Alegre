@@ -639,6 +639,7 @@ async def ver_relatorio_semestre(request: Request, matricula: str, semestre: int
 
     temas = get_temas_para_turma(aluno.get("turma", ""))
     respostas = get_respostas(relatorio["id"])
+    aluno = dict(aluno); aluno["foto_url"] = dfoto.get_foto(dfoto.chave_aluno(mat_clean))
     itens = [(semestre, relatorio, temas, respostas)]
     return HTMLResponse(inject_player(gerar_relatorios_aluno_print_html(aluno, mat_clean, itens)))
 
@@ -2127,6 +2128,8 @@ async def admin_imprimir_relatorio(request: Request, rel_id: int):
     aluno    = get_aluno(relatorio["matricula"])
     temas    = get_temas_para_turma(aluno.get("turma", "") if aluno else "")
     respostas = get_respostas(rel_id)
+    if aluno:
+        aluno = dict(aluno); aluno["foto_url"] = dfoto.get_foto(dfoto.chave_aluno(relatorio["matricula"]))
 
     return HTMLResponse(gerar_relatorio_print_html(
         aluno, relatorio["matricula"], relatorio["semestre"],
@@ -2143,6 +2146,7 @@ async def admin_imprimir_relatorios_lote(request: Request, semestre: int, turma:
     if semestre not in (1, 2):
         return RedirectResponse("/admin/relatorios", status_code=302)
 
+    _fotos = dfoto.get_fotos_map("aluno:")
     itens = []
     for mat, al in sorted(get_all_alunos().items(), key=lambda x: (x[1].get("turma", ""), x[1].get("nome", ""))):
         t = al.get("turma", "")
@@ -2155,6 +2159,7 @@ async def admin_imprimir_relatorios_lote(request: Request, semestre: int, turma:
             continue
         temas = get_temas_para_turma(t)
         respostas = get_respostas(relatorio["id"])
+        al["foto_url"] = _fotos.get(dfoto.chave_aluno(mat))
         itens.append((al, mat, relatorio, temas, respostas))
 
     return HTMLResponse(gerar_relatorios_print_html_multiplos(itens, semestre))
@@ -2172,6 +2177,7 @@ async def admin_imprimir_relatorios_selecionados(request: Request, semestre: int
     if not selecionadas:
         return RedirectResponse("/admin/relatorios", status_code=302)
 
+    _fotos = dfoto.get_fotos_map("aluno:")
     itens = []
     for mat, al in sorted(get_all_alunos().items(), key=lambda x: (x[1].get("turma", ""), x[1].get("nome", ""))):
         if mat not in selecionadas or not is_infantil(al.get("turma", "")):
@@ -2181,6 +2187,7 @@ async def admin_imprimir_relatorios_selecionados(request: Request, semestre: int
             continue
         temas = get_temas_para_turma(al.get("turma", ""))
         respostas = get_respostas(relatorio["id"])
+        al["foto_url"] = _fotos.get(dfoto.chave_aluno(mat))
         itens.append((al, mat, relatorio, temas, respostas))
 
     return HTMLResponse(gerar_relatorios_print_html_multiplos(itens, semestre))

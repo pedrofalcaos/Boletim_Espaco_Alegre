@@ -64,9 +64,12 @@ def _pagina_relatorio_html(
     ano        = aluno.get("ano_letivo", "2026")
     sem_label  = "1º Semestre" if semestre == 1 else "2º Semestre"
     descricao  = sanitizar_html(relatorio.get("descricao_final", ""))
+    foto_url   = aluno.get("foto_url")
     confirmado = relatorio.get("confirmado_em", "")
-    if confirmado and isinstance(confirmado, str):
-        confirmado = confirmado[:10]  # só a data
+    if confirmado:
+        confirmado = str(confirmado)[:10]  # 'YYYY-MM-DD' (datetime ou string)
+        if len(confirmado) == 10 and confirmado[4] == "-":
+            confirmado = f"{confirmado[8:10]}/{confirmado[5:7]}/{confirmado[0:4]}"  # DD/MM/AAAA
 
     # ── Tópicos → Temas → Subtemas ──
     # temas é lista de tópicos: [{id, nome, temas:[{id, nome, subtemas:[...]}]}]
@@ -160,7 +163,8 @@ def _pagina_relatorio_html(
   </div>
 </div>"""
 
-    confirmado_info = (f'<span style="font-size:10px;color:#0a7c3e;font-weight:700;">✔ Confirmado em {confirmado}</span>'
+    # Dado interno: aparece só na tela (no-print) e nunca para os pais.
+    confirmado_info = (f'<span class="no-print" style="font-size:10px;color:#0a7c3e;font-weight:700;">✔ Confirmado em {confirmado}</span>'
                        if (confirmado and mostrar_confirmacao) else "")
 
     return f"""
@@ -185,23 +189,26 @@ def _pagina_relatorio_html(
 
   <!-- Dados do aluno -->
   <div style="background:#f7f7f5;border-radius:8px;padding:10px 16px;margin-bottom:12px;
-              display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;break-inside:avoid;page-break-inside:avoid;">
-    <div>
-      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#aaa;">Aluno(a)</div>
-      <div style="font-size:13px;font-weight:800;color:#2b3990;margin-top:2px;">{nome}</div>
-    </div>
-    <div>
-      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#aaa;">Turma / Período</div>
-      <div style="font-size:13px;font-weight:700;color:#333;margin-top:2px;">{turma} — {periodo}</div>
-    </div>
-    <div>
-      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#aaa;">Professora</div>
-      <div style="font-size:13px;font-weight:700;color:#333;margin-top:2px;">{professora}</div>
-    </div>
-    <div style="grid-column:span 3;display:flex;justify-content:space-between;align-items:center;
-                border-top:1px solid #e0e0e0;padding-top:6px;margin-top:2px;">
-      <span style="font-size:11px;color:#888;">Matrícula: <strong>{matricula}</strong></span>
-      {confirmado_info}
+              display:flex;align-items:center;gap:16px;break-inside:avoid;page-break-inside:avoid;">
+    {avatar(nome, foto_url, size=66)}
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+      <div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#aaa;">Aluno(a)</div>
+        <div style="font-size:13px;font-weight:800;color:#2b3990;margin-top:2px;">{nome}</div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#aaa;">Turma / Período</div>
+        <div style="font-size:13px;font-weight:700;color:#333;margin-top:2px;">{turma} — {periodo}</div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#aaa;">Professora</div>
+        <div style="font-size:13px;font-weight:700;color:#333;margin-top:2px;">{professora}</div>
+      </div>
+      <div style="grid-column:span 3;display:flex;justify-content:space-between;align-items:center;
+                  border-top:1px solid #e0e0e0;padding-top:6px;margin-top:2px;">
+        <span style="font-size:11px;color:#888;">Matrícula: <strong>{matricula}</strong></span>
+        {confirmado_info}
+      </div>
     </div>
   </div>
 
