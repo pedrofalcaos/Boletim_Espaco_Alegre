@@ -69,18 +69,28 @@ _SEM_CACHE = ("/boletim", "/relatorio", "/avaliacao-ingles", "/admin", "/profess
 _ROLE_NOME = {"admin": "Administrador", "coordenacao": "Coordenação", "professora": "Professora"}
 
 
+def _saudacao() -> str:
+    """Saudação conforme a hora (Brasília, UTC-3)."""
+    from datetime import datetime, timezone, timedelta
+    h = datetime.now(timezone(timedelta(hours=-3))).hour
+    if h < 12:
+        return "Bom dia"
+    if h < 18:
+        return "Boa tarde"
+    return "Boa noite"
+
+
 def _user_chip_html(user: dict) -> str:
-    """Chip fixo mostrando quem está logado (canto inferior esquerdo, acima do
-    botão de tema). Não aparece na impressão."""
+    """Saudação fixa do usuário logado (canto inferior direito, acima do player).
+    Fica do lado oposto ao botão de tema para não conflitar. Some na impressão."""
     nome = (user.get("nome") or user.get("username") or "").strip()
-    role = _ROLE_NOME.get(user.get("role", ""), "")
-    sufixo = f" · {role}" if role else ""
-    return ('<div id="user-chip" class="no-print" style="position:fixed;bottom:74px;left:18px;z-index:9998;'
+    primeiro = nome.split()[0] if nome else "você"
+    return ('<div id="user-chip" class="no-print" style="position:fixed;bottom:80px;right:16px;z-index:9998;'
             'background:#1a2570;color:#fff;border:2px solid rgba(255,255,255,.22);border-radius:999px;'
-            "padding:6px 14px 6px 6px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;"
-            'box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;align-items:center;gap:8px;max-width:260px;">'
-            + avatar_iniciais(nome, size=26) +
-            f'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{nome}{sufixo}</span>'
+            "padding:6px 16px 6px 6px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;"
+            'box-shadow:0 6px 18px rgba(0,0,0,.3);display:inline-flex;align-items:center;gap:8px;max-width:240px;">'
+            + avatar_iniciais(nome, size=28) +
+            f'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{_saudacao()}, {primeiro}! 👋</span>'
             '</div>')
 
 
