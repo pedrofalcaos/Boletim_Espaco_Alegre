@@ -867,6 +867,44 @@ def admin_relatorios_page(
   <span style="font-size:10px;color:#aaa;">💡 Use o filtro de turma acima para restringir a impressão a uma turma.</span>
 </div>""")
 
+    imp_selecionados_card = _card(f"""
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <span style="font-size:11px;font-weight:800;color:#0a7c3e;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">
+    Imprimir selecionados:
+  </span>
+  <span id="sel-contador" style="font-size:12px;font-weight:800;color:#2b3990;min-width:80px;">nenhum marcado</span>
+  <button type="button" onclick="imprimirSelecionados(1)"
+    style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;background:#e3f5ec;color:#0a7c3e;
+           border:1.5px solid #a8ddc0;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap;">
+    {ICON_PRINTER}Imprimir selecionados — 1º Semestre
+  </button>
+  <button type="button" onclick="imprimirSelecionados(2)"
+    style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;background:#e3f5ec;color:#0a7c3e;
+           border:1.5px solid #a8ddc0;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap;">
+    {ICON_PRINTER}Imprimir selecionados — 2º Semestre
+  </button>
+  <span style="font-size:10px;color:#aaa;">💡 Marque os alunos na tabela e clique no semestre desejado.</span>
+</div>""")
+
+    sel_script = """
+<script>
+function atualizaContadorSel(){
+  var n=document.querySelectorAll('.sel-rel:checked').length;
+  var el=document.getElementById('sel-contador');
+  if(el)el.textContent=n>0?(n+' aluno(s) marcado(s)'):'nenhum marcado';
+}
+function selTodosRel(master){
+  document.querySelectorAll('.sel-rel').forEach(function(c){c.checked=master.checked;});
+  atualizaContadorSel();
+}
+function imprimirSelecionados(sem){
+  var mats=[];
+  document.querySelectorAll('.sel-rel:checked').forEach(function(c){mats.push(c.value);});
+  if(mats.length===0){alert('Marque ao menos um aluno na tabela para imprimir.');return;}
+  window.open('/admin/relatorios/imprimir-selecionados?semestre='+sem+'&matriculas='+mats.join(','),'_blank');
+}
+</script>"""
+
     # ── Tabela de alunos ──
     sem_filtro = str(filtros.get("semestre", ""))
     mostrar_s1 = sem_filtro in ("", "1")
@@ -899,6 +937,7 @@ def admin_relatorios_page(
 
             linhas += f"""
 <tr style="border-bottom:.5px solid #f0f0ee;">
+  <td style="padding:9px 12px;text-align:center;"><input type="checkbox" class="sel-rel" value="{r['matricula']}" onchange="atualizaContadorSel()" style="width:16px;height:16px;cursor:pointer;"></td>
   <td style="padding:9px 12px;font-weight:800;color:#2b3990;">{r['nome']}</td>
   <td style="padding:9px 12px;font-size:12px;color:#555;">{r['turma']}</td>
   <td style="padding:9px 12px;font-size:12px;color:#888;">{r['professora']}</td>
@@ -911,6 +950,7 @@ def admin_relatorios_page(
 <table style="width:100%;border-collapse:collapse;font-size:13px;">
   <thead>
     <tr style="background:#e8eaf8;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#2b3990;">
+      <th style="padding:9px 12px;text-align:center;"><input type="checkbox" onclick="selTodosRel(this)" title="Selecionar todos" style="width:16px;height:16px;cursor:pointer;"></th>
       <th style="padding:9px 12px;text-align:left;">Aluno</th>
       <th style="padding:9px 12px;text-align:left;">Turma</th>
       <th style="padding:9px 12px;text-align:left;">Professora</th>
@@ -942,8 +982,10 @@ def admin_relatorios_page(
   {filtros_card}
   {trava_massa_card}
   {imp_lote_card}
+  {imp_selecionados_card}
   {tabela_html}
-</div>"""
+</div>
+{sel_script}"""
     return page_shell("Relatórios Semestrais — Escola Espaço Alegre", body)
 
 

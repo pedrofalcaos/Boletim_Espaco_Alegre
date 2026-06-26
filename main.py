@@ -1989,3 +1989,29 @@ async def admin_imprimir_relatorios_lote(request: Request, semestre: int, turma:
 
     return HTMLResponse(gerar_relatorios_print_html_multiplos(itens, semestre))
 
+
+@app.get("/admin/relatorios/imprimir-selecionados", response_class=HTMLResponse)
+async def admin_imprimir_relatorios_selecionados(request: Request, semestre: int, matriculas: str = ""):
+    """Impressão apenas dos alunos marcados pela coordenação (ordem por turma/nome)."""
+    if not check_staff(request):
+        return _redir_login()
+    if semestre not in (1, 2):
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    selecionadas = {re.sub(r'\D', '', m) for m in matriculas.split(",") if m.strip()}
+    if not selecionadas:
+        return RedirectResponse("/admin/relatorios", status_code=302)
+
+    itens = []
+    for mat, al in sorted(get_all_alunos().items(), key=lambda x: (x[1].get("turma", ""), x[1].get("nome", ""))):
+        if mat not in selecionadas or not is_infantil(al.get("turma", "")):
+            continue
+        relatorio = get_relatorio(mat, semestre, al.get("ano_letivo", "2026"))
+        if not relatorio:
+            continue
+        temas = get_temas_para_turma(al.get("turma", ""))
+        respostas = get_respostas(relatorio["id"])
+        itens.append((al, mat, relatorio, temas, respostas))
+
+    return HTMLResponse(gerar_relatorios_print_html_multiplos(itens, semestre))
+
