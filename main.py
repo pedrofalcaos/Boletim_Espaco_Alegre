@@ -567,6 +567,7 @@ async def ver_boletim(request: Request, matricula: str, ref: str = ""):
 
     aluno_completo = dict(aluno)
     aluno_completo['matricula'] = mat_clean
+    aluno_completo['foto_url'] = dfoto.get_foto(dfoto.chave_aluno(mat_clean))
     back_url = "/admin" if ref == "admin" else "/"
     _registrar_acesso_pai(request, aluno, mat_clean, "boletim", ref=ref)
     sems = dav.semestres_disponiveis(mat_clean)
@@ -660,6 +661,9 @@ async def imprimir_boletins(request: Request, turma: str = "todos"):
             key=lambda x: x['nome']
         )
         titulo = turma
+    _fotos = dfoto.get_fotos_map("aluno:")
+    for a in lista:
+        a['foto_url'] = _fotos.get(dfoto.chave_aluno(a['matricula']))
     return HTMLResponse(gerar_boletins_multiplos_html(lista, titulo))
 
 # ════════════════════════════════════════════════════════════════════════════

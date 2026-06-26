@@ -130,10 +130,10 @@ def _pagina_relatorio_html(
   </div>
 </div>"""
 
-    # ── Descrição final ──
+    # ── Descrição final ── (texto longo: flui naturalmente na impressão)
     desc_html = f"""
-<div style="margin-bottom:14px;">
-  <div style="background:#2b3990;color:#fff;font-family:'Fredoka One',cursive;
+<div class="desc-bloco" style="margin-bottom:14px;">
+  <div class="desc-titulo" style="background:#2b3990;color:#fff;font-family:'Fredoka One',cursive;
               font-size:13px;padding:6px 14px;border-radius:6px 6px 0 0;break-after:avoid;page-break-after:avoid;">
     Descrição Final do Semestre
   </div>
@@ -143,9 +143,9 @@ def _pagina_relatorio_html(
   </div>
 </div>"""
 
-    # ── Assinaturas ── (espaço extra acima para caber a assinatura à mão)
+    # ── Assinaturas ── (mantidas juntas; espaço acima para assinar à mão)
     assinaturas = """
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:52px;break-inside:avoid;page-break-inside:avoid;">
+<div class="assinaturas" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:40px;break-inside:avoid;page-break-inside:avoid;break-before:avoid;">
   <div style="text-align:center;">
     <div style="border-top:1.5px solid #333;padding-top:6px;font-size:11px;color:#555;">
       Professora
@@ -235,12 +235,11 @@ def _pagina_relatorio_html(
   <!-- Temas e subtemas -->
   {temas_html}
 
-  <!-- Descrição final + assinaturas: mantidas no mesmo bloco para não se
-       separarem na impressão; se não couberem, vão juntas para a próxima página -->
-  <div style="break-inside:avoid;page-break-inside:avoid;">
-    {desc_html}
-    {assinaturas}
-  </div>
+  <!-- Descrição final (flui naturalmente) -->
+  {desc_html}
+
+  <!-- Assinaturas (mantidas juntas) -->
+  {assinaturas}
 """
 
 
@@ -269,6 +268,13 @@ body{{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing
   .pagina{{max-width:100%;padding:11mm 12mm;margin:0;background:#fff!important;backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;border:none!important;box-shadow:none!important;border-radius:0!important;}}
   .no-print{{display:none!important;}}
+  /* Descrição: flui naturalmente entre páginas, sem borda "cortada" na quebra. */
+  .desc-bloco{{break-inside:auto!important;page-break-inside:auto!important;}}
+  .desc-titulo{{break-after:avoid!important;page-break-after:avoid!important;}}
+  .desc-rendered{{border:none!important;border-radius:0!important;padding:8px 0 0 0!important;min-height:0!important;orphans:3;widows:3;}}
+  .desc-rendered p,.desc-rendered li{{orphans:3;widows:3;}}
+  /* Assinaturas nunca se dividem entre páginas. */
+  .assinaturas{{break-inside:avoid!important;page-break-inside:avoid!important;margin-top:30px!important;}}
   @page{{size:A4 portrait;margin:0;}}
 }}
 .pagina + .pagina{{page-break-before:always;}}

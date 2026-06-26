@@ -1,5 +1,5 @@
 import re, os
-from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS
+from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS, avatar
 from icons import ICON_PRINTER, icon_printer
 
 DISCIPLINAS = [
@@ -374,6 +374,7 @@ def _gerar_pagina(aluno: dict) -> str:
     ano     = aluno.get('ano_letivo', '2026')
     obs     = aluno.get('observacoes', '').strip()
 
+    foto    = aluno.get('foto_url')
     ta, tf, pct_str, max_str, pct_color, freq_badge = _calc_freq(aluno)
     obs_conteudo = (f'<p style="font-size:9px;color:#444;padding:2px 0;">{obs}</p>'
                     if obs else '<div class="obs-line"></div>')
@@ -392,11 +393,14 @@ def _gerar_pagina(aluno: dict) -> str:
     </div>
   </div>
 
-  <div class="aluno-grid">
-    <div class="field"><label>Nome do(a) Aluno(a)</label><span>{nome}</span></div>
-    <div class="field"><label>Turma / Série</label><span>{turma} – {periodo}</span></div>
-    <div class="field"><label>Professor(a)</label><span>{prof}</span></div>
-    <div class="field"><label>Matrícula</label><span>{mat}</span></div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="aluno-foto">{avatar(nome, foto, size=44)}</div>
+    <div class="aluno-grid" style="flex:1;">
+      <div class="field"><label>Nome do(a) Aluno(a)</label><span>{nome}</span></div>
+      <div class="field"><label>Turma / Série</label><span>{turma} – {periodo}</span></div>
+      <div class="field"><label>Professor(a)</label><span>{prof}</span></div>
+      <div class="field"><label>Matrícula</label><span>{mat}</span></div>
+    </div>
   </div>
 
   <div class="table-scroll">
