@@ -2,6 +2,7 @@
 from urllib.parse import quote
 from datetime import date
 from templates import page_shell, admin_nav
+from design_system import avatar_iniciais
 
 # O pop-up de festas (São João / férias) some sozinho após esta data.
 FESTAS_ATE = date(2026, 7, 31)
@@ -124,6 +125,7 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
 <div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;
             box-shadow:0 2px 8px rgba(0,0,0,.06);">
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    {avatar_iniciais(p["nome"], size=40)}
     <div style="flex:1;">
       <div style="font-weight:800;color:#2b3990;font-size:14px;">{p["nome"]}{pendente_badge}</div>
       <div style="font-size:11px;color:#aaa;margin-top:2px;">{p["username"]}</div>
@@ -238,6 +240,7 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
 <div style="background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;
             box-shadow:0 2px 8px rgba(0,0,0,.06);">
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    {avatar_iniciais(c["nome"], size=40)}
     <div style="flex:1;">
       <div style="font-weight:800;color:#2b3990;font-size:14px;">{c["nome"]}{pendente_badge}</div>
       <div style="font-size:11px;color:#aaa;margin-top:2px;">{c["username"]} · coordenação</div>

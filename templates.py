@@ -2,7 +2,7 @@
 from urllib.parse import quote
 from datetime import datetime
 from music_player import PLAYER_MUSICA_HTML
-from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS, TEMA_TOGGLE
+from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS, TEMA_TOGGLE, avatar_iniciais
 
 _ANO_ATUAL = datetime.now().year
 
@@ -251,7 +251,7 @@ def admin_dashboard(alunos: dict, resetado: bool = False, rel_status: dict = Non
 <tr>
   <td style="text-align:center;font-size:11px;color:#aaa;font-weight:700;width:32px;">{i}</td>
   <td style="font-weight:700;color:var(--azul);">{mat}</td>
-  <td>{nome}</td>
+  <td><div style="display:flex;align-items:center;gap:9px;">{avatar_iniciais(nome, size=30)}<span>{nome}</span></div></td>
   <td style="font-size:12px;color:#888;">{prof}</td>
   <td style="text-align:center;">{badge_html}</td>
   <td style="text-align:center;white-space:nowrap;">

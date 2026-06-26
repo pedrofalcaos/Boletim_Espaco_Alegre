@@ -12,6 +12,32 @@ GLASS_BG_BLOBS = """<div class="lg-bg" aria-hidden="true">
   <span class="lg-blob lg-blob-3"></span>
 </div>"""
 
+# ── Avatar por iniciais ──────────────────────────────────────────────────────
+# Em vez de foto enviada (dado sensível + armazenamento), gera um círculo
+# colorido com as iniciais do nome. Cor estável por nome.
+_AVATAR_CORES = ["#2b3990", "#0a7c3e", "#c25b0d", "#6a1a8a", "#b52222",
+                 "#1a5fa8", "#0f766e", "#9333ea", "#be185d", "#0369a1"]
+
+
+def _iniciais(nome: str) -> str:
+    partes = [p for p in (nome or "").strip().split() if p]
+    if not partes:
+        return "?"
+    if len(partes) == 1:
+        return partes[0][:2].upper()
+    return (partes[0][0] + partes[-1][0]).upper()
+
+
+def avatar_iniciais(nome: str, size: int = 36, fonte: int = None) -> str:
+    """Retorna um <span> circular com as iniciais do nome (cor estável)."""
+    ini = _iniciais(nome)
+    cor = _AVATAR_CORES[sum(ord(c) for c in (nome or "?")) % len(_AVATAR_CORES)]
+    fs = fonte or max(10, int(size * 0.4))
+    return (f'<span title="{nome}" style="display:inline-flex;align-items:center;justify-content:center;'
+            f'width:{size}px;height:{size}px;min-width:{size}px;border-radius:50%;background:{cor};color:#fff;'
+            f"font-family:'Nunito',sans-serif;font-weight:800;font-size:{fs}px;line-height:1;flex:none;"
+            f'box-shadow:0 2px 6px rgba(0,0,0,.18);">{ini}</span>')
+
 # ── Tema claro/escuro ────────────────────────────────────────────────────────
 # Botão flutuante + tema salvo por dispositivo (localStorage). TODAS as regras
 # escuras ficam sob html[data-tema="dark"] e dentro de @media screen, de modo que

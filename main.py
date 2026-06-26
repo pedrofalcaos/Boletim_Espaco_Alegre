@@ -48,6 +48,7 @@ from relatorio_print import (
     gerar_escolha_semestre_html, gerar_relatorio_indisponivel_html,
 )
 from music_player import inject_player
+from design_system import avatar_iniciais
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -76,9 +77,9 @@ def _user_chip_html(user: dict) -> str:
     sufixo = f" · {role}" if role else ""
     return ('<div id="user-chip" class="no-print" style="position:fixed;bottom:74px;left:18px;z-index:9998;'
             'background:#1a2570;color:#fff;border:2px solid rgba(255,255,255,.22);border-radius:999px;'
-            "padding:8px 14px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;"
-            'box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;align-items:center;gap:7px;max-width:250px;">'
-            '<span style="font-size:14px;">👤</span>'
+            "padding:6px 14px 6px 6px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;"
+            'box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;align-items:center;gap:8px;max-width:260px;">'
+            + avatar_iniciais(nome, size=26) +
             f'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{nome}{sufixo}</span>'
             '</div>')
 

@@ -1,5 +1,5 @@
 """HTML otimizado para impressão/PDF do Relatório Semestral da Ed. Infantil."""
-from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS
+from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS, avatar_iniciais
 from icons import ICON_PRINTER
 from sanitize import sanitizar_html
 
@@ -424,7 +424,9 @@ def gerar_escolha_semestre_html(aluno: dict, matricula: str, disponivel: dict, e
         'box-shadow:0 8px 22px rgba(26,37,112,.18);margin-bottom:16px;">'
         '<h1 style="font-family:\'Fredoka One\',cursive;font-size:23px;color:#2b3990;line-height:1.3;">'
         'Relatório Semestral</h1>'
-        f'<p style="font-size:14px;color:#5a6079;font-weight:600;margin-top:6px;">{nome} &nbsp;·&nbsp; {turma}</p>'
+        '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;">'
+        + avatar_iniciais(nome, size=40) +
+        f'<p style="font-size:14px;color:#5a6079;font-weight:600;">{nome} &nbsp;·&nbsp; {turma}</p></div>'
         '<p style="font-size:13px;color:#7d83a3;margin-top:4px;">Escolha o semestre que deseja visualizar:</p>'
         '</div>'
         '<div style="display:flex;gap:16px;flex-wrap:wrap;">'

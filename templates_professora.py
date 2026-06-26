@@ -2,6 +2,7 @@
 from urllib.parse import quote
 from templates import page_shell, _ANO_ATUAL
 from icons import ICON_EDIT, ICON_VIEW, ICON_KEY, dot
+from design_system import avatar_iniciais
 
 # ── Helpers de status ─────────────────────────────────────────────────────────
 
@@ -234,7 +235,7 @@ def professora_dashboard(user: dict, turmas_data: list, msg: str = "", bemvindo:
   <!-- Header -->
   <div style="background:#2b3990;border-radius:16px;padding:24px 28px;margin-bottom:24px;
               display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-    <img src="/static/logo.png" style="height:44px;object-fit:contain;background:#fff;padding:8px 14px;border-radius:14px;box-shadow:0 5px 14px rgba(0,0,0,.18);">
+    {avatar_iniciais(nome, size=46)}
     <div style="flex:1;">
       <div style="font-family:'Fredoka One',cursive;font-size:22px;color:#fff;">Olá, {nome}! 👋</div>
       <div style="font-size:12px;color:#b0b8e8;margin-top:3px;">
