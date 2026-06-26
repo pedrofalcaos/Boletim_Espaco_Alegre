@@ -3,6 +3,7 @@ from urllib.parse import quote
 from datetime import datetime
 from music_player import PLAYER_MUSICA_HTML
 from design_system import FONTS_LINK, GLASS_BG_BLOBS, LIQUID_GLASS_CSS, TEMA_TOGGLE, avatar_iniciais, avatar
+from foto_cropper import FOTO_CROPPER_HTML
 
 _ANO_ATUAL = datetime.now().year
 
@@ -46,6 +47,7 @@ a{{text-decoration:none;color:inherit;}}
   Sistema desenvolvido por <strong style="color:#6a6f87;">Pedro Falcão</strong> © {_ANO_ATUAL} — Todos os direitos reservados.
 </footer>
 {TEMA_TOGGLE}
+{FOTO_CROPPER_HTML}
 {PLAYER_MUSICA_HTML}
 <script>
 function verSenha(b){{var i=b.parentNode.querySelector('input');if(!i)return;i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'\\u{{1F441}}':'\\u{{1F648}}';}}
@@ -579,10 +581,10 @@ def aluno_form(matricula: str, aluno: dict, novo: bool, msg: str = "") -> str:
       <div style="font-family:'Fredoka One',cursive;font-size:15px;color:var(--azul);">📷 Foto do aluno</div>
       <div style="font-size:11px;color:#888;margin-top:2px;">JPG, PNG ou WEBP · até 8 MB · recortada em quadrado automaticamente.</div>
     </div>
-    <form method="POST" action="/admin/aluno/{matricula}/foto" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required style="font-size:12px;color:#555;max-width:220px;">
-      <button type="submit" style="background:var(--azul);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:800;font-size:12px;cursor:pointer;">⬆ Enviar</button>
-    </form>
+    <label style="background:var(--azul);color:#fff;border-radius:8px;padding:9px 18px;font-weight:800;font-size:12px;cursor:pointer;display:inline-block;">
+      📷 Escolher foto
+      <input type="file" accept="image/jpeg,image/png,image/webp" data-action="/admin/aluno/{matricula}/foto" onchange="abrirCropper(this)" style="display:none;">
+    </label>
     {_remover}
   </div>'''
 

@@ -112,11 +112,13 @@ def admin_professoras_page(professoras: list, alunos_por_prof: dict, msg: str = 
                    f'<button type="submit" style="{_BTN_VM}">Remover foto</button></form>') if foto_url else ""
         return f"""
   <div id="foto-form-{uid}" style="display:none;margin-top:11px;border-top:1px solid #f0f0ee;padding-top:11px;">
-    <form method="POST" action="/admin/usuario/{uid}/foto" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required style="font-size:11px;color:#555;max-width:220px;">
-      <button type="submit" style="{_BTN_AZ}padding:7px 16px;font-size:12px;">⬆ Enviar foto</button>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="{_BTN_AZ}padding:7px 16px;font-size:12px;cursor:pointer;display:inline-block;">
+        📷 Escolher foto
+        <input type="file" accept="image/jpeg,image/png,image/webp" data-action="/admin/usuario/{uid}/foto" onchange="abrirCropper(this)" style="display:none;">
+      </label>
       {remover}
-    </form>
+    </div>
     <div style="font-size:10px;color:#aaa;margin-top:5px;">JPG, PNG ou WEBP · até 8 MB · recortada em quadrado automaticamente.</div>
   </div>"""
 
@@ -1182,10 +1184,10 @@ def aluno_infantil_form(matricula: str, aluno: dict, temas: list, msg: str = "")
     <div style="font-family:'Fredoka One',cursive;font-size:14px;color:#2b3990;">📷 Foto do aluno</div>
     <div style="font-size:11px;color:#888;margin-top:2px;">JPG, PNG ou WEBP · até 8 MB · recortada em quadrado automaticamente.</div>
   </div>
-  <form method="POST" action="/admin/aluno/{matricula}/foto" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-    <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required style="font-size:12px;color:#555;max-width:210px;">
-    <button type="submit" style="{_BTN_AZ}padding:8px 16px;font-size:12px;">⬆ Enviar</button>
-  </form>
+  <label style="{_BTN_AZ}padding:9px 18px;font-size:12px;cursor:pointer;display:inline-block;">
+    📷 Escolher foto
+    <input type="file" accept="image/jpeg,image/png,image/webp" data-action="/admin/aluno/{matricula}/foto" onchange="abrirCropper(this)" style="display:none;">
+  </label>
   {_rem_foto}
 </div>"""
 
