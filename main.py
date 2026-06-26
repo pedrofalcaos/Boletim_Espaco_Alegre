@@ -31,7 +31,7 @@ import db_avaliacao as dav
 import db_acesso as dac
 import db_auditoria as daud
 from sanitize import sanitizar_html
-from templates import login_page, admin_dashboard, aluno_form
+from templates import login_page, admin_dashboard, aluno_form, trocar_senha_staff_page
 from templates_admin_extras import (
     admin_professoras_page, admin_temas_page, admin_relatorios_page,
     admin_aluno_relatorios_page, aluno_infantil_form, admin_avaliacoes_page,
@@ -65,9 +65,47 @@ _CSP = (
 _SEM_CACHE = ("/boletim", "/relatorio", "/avaliacao-ingles", "/admin", "/professora")
 
 
+_ROLE_NOME = {"admin": "Administrador", "coordenacao": "Coordenação", "professora": "Professora"}
+
+
+def _user_chip_html(user: dict) -> str:
+    """Chip fixo mostrando quem está logado (canto inferior esquerdo, acima do
+    botão de tema). Não aparece na impressão."""
+    nome = (user.get("nome") or user.get("username") or "").strip()
+    role = _ROLE_NOME.get(user.get("role", ""), "")
+    sufixo = f" · {role}" if role else ""
+    return ('<div id="user-chip" class="no-print" style="position:fixed;bottom:74px;left:18px;z-index:9998;'
+            'background:#1a2570;color:#fff;border:2px solid rgba(255,255,255,.22);border-radius:999px;'
+            "padding:8px 14px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;"
+            'box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;align-items:center;gap:7px;max-width:250px;">'
+            '<span style="font-size:14px;">👤</span>'
+            f'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{nome}{sufixo}</span>'
+            '</div>')
+
+
+async def _injeta_chip_usuario(request: Request, resp):
+    """Injeta o chip do usuário logado nas páginas HTML (qualquer perfil)."""
+    if "text/html" not in resp.headers.get("content-type", ""):
+        return resp
+    user = get_session_user(request)
+    if not user:
+        return resp
+    body = b""
+    async for chunk in resp.body_iterator:
+        body += chunk
+    html = body.decode("utf-8", "ignore")
+    if "</body>" in html and 'id="user-chip"' not in html:
+        html = html.replace("</body>", _user_chip_html(user) + "</body>", 1)
+    headers = dict(resp.headers)
+    headers.pop("content-length", None)
+    headers.pop("content-type", None)
+    return HTMLResponse(content=html, status_code=resp.status_code, headers=headers)
+
+
 @app.middleware("http")
 async def _security_headers(request: Request, call_next):
     resp = await call_next(request)
+    resp = await _injeta_chip_usuario(request, resp)
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
     resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -626,7 +664,8 @@ async def post_login(
     user = authenticate_user(usuario, senha)
     if user and user.get("role") in ("admin", "coordenacao"):
         limpar_falhas_login(ip)
-        resp = RedirectResponse("/admin", status_code=302)
+        destino = "/admin/trocar-senha" if user.get("senha_temporaria") else "/admin"
+        resp = RedirectResponse(destino, status_code=302)
         resp.set_cookie(COOKIE_NAME, make_session_token(user),
                         max_age=COOKIE_MAX, httponly=True, samesite="lax",
                         secure=COOKIE_SECURE)
@@ -640,10 +679,36 @@ async def logout():
     resp.delete_cookie(COOKIE_NAME)
     return resp
 
+
+@app.get("/admin/trocar-senha", response_class=HTMLResponse)
+async def admin_trocar_senha_form(request: Request, erro: str = "", ok: str = ""):
+    user = get_session_user(request)
+    if not user or user.get("role") not in ("admin", "coordenacao"):
+        return _redir_login()
+    return trocar_senha_staff_page(user, obrigatorio=_precisa_trocar_senha(user), erro=erro)
+
+
+@app.post("/admin/trocar-senha")
+async def admin_trocar_senha_salvar(
+    request: Request, nova_senha: str = Form(...), confirmar_senha: str = Form(...),
+):
+    user = get_session_user(request)
+    if not user or user.get("role") not in ("admin", "coordenacao"):
+        return _redir_login()
+    if len(nova_senha) < 6:
+        return RedirectResponse("/admin/trocar-senha?erro=A+senha+deve+ter+ao+menos+6+caracteres", status_code=302)
+    if nova_senha != confirmar_senha:
+        return RedirectResponse("/admin/trocar-senha?erro=As+senhas+n%C3%A3o+coincidem", status_code=302)
+    update_usuario_senha(user["user_id"], nova_senha)
+    _auditar(request, "Trocar a própria senha")
+    return RedirectResponse("/admin", status_code=302)
+
 @app.get("/admin", response_class=HTMLResponse)
 async def painel(request: Request, resetado: str = ""):
     if not check_session(request):
         return _redir_login()
+    if _precisa_trocar_senha(get_session_user(request)):
+        return RedirectResponse("/admin/trocar-senha", status_code=302)
     if not check_admin(request):
         return RedirectResponse("/admin/relatorios", status_code=302)
     alunos = get_all_alunos()
@@ -1114,8 +1179,8 @@ def _check_prof(request: Request) -> dict | None:
 
 
 def _precisa_trocar_senha(user: dict) -> bool:
-    """True se a professora estiver com uma senha temporária pendente de troca."""
-    if user.get("role") != "professora":
+    """True se o usuário (qualquer perfil) está com senha temporária pendente de troca."""
+    if not user or not user.get("user_id"):
         return False
     atual = get_usuario_by_id(user["user_id"])
     return bool(atual and atual.get("senha_temporaria"))
@@ -1519,6 +1584,8 @@ async def admin_relatorios(
 ):
     if not check_staff(request):
         return _redir_login()
+    if _precisa_trocar_senha(get_session_user(request)):
+        return RedirectResponse("/admin/trocar-senha", status_code=302)
     rows, turmas_inf, cont = _painel_relatorios_data(turma, semestre, status)
     filtros = {"turma": turma, "semestre": semestre, "status": status}
     is_admin_user = check_admin(request)

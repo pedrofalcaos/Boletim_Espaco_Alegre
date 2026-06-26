@@ -55,10 +55,14 @@ def professora_login_page(erro: bool = False, bloqueado: bool = False) -> str:
       </div>
       <div style="margin-bottom:20px;">
         <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#aaa;display:block;margin-bottom:5px;">Senha</label>
-        <input name="senha" type="password" autocomplete="current-password"
-          style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
-                 padding:11px 14px;border:2px solid #ddd;border-radius:10px;outline:none;color:#2b3990;"
-          onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#ddd'">
+        <div style="position:relative;">
+          <input name="senha" type="password" autocomplete="current-password"
+            style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
+                   padding:11px 44px 11px 14px;border:2px solid #ddd;border-radius:10px;outline:none;color:#2b3990;"
+            onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#ddd'">
+          <button type="button" onclick="verSenha(this)" tabindex="-1" title="Mostrar/ocultar senha"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px;">👁️</button>
+        </div>
       </div>
       <button type="submit"
         style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;
@@ -115,15 +119,23 @@ def professora_trocar_senha_page(user: dict, obrigatorio: bool = False, erro: st
     <form method="POST" action="/professora/trocar-senha">
       <div style="margin-bottom:14px;">
         <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#aaa;display:block;margin-bottom:5px;">Nova senha</label>
-        <input name="nova_senha" type="password" required minlength="6" autocomplete="new-password"
-          style="{_input}"
-          onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#ddd'">
+        <div style="position:relative;">
+          <input name="nova_senha" type="password" required minlength="6" autocomplete="new-password"
+            style="{_input}padding-right:44px;"
+            onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#ddd'">
+          <button type="button" onclick="verSenha(this)" tabindex="-1" title="Mostrar/ocultar senha"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px;">👁️</button>
+        </div>
       </div>
       <div style="margin-bottom:20px;">
         <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#aaa;display:block;margin-bottom:5px;">Confirmar nova senha</label>
-        <input name="confirmar_senha" type="password" required minlength="6" autocomplete="new-password"
-          style="{_input}"
-          onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#ddd'">
+        <div style="position:relative;">
+          <input name="confirmar_senha" type="password" required minlength="6" autocomplete="new-password"
+            style="{_input}padding-right:44px;"
+            onfocus="this.style.borderColor='#2b3990'" onblur="this.style.borderColor='#ddd'">
+          <button type="button" onclick="verSenha(this)" tabindex="-1" title="Mostrar/ocultar senha"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px;">👁️</button>
+        </div>
       </div>
       <button type="submit"
         style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;

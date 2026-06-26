@@ -47,6 +47,9 @@ a{{text-decoration:none;color:inherit;}}
 </footer>
 {TEMA_TOGGLE}
 {PLAYER_MUSICA_HTML}
+<script>
+function verSenha(b){{var i=b.parentNode.querySelector('input');if(!i)return;i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'\\u{{1F441}}':'\\u{{1F648}}';}}
+</script>
 </body>
 </html>"""
 
@@ -78,10 +81,14 @@ def login_page(erro: bool = False, bloqueado: bool = False) -> str:
       </div>
       <div style="margin-bottom:20px;">
         <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#aaa;display:block;margin-bottom:5px;">Senha</label>
-        <input name="senha" type="password" autocomplete="current-password"
-          style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
-                 padding:11px 14px;border:2px solid #ddd;border-radius:10px;outline:none;color:var(--azul);"
-          onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='#ddd'">
+        <div style="position:relative;">
+          <input name="senha" type="password" autocomplete="current-password"
+            style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
+                   padding:11px 44px 11px 14px;border:2px solid #ddd;border-radius:10px;outline:none;color:var(--azul);"
+            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='#ddd'">
+          <button type="button" onclick="verSenha(this)" tabindex="-1" title="Mostrar/ocultar senha"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px;">👁️</button>
+        </div>
       </div>
       <button type="submit"
         style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;
@@ -98,6 +105,61 @@ def login_page(erro: bool = False, bloqueado: bool = False) -> str:
 </div>"""
     css = ".erro{background:var(--vermelho-lt);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--vermelho);font-weight:700;text-align:center;}"
     return page_shell("Login — Escola Espaço Alegre", body, css)
+
+
+# ── Troca de senha (admin / coordenação) ─────────────────────────────────────
+def trocar_senha_staff_page(user: dict, obrigatorio: bool = False, erro: str = "") -> str:
+    nome = user.get("nome", "")
+    erro_html = (f'<div class="erro">{erro}</div>' if erro else "")
+    aviso = ("""
+    <div style="background:#fffbe6;border:1px solid #f7d800;border-radius:10px;padding:12px 16px;margin-bottom:16px;
+                font-size:12.5px;color:#8a6d00;font-weight:600;line-height:1.5;">
+      🔐 Você está usando uma <strong>senha temporária</strong>. Para sua segurança, defina agora uma
+      nova senha pessoal antes de continuar.
+    </div>""" if obrigatorio else "")
+
+    def _campo(label, name):
+        return f"""
+      <div style="margin-bottom:14px;">
+        <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#aaa;display:block;margin-bottom:5px;">{label}</label>
+        <div style="position:relative;">
+          <input name="{name}" type="password" autocomplete="new-password" required minlength="6"
+            style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
+                   padding:11px 44px 11px 14px;border:2px solid #ddd;border-radius:10px;outline:none;color:var(--azul);"
+            onfocus="this.style.borderColor='var(--azul)'" onblur="this.style.borderColor='#ddd'">
+          <button type="button" onclick="verSenha(this)" tabindex="-1" title="Mostrar/ocultar senha"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px;">👁️</button>
+        </div>
+      </div>"""
+
+    sair = "" if obrigatorio else '<a href="/admin" style="display:block;text-align:center;font-size:12px;color:#888;margin-top:14px;text-decoration:none;">← Voltar ao painel</a>'
+    body = f"""
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
+<div style="background:#fff;border-radius:20px;box-shadow:0 8px 48px rgba(0,0,0,.22);width:100%;max-width:400px;overflow:hidden;">
+  <div style="background:var(--azul);padding:26px 32px 22px;text-align:center;border-bottom:4px solid var(--amarelo);">
+    <img src="/static/logo.png" style="height:48px;object-fit:contain;margin-bottom:12px;background:#fff;padding:9px 15px;border-radius:15px;box-shadow:0 5px 14px rgba(0,0,0,.18);" alt="Logo">
+    <h1 style="font-family:'Fredoka One',cursive;font-size:20px;color:#fff;">Definir nova senha</h1>
+    <p style="font-size:11px;color:#b0b8e8;margin-top:3px;">Olá, {nome}</p>
+  </div>
+  <div style="padding:26px 32px 30px;">
+    {erro_html}
+    {aviso}
+    <form method="POST" action="/admin/trocar-senha">
+      {_campo("Nova senha", "nova_senha")}
+      {_campo("Confirmar nova senha", "confirmar_senha")}
+      <button type="submit"
+        style="width:100%;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;
+               background:var(--azul);color:#fff;border:none;border-radius:10px;padding:13px;cursor:pointer;margin-top:4px;">
+        Salvar nova senha →
+      </button>
+    </form>
+    {sair}
+  </div>
+</div>
+</div>"""
+    css = ".erro{background:var(--vermelho-lt);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--vermelho);font-weight:700;text-align:center;}"
+    return page_shell("Definir nova senha — Escola Espaço Alegre", body, css)
+
 
 # ── Nav bar do admin ─────────────────────────────────────────────────────────
 def admin_nav(current: str = "alunos", staff_only: bool = False) -> str:
