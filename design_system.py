@@ -235,4 +235,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
     box-shadow:none !important; border:1px solid #ddd !important;
   }
 }
+/* Card de vidro (helper _card): vidro no claro, opaco no escuro, branco na impressão */
+.gcard{background:rgba(255,255,255,.74);backdrop-filter:blur(16px) saturate(170%);
+  -webkit-backdrop-filter:blur(16px) saturate(170%);border:1px solid rgba(255,255,255,.6);
+  border-radius:16px;padding:20px 24px;margin-bottom:20px;box-shadow:0 10px 30px rgba(43,57,144,.10);}
+@media screen{
+  html[data-tema="dark"] .gcard{background:rgba(28,35,66,.86)!important;border-color:#2e3760!important;
+    color:#e7eaf6!important;box-shadow:0 10px 30px rgba(0,0,0,.4)!important;}
+}
+@media print{.gcard{background:#fff!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:none!important;border:1px solid #ddd!important;border-radius:0!important;}}
 """

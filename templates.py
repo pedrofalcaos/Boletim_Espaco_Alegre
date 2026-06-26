@@ -215,7 +215,7 @@ _SIDEBAR_CSS = """
 .tema-btn{display:none!important;}
 /* remove redundancia: o logo e o "Sair" do cabecalho das paginas (o sidebar ja tem) */
 img[src="/static/logo.png"]:not(.sb-logo){display:none!important;}
-a[href="/admin/logout"]:not(.sb-sair){display:none!important;}
+a[href="/admin/logout"]:not(.sb-sair),a[href="/professora/logout"]:not(.sb-sair){display:none!important;}
 @media(min-width:1000px){ body{padding-left:248px;} }
 @media(max-width:999px){
   .sb-side{transform:translateX(-100%);}

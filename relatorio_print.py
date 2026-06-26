@@ -17,9 +17,9 @@ _MODAL_REL = """
     <h3 style="font-family:'Fredoka One',cursive;color:#2b3990;font-size:18px;margin-bottom:10px;">Antes de imprimir</h3>
     <p style="font-size:13px;color:#555;line-height:1.6;margin-bottom:10px;">No diálogo de impressão, ajuste:</p>
     <div style="background:#e8eaf8;border-radius:10px;padding:11px 14px;margin-bottom:16px;text-align:left;">
-      <div style="font-size:13px;color:#2b3990;font-weight:800;margin-bottom:5px;">📐 Margens &rarr; <strong>Nenhuma</strong></div>
+      <div style="font-size:13px;color:#2b3990;font-weight:800;margin-bottom:5px;">📐 Margens &rarr; <strong>Padr&atilde;o</strong></div>
       <div style="font-size:13px;color:#2b3990;font-weight:800;">🚫 Desmarque <strong>Cabe&ccedil;alhos e rodap&eacute;s</strong></div>
-      <div style="font-size:11px;color:#888;margin-top:6px;">Assim o endere&ccedil;o do site n&atilde;o aparece na folha.</div>
+      <div style="font-size:11px;color:#888;margin-top:6px;">Assim o texto fica com bom espa&ccedil;amento e o endere&ccedil;o do site n&atilde;o aparece.</div>
     </div>
     <button onclick="fecharEImprimirRel()" style="width:100%;background:#2b3990;color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:8px;">Imprimir agora</button>
     <button onclick="document.getElementById('print-modal-rel').style.display='none'" style="width:100%;background:#f3f3f3;color:#666;border:none;border-radius:10px;padding:10px;font-family:'Plus Jakarta Sans','Nunito',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">Cancelar</button>
@@ -263,19 +263,22 @@ body{{font-family:'Plus Jakarta Sans','Nunito',sans-serif;-webkit-font-smoothing
 @media print{{
   body{{margin:0;padding:0;background:#fff;}}
   .lg-bg{{display:none!important;}}
-  /* Margem vai para o padding do conteúdo; a @page fica com margin:0 para o
-     navegador NÃO imprimir cabeçalho/rodapé (URL, data, número de página). */
-  .pagina{{max-width:100%;padding:11mm 12mm;margin:0;background:#fff!important;backdrop-filter:none!important;
+  /* Margem na @page = respiro em TODA página, inclusive nas continuações.
+     (A URL/cabeçalho é removida pelo navegador ao desmarcar "Cabeçalhos e
+     rodapés" — o lembrete antes de imprimir orienta isso.) */
+  .pagina{{max-width:100%;padding:0;margin:0;background:#fff!important;backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;border:none!important;box-shadow:none!important;border-radius:0!important;}}
   .no-print{{display:none!important;}}
-  /* Descrição: flui naturalmente entre páginas, sem borda "cortada" na quebra. */
+  /* Descrição: flui naturalmente, com respiro, sem borda "cortada" na quebra. */
   .desc-bloco{{break-inside:auto!important;page-break-inside:auto!important;}}
   .desc-titulo{{break-after:avoid!important;page-break-after:avoid!important;}}
-  .desc-rendered{{border:none!important;border-radius:0!important;padding:8px 0 0 0!important;min-height:0!important;orphans:3;widows:3;}}
-  .desc-rendered p,.desc-rendered li{{orphans:3;widows:3;}}
+  .desc-rendered{{border:none!important;border-radius:0!important;padding:10px 0 0 0!important;min-height:0!important;
+    font-size:12.5px!important;line-height:1.85!important;text-align:left!important;orphans:3;widows:3;}}
+  .desc-rendered p{{margin:0 0 12px 0!important;orphans:3;widows:3;}}
+  .desc-rendered li{{orphans:3;widows:3;margin-bottom:5px!important;}}
   /* Assinaturas nunca se dividem entre páginas. */
-  .assinaturas{{break-inside:avoid!important;page-break-inside:avoid!important;margin-top:30px!important;}}
-  @page{{size:A4 portrait;margin:0;}}
+  .assinaturas{{break-inside:avoid!important;page-break-inside:avoid!important;margin-top:34px!important;}}
+  @page{{size:A4 portrait;margin:15mm 14mm 14mm;}}
 }}
 .pagina + .pagina{{page-break-before:always;}}
 .desc-rendered{{text-align:justify;text-justify:inter-word;}}

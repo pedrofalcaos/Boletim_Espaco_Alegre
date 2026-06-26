@@ -1,8 +1,32 @@
 """Páginas da área da professora."""
 from urllib.parse import quote
-from templates import page_shell, _ANO_ATUAL
+from templates import page_shell, _ANO_ATUAL, _SIDEBAR_CSS
 from icons import ICON_EDIT, ICON_VIEW, ICON_KEY, dot
 from design_system import avatar_iniciais
+
+
+def professora_nav(current: str = "turmas") -> str:
+    """Sidebar de vidro da área da professora (mesmo padrão do admin)."""
+    items = [
+        ("turmas",  "/professora",               "📚 Minhas Turmas"),
+        ("senha",   "/professora/trocar-senha",  "🔑 Trocar Senha"),
+    ]
+    links = ""
+    for key, href, label in items:
+        cls = "sb-link sb-active" if key == current else "sb-link"
+        links += f'<a href="{href}" class="{cls}">{label}</a>\n'
+    sidebar = f"""
+<button class="sb-burger no-print" onclick="document.body.classList.toggle('sb-open')" aria-label="Abrir menu">☰</button>
+<div class="sb-backdrop no-print" onclick="document.body.classList.remove('sb-open')"></div>
+<aside class="sb-side no-print">
+  <div class="sb-head"><img src="/static/logo.png" alt="Escola Espaço Alegre" class="sb-logo"></div>
+  <nav class="sb-nav">{links}</nav>
+  <div class="sb-foot">
+    <button type="button" class="sb-tema" onclick="toggleTema()"><span class="tema-ico">🌙</span><span class="tema-txt">Modo escuro</span></button>
+    <a href="/professora/logout" class="sb-sair">↩ Sair</a>
+  </div>
+</aside>"""
+    return sidebar + _SIDEBAR_CSS
 
 # ── Helpers de status ─────────────────────────────────────────────────────────
 
@@ -231,6 +255,7 @@ def professora_dashboard(user: dict, turmas_data: list, msg: str = "", bemvindo:
   </div>
 </div>""" if bemvindo else ""
     body = f"""
+{professora_nav('turmas')}
 <div style="max-width:960px;margin:0 auto;padding:24px 16px;">
   <!-- Header -->
   <div style="background:#2b3990;border-radius:16px;padding:24px 28px;margin-bottom:24px;
@@ -363,6 +388,7 @@ def professora_turma_page(user: dict, turma: str, alunos: list, msg: str = "") -
 
     periodo_hint = " (Manhã)" if turma.endswith("– A") else " (Tarde)" if turma.endswith("– B") else ""
     body = f"""
+{professora_nav('turmas')}
 <div style="max-width:900px;margin:0 auto;padding:24px 16px;">
   <!-- Header -->
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">

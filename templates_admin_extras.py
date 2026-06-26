@@ -35,7 +35,7 @@ def _msg_erro(texto: str) -> str:
     return f'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:11px 16px;margin-bottom:20px;font-size:13px;color:#b52222;font-weight:700;">✖ {texto}</div>'
 
 def _card(conteudo: str) -> str:
-    return f'<div style="background:#fff;border-radius:14px;padding:20px 24px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,.07);">{conteudo}</div>'
+    return f'<div class="gcard">{conteudo}</div>'
 
 def _secao(titulo: str) -> str:
     return f'<div style="font-family:\'Fredoka One\',cursive;font-size:16px;color:#2b3990;margin-bottom:16px;border-bottom:2px solid #f7d800;padding-bottom:6px;">{titulo}</div>'
