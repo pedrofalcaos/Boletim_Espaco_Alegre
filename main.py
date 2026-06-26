@@ -499,33 +499,40 @@ ul{margin:6px 0 6px 20px;}
   <h2>1. Quais dados tratamos</h2>
   <ul>
     <li><strong>Dos alunos (crianças):</strong> nome, turma, período, professora, matrícula, notas,
-        frequência, observações pedagógicas, relatórios e avaliações em PDF.</li>
-    <li><strong>Da equipe (usuários internos):</strong> nome, usuário/e-mail de acesso e senha (armazenada
-        de forma criptografada).</li>
+        frequência, observações pedagógicas, relatórios, avaliações em PDF e, quando autorizada,
+        a <strong>foto</strong> do aluno.</li>
+    <li><strong>Da equipe (usuários internos):</strong> nome, usuário/e-mail de acesso, senha (armazenada
+        de forma criptografada) e, opcionalmente, foto de perfil.</li>
     <li><strong>De navegação:</strong> ao abrir um documento, registramos data/hora, tipo de documento,
         dispositivo (web/celular/tablet) e um <strong>IP parcial/anonimizado</strong>, para acompanhamento
         interno de acesso. Não usamos cookies de rastreamento ou publicidade.</li>
   </ul>
 
-  <h2>2. Por que tratamos esses dados</h2>
+  <h2>2. Uso de imagem (foto)</h2>
+  <p>A foto do aluno é utilizada <strong>apenas dentro desta plataforma</strong>, para identificação visual
+  nas telas internas e na área do próprio responsável — não é publicada, compartilhada com terceiros nem
+  usada para divulgação. O cadastro da foto do aluno só é feito mediante <strong>autorização do responsável
+  legal</strong> (termo de uso de imagem). O responsável pode solicitar a remoção da foto a qualquer momento.</p>
+
+  <h2>3. Por que tratamos esses dados</h2>
   <p>Para a finalidade educacional de acompanhamento escolar e comunicação com as famílias
   (execução do contrato educacional e legítimo interesse pedagógico da escola).</p>
 
-  <h2>3. Quem tem acesso</h2>
+  <h2>4. Quem tem acesso</h2>
   <p>Apenas a administração e a coordenação têm acesso pleno. Professoras acessam somente as turmas
   vinculadas a elas. Os responsáveis acessam exclusivamente os documentos do próprio aluno.</p>
 
-  <h2>4. Por quanto tempo guardamos</h2>
+  <h2>5. Por quanto tempo guardamos</h2>
   <p>Os dados são mantidos enquanto durar o vínculo escolar e pelo prazo necessário ao cumprimento de
   obrigações legais. Registros de acesso são mantidos apenas pelo tempo útil ao acompanhamento.</p>
 
-  <h2>5. Seus direitos</h2>
+  <h2>6. Seus direitos</h2>
   <p>O titular (ou seu responsável legal) pode solicitar confirmação, acesso, correção, anonimização
   ou exclusão de dados, bem como informações sobre o tratamento.</p>
   <div class="box">📧 Para exercer seus direitos ou tirar dúvidas, entre em contato com a secretaria da
   Escola Espaço Alegre.</div>
 
-  <h2>6. Segurança</h2>
+  <h2>7. Segurança</h2>
   <p>Adotamos medidas técnicas como senhas criptografadas, acesso restrito por perfil, conexão segura
   (HTTPS), cabeçalhos de segurança e registro de acessos. Ainda assim, nenhum sistema é 100% imune;
   trabalhamos continuamente para proteger os dados das crianças e famílias.</p>
