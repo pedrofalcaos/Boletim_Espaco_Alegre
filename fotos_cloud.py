@@ -71,9 +71,14 @@ def upload_foto(conteudo: bytes, public_id: str) -> tuple[str | None, str | None
             invalidate=True,
             resource_type="image",
             transformation=[
-                {"width": 400, "height": 400, "crop": "fill", "gravity": "face"},
+                {"width": 400, "height": 400, "crop": "fill", "gravity": "auto"},
             ],
         )
-        return res.get("secure_url"), None
-    except Exception:
-        return None, "Falha ao enviar a imagem. Tente novamente."
+        url = res.get("secure_url")
+        if not url:
+            return None, "O Cloudinary não retornou a URL da imagem."
+        return url, None
+    except Exception as e:
+        # Mostra um motivo curto para facilitar o diagnóstico (ex.: credenciais).
+        motivo = str(e)[:160] or e.__class__.__name__
+        return None, f"Falha ao enviar a imagem: {motivo}"

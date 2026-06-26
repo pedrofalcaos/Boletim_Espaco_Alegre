@@ -57,7 +57,7 @@ app = FastAPI(docs_url=None, redoc_url=None)
 # ── Cabeçalhos de segurança + cache em conteúdo sensível ─────────────────────
 _CSP = (
     "default-src 'self'; "
-    "img-src 'self' data:; "
+    "img-src 'self' data: https://res.cloudinary.com; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com; "
     "script-src 'self' 'unsafe-inline'; "

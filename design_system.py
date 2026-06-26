@@ -40,9 +40,12 @@ def avatar_iniciais(nome: str, size: int = 36, fonte: int = None) -> str:
 
 
 def avatar(nome: str, foto_url: str = None, size: int = 36, fonte: int = None) -> str:
-    """Mostra a foto (se houver) num círculo; senão, cai no avatar de iniciais."""
+    """Mostra a foto (se houver) num círculo; senão, cai no avatar de iniciais.
+    Se a foto não carregar, o onerror substitui a imagem pelo avatar de iniciais."""
     if foto_url:
+        fb = avatar_iniciais(nome, size=size, fonte=fonte).replace('"', "&quot;")
         return (f'<img src="{foto_url}" alt="{nome}" title="{nome}" loading="lazy" '
+                f'data-fb="{fb}" onerror="this.outerHTML=this.dataset.fb" '
                 f'style="width:{size}px;height:{size}px;min-width:{size}px;border-radius:50%;'
                 f'object-fit:cover;flex:none;box-shadow:0 2px 6px rgba(0,0,0,.18);background:#e8eaf8;">')
     return avatar_iniciais(nome, size=size, fonte=fonte)
